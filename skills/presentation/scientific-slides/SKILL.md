@@ -1,10 +1,8 @@
 ---
 name: scientific-slides
-description: Build slide decks and presentations for research talks. Use this for making PowerPoint slides, conference presentations, seminar talks, research presentations, thesis defense slides, or any scientific talk. Provides slide structure, design templates, timing guidance, and visual validation. Works with PowerPoint and LaTeX Beamer.
+description: 用 python-pptx 或 LaTeX Beamer 生成发表级科研演讲幻灯片（会议/研讨会/答辩/grant pitch/journal club）。当用户要做 PPT、幻灯片、slides、汇报、beamer、presentation 时触发。纯代码生成，不依赖 AI 生图 API——嵌入真实分析图（UMAP/火山图/空间切片等），outline.json 驱动，含 readability 契约与几何 QA。
 allowed-tools: Read Write Edit Bash
-license: MIT license
-metadata:
-    skill-author: K-Dense Inc.
+license: MIT
 ---
 
 # Scientific Slides
@@ -16,276 +14,154 @@ metadata:
 - 画机制图/流程图/架构图（非 slide）→ 改用 `visualization/scientific-schematics`
 - 论文图形摘要 → 改用 `visualization/graphical-abstract`
 
-> **路由层 SKILL.md**——本文件只放「该干啥 + 代码骨架 + 索引」。深度细节（8 大能力、6 阶段工作流、坑、脚本/提示词全集）下沉到 `references/`，按需加载。
-
 ## Overview
 
-Scientific presentations are a critical medium for communicating research, sharing findings, and engaging with academic and professional audiences. This skill provides comprehensive guidance for creating effective scientific presentations, from structure and content development to visual design and delivery preparation.
+本 skill 用 **python-pptx**（默认）或 **LaTeX Beamer** 生成科研演讲幻灯片。**核心原则：source-first，纯代码，不依赖 AI 生图 API**。
 
-**Key Focus**: Oral presentations for conferences, seminars, defenses, and professional talks.
-
-**CRITICAL DESIGN PHILOSOPHY**: Scientific presentations should be VISUALLY ENGAGING and RESEARCH-BACKED. Avoid dry, text-heavy slides at all costs. Great scientific presentations combine:
-- **Compelling visuals**: High-quality figures, images, diagrams (not just bullet points)
-- **Research context**: Proper citations from research-lookup establishing credibility
-- **Minimal text**: Bullet points as prompts, YOU provide the explanation verbally
-- **Professional design**: Modern color schemes, strong visual hierarchy, generous white space
-- **Story-driven**: Clear narrative arc, not just data dumps
-
-**Remember**: Boring presentations = forgotten science. Make your slides visually memorable while maintaining scientific rigor through proper citations.
+**设计哲学**（吸收 siril9/presentation-skill + anthropics/pptx 范式）：
+- **Deck as Code**：`outline.json` 是唯一源，脚本渲染 `.pptx`，QA 循环校验排版——禁止写一次性 inline python-pptx，改 source 不改 artifact
+- **Visual-First**：每张 slide 嵌真实分析图（UMAP/火山/空间切片），不是 bullet list 堆砌
+- **Research-Backed**：每张数据图标注 N / 统计检验 / 阈值（Wilcoxon+FDR / Moran's I）
+- **Minimal Text**：bullet 是提示词，你口头讲解；3-4 条，每条 ≤6 词，24-28pt
+- **Readability Contract**：标题≥24pt / 正文≥12pt / 图注≥7.5pt / 图表标签≥7pt（preflight 强制）
+- **反 AI 味铁律**（抄 anthropics/pptx）：**永远不在标题下加装饰线**——这是 AI 生成 slide 的标志
 
 ## When to Use This Skill
 
-Use this skill when:
-- Preparing conference presentations (5-20 minutes)
-- Developing academic seminars (45-60 minutes)
-- Creating thesis or dissertation defense presentations
-- Designing grant pitch presentations
-- Preparing journal club presentations
-- Giving research talks at institutions or companies
-- Teaching or tutorial presentations on scientific topics
+- 会议报告（5-20 分钟）/ 学术研讨会（45-60 分钟）/ 答辩 / grant pitch / journal club
+- 需要嵌入真实分析图（来自 `visualization/omicverse-plotting` 或 `multi-panel-figures` 的 PNG）
+- 需要可编辑 .pptx（同事/导师要改字）或编译 PDF（Beamer）
 
-**When NOT to use this skill**:
-- Internal lab-meeting / progress updates → use `presentation/lab-meeting-slides` instead
-- Writing paper Methods / Results / Figure legends → use `presentation/methods-writer`, `presentation/results-writer`, `presentation/figure-legend-writer`
-- Making standalone publication figures (not slides) → use `visualization/multi-panel-figures`
-- Drawing mechanism/flowchart schematics → use `visualization/scientific-schematics`
+## 工作流：outline.json source-first（python-pptx）
 
-## Slide Generation with Nano Banana Pro
+### Step 1: 写 outline.json（唯一源）
 
-**This skill uses Nano Banana Pro AI to generate stunning presentation slides automatically.**
-
-There are two workflows depending on output format. Both share the same planning step.
-
-### Default Workflow: PDF Slides (Recommended)
-
-Generate each slide as a complete image using Nano Banana Pro, then combine into a PDF. This produces the most visually stunning results.
-
-**How it works:**
-1. **Plan the deck**: Create a detailed plan for each slide (title, key points, visual elements)
-2. **Generate slides**: Call Nano Banana Pro for each slide to create complete slide images
-3. **Combine to PDF**: Assemble slide images into a single PDF presentation
-
-**Step 1: Plan Each Slide**
-
-Before generating, create a detailed plan for your presentation:
-
-```markdown
-# Presentation Plan: Introduction to Machine Learning
-
-## Slide 1: Title Slide
-- Title: "Machine Learning: From Theory to Practice"
-- Subtitle: "AI Conference 2025"
-- Speaker: Dr. Jane Smith, University of XYZ
-- Visual: Modern abstract neural network background
-
-## Slide 2: Introduction
-- Title: "Why Machine Learning Matters"
-- Key points: Industry adoption, breakthrough applications, future potential
-- Visual: Icons showing different ML applications (healthcare, finance, robotics)
-
-## Slide 3: Core Concepts
-- Title: "The Three Types of Learning"
-- Content: Supervised, Unsupervised, Reinforcement
-- Visual: Three-part diagram showing each type with examples
-
-... (continue for all slides)
+```json
+{
+  "title": "cns-bio-pilot 生信分析流程验证",
+  "subtitle": "基于 OmicVerse + squidpy 的单细胞与空间转录组全流程",
+  "preset": "cns-bio-light",
+  "slides": [
+    {"variant": "title", "title": "...", "subtitle": "..."},
+    {"variant": "scientific-figure", "title": "单细胞聚类",
+     "image": "figures/umap_celltype.png",
+     "caption": "图1. UMAP 按细胞类型（N=2,700，leiden res=0.6）",
+     "bullets": ["6 个聚类", "CD4 T / Mono / B / CD8 T / NK / 血小板"]},
+    {"variant": "image-sidebar", "title": "差异表达",
+     "image": "figures/volcano.png",
+     "caption": "图2. 火山图（Padj<0.05 & |log2FC|>1，BH-FDR）",
+     "bullets": ["602 显著基因", "Top: RPS12/LDHB（T 细胞代谢）"]},
+    {"variant": "results-table", "title": "空转 SVG",
+     "table": {"headers": ["Rank","Gene","I","p"],"rows": [["1","Pcp2","0.85","<0.001"]]}},
+    {"variant": "methods-flow", "title": "流程", "steps": ["QC","聚类","注释","DE"]}
+  ]
+}
 ```
 
-**Step 2: Generate Each Slide**
-
-Use the `generate_slide_image.py` script to create each slide.
-
-**CRITICAL: Formatting Consistency Protocol**
-
-To ensure unified formatting across all slides in a presentation:
-
-1. **Define a Formatting Goal** at the start of your presentation and include it in EVERY prompt:
-   - Color scheme (e.g., "dark blue background, white text, gold accents")
-   - Typography style (e.g., "bold sans-serif titles, clean body text")
-   - Visual style (e.g., "minimal, professional, corporate aesthetic")
-   - Layout approach (e.g., "generous white space, left-aligned content")
-
-2. **Always attach the previous slide** when generating subsequent slides using `--attach`:
-   - This allows Nano Banana Pro to see and match the existing style
-   - Creates visual continuity throughout the deck
-   - Ensures consistent colors, fonts, and design language
-
-3. **Default author is "K-Dense"** unless another name is specified
-
-4. **Include citations directly in the prompt** for slides that reference research:
-   - Add citations in the prompt text so they appear on the generated slide
-   - Use format: "Include citation: (Author et al., Year)" or "Show reference: Author et al., Year"
-   - For multiple citations, list them all in the prompt
-   - Citations should appear in small text at the bottom of the slide or near relevant content
-
-5. **Attach existing figures/data for results slides** (CRITICAL for data-driven presentations):
-   - When creating slides about results, ALWAYS check for existing figures in:
-     - The working directory (e.g., `figures/`, `results/`, `plots/`, `images/`)
-     - User-provided input files or directories
-     - Any data visualizations, charts, or graphs relevant to the presentation
-   - Use `--attach` to include these figures so Nano Banana Pro can incorporate them:
-     - Attach the actual data figure/chart for results slides
-     - Attach relevant diagrams for methodology slides
-     - Attach logos or institutional images for title slides
-   - When attaching data figures, describe what you want in the prompt:
-     - "Create a slide presenting the attached results chart with key findings highlighted"
-     - "Build a slide around this attached figure, add title and bullet points explaining the data"
-     - "Incorporate the attached graph into a results slide with interpretation"
-   - **Before generating results slides**: List files in the working directory to find relevant figures
-   - Multiple figures can be attached: `--attach fig1.png --attach fig2.png`
-
-**Example with formatting consistency, citations, and figure attachments:**
+### Step 2: 渲染（python-pptx）
 
 ```bash
-# Title slide (first slide - establishes the style)
-python scripts/generate_slide_image.py "Title slide for presentation: 'Machine Learning: From Theory to Practice'. Subtitle: 'AI Conference 2025'. Speaker: K-Dense. FORMATTING GOAL: Dark blue background (#1a237e), white text, gold accents (#ffc107), minimal design, sans-serif fonts, generous margins, no decorative elements." -o slides/01_title.png
-
-# Content slide with citations (attach previous slide for consistency)
-python scripts/generate_slide_image.py "Presentation slide titled 'Why Machine Learning Matters'. Three key points with simple icons: 1) Industry adoption, 2) Breakthrough applications, 3) Future potential. CITATIONS: Include at bottom in small text: (LeCun et al., 2015; Goodfellow et al., 2016). FORMATTING GOAL: Match attached slide style - dark blue background, white text, gold accents, minimal professional design, no visual clutter." -o slides/02_intro.png --attach slides/01_title.png
-
-# Background slide with multiple citations
-python scripts/generate_slide_image.py "Presentation slide titled 'Deep Learning Revolution'. Key milestones: ImageNet breakthrough (2012), transformer architecture (2017), GPT models (2018-present). CITATIONS: Show references at bottom: (Krizhevsky et al., 2012; Vaswani et al., 2017; Brown et al., 2020). FORMATTING GOAL: Match attached slide style exactly - same colors, fonts, minimal design." -o slides/03_background.png --attach slides/02_intro.png
-
-# RESULTS SLIDE - Attach actual data figure from working directory
-# First, check what figures exist: ls figures/ or ls results/
-python scripts/generate_slide_image.py "Presentation slide titled 'Model Performance Results'. Create a slide presenting the attached accuracy chart. Key findings to highlight: 1) 95% accuracy achieved, 2) Outperforms baseline by 12%, 3) Consistent across test sets. CITATIONS: Include at bottom: (Our results, 2025). FORMATTING GOAL: Match attached slide style exactly." -o slides/04_results.png --attach slides/03_background.png --attach figures/accuracy_chart.png
-
-# RESULTS SLIDE - Multiple figures comparison
-python scripts/generate_slide_image.py "Presentation slide titled 'Before vs After Comparison'. Build a side-by-side comparison slide using the two attached figures. Left: baseline results, Right: our improved results. Add brief labels explaining the improvement. FORMATTING GOAL: Match attached slide style exactly." -o slides/05_comparison.png --attach slides/04_results.png --attach figures/baseline.png --attach figures/improved.png
-
-# METHODOLOGY SLIDE - Attach existing diagram
-python scripts/generate_slide_image.py "Presentation slide titled 'System Architecture'. Present the attached architecture diagram with brief explanatory bullet points: 1) Input processing, 2) Model inference, 3) Output generation. FORMATTING GOAL: Match attached slide style exactly." -o slides/06_architecture.png --attach slides/05_comparison.png --attach diagrams/system_architecture.png
+# 默认 python-pptx 渲染（无需 Node/AI API）
+python scripts/build_deck.py outline.json -o presentation.pptx
+# 可选：LibreOffice 导出 PDF（无 LibreOffice 时跳过）
+soffice --headless --convert-to pdf presentation.pptx
 ```
 
-**IMPORTANT: Before creating results slides, always:**
-1. List files in working directory: `ls -la figures/` or `ls -la results/`
-2. Check user-provided directories for relevant figures
-3. Attach ALL relevant figures that should appear on the slide
-4. Describe how Nano Banana Pro should incorporate the attached figures
-
-**Prompt Template:**
-
-Include these elements in every prompt (customize as needed):
-```
-[Slide content description]
-CITATIONS: Include at bottom: (Author1 et al., Year; Author2 et al., Year)
-FORMATTING GOAL: [Background color], [text color], [accent color], minimal professional design, no decorative elements, consistent with attached slide style.
-```
-
-**Step 3: Combine to PDF**
+### Step 3: QA Gate（强制，三道检查）
 
 ```bash
-# Combine all slides into a PDF presentation
-python scripts/slides_to_pdf.py slides/*.png -o presentation.pdf
+# 1. 几何 QA：溢出/重叠/小字号（readability contract）
+python scripts/qa_deck.py presentation.pptx
+# 2. 占位符 grep：检测 TODO/lorem/xxx/placeholder 泄漏
+python scripts/qa_placeholders.py presentation.pptx
+# 3. 视觉复查（可选）：渲染缩略图人工/subagent 审
+python scripts/thumbnail_deck.py presentation.pptx --pages 1-5
 ```
 
-### PPT Workflow: PowerPoint with Generated Visuals
+> **USE SUBAGENTS for visual QA**（抄 anthropics/pptx）：你看自己的代码会有确认偏误，让 subagent 用全新视角查重叠/溢出/对比度。"如果你第一眼没发现任何问题，说明你看得不够仔细。"
 
-When creating PowerPoint presentations, use Nano Banana Pro to generate images and figures for each slide, then add text separately using the PPTX skill.
+## Slide Variants（版式纪律，吸收 siril9）
 
-**How it works:**
-1. **Plan the deck**: Create content plan for each slide
-2. **Generate visuals**: Use Nano Banana Pro with `--visual-only` flag to create images for slides
-3. **Build PPTX**: Use the PPTX skill (html2pptx or template-based) to create slides with generated visuals and separate text
+| variant | 用途 | 排版纪律 |
+|---|---|---|
+| `title` | 标题页 | 居中大标题，副标题，无装饰线 |
+| `section` | 章节分隔 | 单行居中，留白>60% |
+| `scientific-figure` | 2-4 panel 真实图 | **最多 4 panel，超过 preflight 报错**；tight bbox，trim whitespace |
+| `image-sidebar` | 1 大图 + 文字解读 | 图占 60%，bullet 占 35%，图注在图下 |
+| `results-table` | 结果表（带语义色） | pass/fail 用绿/红，数字右对齐 |
+| `methods-flow` | 方法流程 | 横向/纵向步骤箭头，每步 1 词 |
+| `bullets` | 纯文字（少用） | ≤4 bullet，每条 ≤6 词 |
 
-**Step 1: Generate Visuals for Each Slide**
+> **scientific-figure 关键**（生信核心场景）：Python 出图（matplotlib/ov.pl）时，导出目标 aspect ratio + `bbox_inches='tight'` + `trim_image_whitespace.py` 去白边，再嵌入。否则 slide 会有难看的白框。
+
+## Preset：cns-bio-light（生信专用）
+
+```
+背景: 白 (#FFFFFF)
+主色: Navy (#1F3A5F)     — 标题/强调
+辅助: 蓝 (#3D7AAB)        — 次级标题
+语义: 绿 (#2E8B57) pass / 红 (#E25D5D) fail / 橙 (#E8A838) warning
+正文: 深灰 (#333333)
+图注: 浅灰 (#666666) 斜体
+字体: 标题 Calibri/Arial Bold，正文 Calibri/Arial
+```
+
+## Readability Contract（preflight 强制）
+
+| 元素 | 最小字号 | 理由 |
+|---|---|---|
+| 标题 | 24pt | 远处可读 |
+| 正文 bullet | 12pt（理想 14-18pt） | 投影可读 |
+| 图注/坐标轴 | 7.5pt | 仅参考 |
+| 图表内标签 | 7pt | 仅参考 |
+| 页脚 | 7pt，预留 ≥0.25in | 不挤压内容 |
+
+> `qa_deck.py` 会扫描所有文本框，发现 <阈值 的字号直接报错（render 前拦住，不靠肉眼）。
+
+## LaTeX Beamer 备选（学术正式）
+
+需要编译 PDF 且偏好 LaTeX 时用 Beamer。模板见 `assets/beamer_template_{conference,seminar,defense}.tex`，完整指南见 `references/beamer_guide.md`。
 
 ```bash
-# Generate a figure for the introduction slide
-python scripts/generate_slide_image.py "Professional illustration showing machine learning applications: healthcare diagnosis, financial analysis, autonomous vehicles, and robotics. Modern flat design, colorful icons on white background." -o figures/ml_applications.png --visual-only
-
-# Generate a diagram for the methods slide
-python scripts/generate_slide_image.py "Neural network architecture diagram showing input layer, three hidden layers, and output layer. Clean, technical style with node connections. Blue and gray color scheme." -o figures/neural_network.png --visual-only
-
-# Generate a conceptual graphic for results
-python scripts/generate_slide_image.py "Before and after comparison showing improvement: left side shows cluttered data, right side shows organized insights. Arrow connecting them. Professional business style." -o figures/results_visual.png --visual-only
+pdflatex beamer_template_conference.tex  # 编译
+# 流程图/方程多时用 Beamer；图多时用 python-pptx
 ```
 
-**Step 2: Build PowerPoint with PPTX Skill**
-
-Use the PPTX skill's html2pptx workflow to create slides that include:
-- Generated images from step 1
-- Title and body text added separately
-- Professional layout and formatting
-
-See `document-skills/pptx/SKILL.md` for complete PPTX creation documentation.
-
-## Visual Enhancement with Scientific Schematics
-
-For complex technical diagrams (circuit diagrams, chemical structures, publication-quality schematics requiring scientific accuracy review), use the **scientific-schematics** skill instead of Nano Banana Pro:
-
-```bash
-python scripts/generate_schematic.py "your diagram description" -o figures/output.png
-```
-
-## References 索引（按需加载，不要一次全读）
-
-> 以下文件存于 `references/`。本 SKILL.md 已覆盖路由与代码骨架；只在需要深度细节时读对应文件。
+## References 索引（按需加载）
 
 | 需要什么 | 读哪个文件 |
 |---|---|
-| 8 大能力详解（Structure / Design Principles / Data Viz / Talk-Specific / Implementation / Visual Review / Timing / QA） | `references/core_capabilities.md` |
-| 6 阶段开发工作流 + 跨 skill 集成 + 15 分钟会议 talk Quick Start | `references/development_workflow.md` |
-| Content / Design / Timing 三类常见坑 + 10 条核心原则总结 | `references/pitfalls.md` |
-| `generate_slide_image.py` / `slides_to_pdf.py` 脚本完整参数 + 提示词写作全集 + 工具清单 + Reference/Assets 索引 | `references/nano_banana_pro_reference.md` |
-| 详细结构（所有 talk 类型、开场/结尾、过渡） | `references/presentation_structure.md` |
-| 排版 / 配色 / 布局 / 无障碍 / 视觉层级 | `references/slide_design_principles.md` |
+| 科研叙事结构（story arc / 5 talk types / timing） | `references/talk_types_guide.md` + `references/presentation_structure.md` |
+| 排版/配色/布局/无障碍/视觉层级 | `references/slide_design_principles.md` |
 | 把期刊 figure 改成 slide-friendly | `references/data_visualization_slides.md` |
-| 各 talk 类型（会议/研讨会/答辩/基金/Journal Club）专项指导 | `references/talk_types_guide.md` |
-| LaTeX Beamer 完整文档、主题、定制、编译 | `references/beamer_guide.md` |
-| PDF→图片、系统化审查、问题记录、迭代改进 | `references/visual_review_workflow.md` |
+| Content/Design/Timing 三类坑 + 10 条原则 | `references/pitfalls.md` |
+| LaTeX Beamer 完整文档 | `references/beamer_guide.md` |
+| 视觉复查工作流（PDF→图、问题记录、迭代） | `references/visual_review_workflow.md` |
 
-## Assets（模板与指南）
-
-### Templates
-- **`assets/beamer_template_conference.tex`**: 15-minute conference talk template
-- **`assets/beamer_template_seminar.tex`**: 45-minute academic seminar template
-- **`assets/beamer_template_defense.tex`**: Dissertation defense template
-
-### Guides
-- **`assets/powerpoint_design_guide.md`**: Complete PowerPoint design and implementation guide
-- **`assets/timing_guidelines.md`**: Comprehensive timing, pacing, and practice strategies
-
-## 核心原则速记（详见 `references/pitfalls.md`）
-
-1. **Visual-First Design**: Every slide needs strong visual element - avoid text-only slides
-2. **Research-Backed**: Use research-lookup to find 8-15 papers, cite 3-5 in intro, 3-5 in discussion
-3. **Modern Aesthetics**: Choose contemporary color palette matching topic, not default themes
-4. **Minimal Text**: 3-4 bullets, 4-6 words each (24-28pt font), let visuals tell story
-5. **Structure**: Follow story arc, spend 40-50% on results
-6. **High Contrast**: 7:1 preferred for professional appearance
-7. **Varied Layouts**: Mix full-figure, two-column, visual overlays (not all bullets)
-8. **Timing**: Practice 3-5 times, ~1 slide per minute, never skip conclusions
-9. **Validation**: Visual review workflow to catch overflow and overlap
-10. **White Space**: 40-50% of slide empty for visual breathing room
-
-**Remember**:
-- **Boring = Forgotten**: Dry, text-heavy slides fail to communicate your science
-- **Visual + Research = Impact**: Combine compelling visuals with research-backed context
-- **You are the presentation, slides are visual support**: They should enhance, not replace your talk
+## Assets（模板）
+- `assets/beamer_template_conference.tex` / `_seminar.tex` / `_defense.tex`
+- `assets/powerpoint_design_guide.md` / `assets/timing_guidelines.md`
 
 ## 前置依赖（从哪来）
-
-- **研究数据 / 结果图** → 已发表的 figure（`visualization/multi-panel-figures` 产出的 PNG/PDF）或工作目录 `figures/`、`results/` 下的图表，结果类 slide 用 `--attach` 嵌入
-- **文献与引用** → 用 research-lookup skill 找 8-15 篇背景/对比文献（intro 引 3-5，discussion 引 3-5）
-- **论文初稿**（可选）→ `presentation/results-writer` / `presentation/methods-writer` 写好的文字，可改写成 slide 文案
-- **技术示意图**（可选）→ `visualization/scientific-schematics` 生成的机制图/流程图，可 `--attach` 进 slide
-- **环境**：`OPENROUTER_API_KEY` 环境变量（Nano Banana Pro），见 `references/nano_banana_pro_reference.md`
+- **真实分析图** → `visualization/omicverse-plotting`（ov.pl.embedding/volcano）或 `visualization/multi-panel-figures`（6 panel 拼图）产出的 PNG
+- **空转空间切片图** → `spatial/omicverse-spatial` 的 `sq.pl.spatial_scatter` 输出
+- **结果数据** → 分析 h5ad / DE 表 / SVG 表（写进 results-table variant）
+- **文献引用** → intro 引 3-5 篇，discussion 引 3-5 篇（research-lookup）
+- **环境**：`pip install python-pptx Pillow`（无 Node/AI API 依赖）
 
 ## Pre-Output Checklist（出报告前必过）
 - [ ] 数值完整性：每张定量图保留 N / 统计检验 / 误差线
-- [ ] 交叉条件一致性：效果是 universal 还是 cell-type-specific？是否需要分面
+- [ ] 交叉条件一致性：效果是 universal 还是 cell-type-specific？
 - [ ] 引用支撑：明确哪张图/哪个统计支持主结论
 - [ ] 避免臆测：无显著差异时写 "No significant effect"，不硬编故事
 - [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
-- [ ] 跑 postcheck.py ✅
+- [ ] readability contract：标题≥24pt / 正文≥12pt / 图注≥7.5pt
+- [ ] 反 AI 味：标题下无装饰线，无占位符泄漏
+- [ ] 跑 qa_deck.py（几何）+ qa_placeholders.py（占位符）✅
 
 ## 何时离开本 skill（去哪）
-
-- 需要可编辑 PPTX（公司模板 / 后期改字）→ `document-skills/pptx`（html2pptx 工作流）
-- 内部组会 / 进度汇报（非正式）→ `presentation/lab-meeting-slides`
-- 把 talk 内容写成论文 Methods / Results / 图注 → `presentation/methods-writer` / `presentation/results-writer` / `presentation/figure-legend-writer`
-- 单独制作发表级 figure（不是 slide）→ `visualization/multi-panel-figures`
-- 复杂技术示意图（电路、化学结构、需科学准确性审查）→ `visualization/scientific-schematics`
-- 论文图形摘要 → `visualization/graphical-abstract`
-- 完成后建议跑 `python scripts/validate_presentation.py presentation.pdf --duration <N>` 校验页数/字体/编译
+- 内部组会 / 进度汇报 → `presentation/lab-meeting-slides`
+- 写论文 Methods / Results / 图注 → 对应 writer skill
+- 单独发表级 figure → `visualization/multi-panel-figures`
+- 机制/流程图 → `visualization/scientific-schematics`
+- 完成后跑 `python scripts/qa_deck.py presentation.pptx` 校验

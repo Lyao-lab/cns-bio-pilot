@@ -86,6 +86,8 @@ ov.space.spatial_autocorr(adata, mode='moran')   # Moran's I；mode='geary' 为 
 svg = adata.var.query('moranI > 0.3').index
 ```
 
+> **Windows + squidpy 实测坑**：用 `squidpy.gr.spatial_autocorr` 时，`n_perms>=1` 会触发 multiprocessing，在 stdin/heredoc 模式下挂死。**必须把脚本写成 `.py` 文件**跑（`python script.py`），并用 `if __name__=='__main__':` 包裹。另外 `sq.pl.spatial_scatter(save='x.png')` 的输出在 `figures/` 子目录，不是当前目录。10x Visium 数据常有重复 var_names，需先 `adata = adata[:, ~adata.var_names.duplicated()].copy()`。
+
 ## 6. 空间细胞通讯
 
 ```python

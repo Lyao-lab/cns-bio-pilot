@@ -119,6 +119,17 @@ def check_de(df_or_path, report):
         df = df_or_path
 
     cols = set(df.columns.str.lower())
+    # 识别 SVG 表（空间自相关，非 DE）：含 moranI/geary/I 列但无 log2FC
+    is_svg = any(k in cols for k in ["morani", "geary", "pval_sim", "ii"]) and not any(
+        k in cols for k in ["log2fc", "logfc", "logfold"]
+    )
+    if is_svg:
+        report.add("DE", "PASS",
+                   "识别为空间变异基因(SVG)表——Moran's I/Geary's C，非 DE，跳过 Log2FC 检查")
+        # SVG 仍校验显著性 P 存在
+        if any("pval" in c for c in cols):
+            report.add("D1", "PASS", "SVG 表含显著性 P（pval_sim）")
+        return
     # D1: Padj
     has_padj = any("adj" in c or "fdr" in c or "qval" in c for c in cols)
     has_p_only = "pvals" in cols or "pvalue" in cols or "p" in cols

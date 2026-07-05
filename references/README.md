@@ -1,49 +1,51 @@
 # cns-bio-pilot 子skill 完整索引
 
-42 个精选子skill，按类别组织。每个 skill 路径相对于本 skill 根目录。
+18 个精选子skill，按类别组织。每个 skill 路径相对于本 skill 根目录。
 
-## 🧬 空间转录组（spatial/，11个）
+> **重构说明（2026-07）**：原 42 个 skill 中，可被 OmicVerse V2 统一 API 覆盖的功能已合并为 5 个 `omicverse-*` skill（单细胞/空间/bulk/绘图/RNA velocity 各对应一个，RNA velocity 由 scvelo 重命名）。其余 13 个为 OmicVerse 未覆盖或不可替代的领域工具，原样保留。
+
+## 🧬 OmicVerse V2 统一流程（5个）
+
+`pip install omicverse`（V2），一个 `import omicverse as ov` 覆盖 90% 常规分析。
+
+| skill | 合并自 | 功能 | 关键 API |
+|---|---|---|---|
+| `single-cell/omicverse-pipeline` | preprocessing/doublet-detection/clustering/cell-annotation/batch-integration/cell-communication/trajectory-inference/scanpy/scvi-tools | 单细胞全流程（QC→doublet→聚类→注释→批次校正→通讯→轨迹） | `ov.pp.*`, `ov.single.*` |
+| `spatial/omicverse-spatial` | preprocessing/data-io/domains/neighbors/statistics/visualization/communication/image-analysis | 空转全流程（IO→空间邻域→SVG→空间域→通讯→可视化） | `ov.io.read_*`, `ov.pp.spatial_neighbors`, `ov.space.*`, `ov.pl.plot_spatial` |
+| `general-bio/omicverse-bulk` | differential-expression/gokegg/gsea/wgcna/ppi-network/batch-correction/batch-correction-de | bulk 全流程（DE→富集→WGCNA→PPI→批次校正）纯 Python 无 R | `ov.bulk.pyDEG/pyGSEA/pyWGCNA/pyPPI/batch_correction` |
+| `visualization/omicverse-plotting` | heatmap/volcano-plot/specialized-omics-plots/interactive-visualization | 统一绘图（80+ 函数） | `ov.plot_set()`, `ov.pl.*` |
+| `single-cell/rna-velocity` | scvelo（重命名重写） | RNA velocity | `ov.single.Velo(adata, mode='scvelo')` |
+
+## 🔬 单细胞（single-cell/，4个）
 
 | skill | 来源 | 功能 | 关键工具 |
 |---|---|---|---|
-| `spatial/preprocessing` | OpenClaw | QC/归一化/特征选择 | scanpy, squidpy |
-| `spatial/data-io` | OpenClaw | 加载 Visium/Xenium/MERFISH/Slide-seq | squidpy, spatialdata |
+| `single-cell/omicverse-pipeline` | OmicVerse V2 | 单细胞全流程统一 API | `ov.pp.*` + `ov.single.*` |
+| `single-cell/rna-velocity` | OmicVerse V2 | RNA velocity（封装 scvelo/dynamo） | `ov.single.Velo` |
+| `single-cell/perturb-seq` | OpenClaw | Perturb-seq/CRISPR筛选 | pertpy, Cassiopeia |
+| `single-cell/research-planner` | aipoch | 单细胞课题设计（方法论） | 零代码，9个references |
+
+## 🧫 空间转录组（spatial/，4个）
+
+| skill | 来源 | 功能 | 关键工具 |
+|---|---|---|---|
+| `spatial/omicverse-spatial` | OmicVerse V2 | 空转全流程统一 API | `ov.space.*` |
 | `spatial/deconvolution` | OpenClaw | spot 细胞类型去卷积 | cell2location, Tangram, RCTD |
-| `spatial/domains` | OpenClaw | 空间域/组织区域识别 | squidpy, BayesSpace, STAGATE |
-| `spatial/communication` | OpenClaw | 空间细胞通讯分析 | CellChat, NicheNet 空间版 |
-| `spatial/statistics` | OpenClaw | 空间统计（Moran's I, Geary's C） | squidpy |
-| `spatial/neighbors` | OpenClaw | 空间邻域图构建 | squidpy |
-| `spatial/visualization` | OpenClaw | 组织切片可视化 | squidpy, scanpy |
-| `spatial/image-analysis` | OpenClaw | 组织图像分析（H&E配准） | squidpy, scikit-image |
 | `spatial/multiomics` | OpenClaw | 高分辨率平台（Stereo-seq/Visium HD） | squidpy, spatialdata |
 | `spatial/proteomics` | OpenClaw | 空间蛋白组（CODEX/IMC/MIBI） | squidpy, scimap |
 
-## 🔬 单细胞（single-cell/，12个）
+## 🧪 通用生信（general-bio/，1个）
 
 | skill | 来源 | 功能 | 关键工具 |
 |---|---|---|---|
-| `single-cell/preprocessing` | OpenClaw | QC/过滤/归一化 | scanpy, Seurat |
-| `single-cell/doublet-detection` | OpenClaw | doublet 检测与去除 | scDblFinder, DoubletFinder |
-| `single-cell/clustering` | OpenClaw | 降维聚类（PCA/UMAP/Leiden） | scanpy, Seurat |
-| `single-cell/cell-annotation` | OpenClaw | 自动细胞类型注释 | CellTypist, SingleR, Azimuth, scPred |
-| `single-cell/cell-communication` | OpenClaw | 细胞通讯网络推断 | CellChat, NicheNet, LIANA |
-| `single-cell/trajectory-inference` | OpenClaw | 发育轨迹/拟时序 | Monocle, PAGA, Slingshot |
-| `single-cell/batch-integration` | OpenClaw | 多批次整合 | Harmony, scVI, Seurat anchors |
-| `single-cell/perturb-seq` | OpenClaw | Perturb-seq/CRISPR筛选 | pertpy, Cassiopeia |
-| `single-cell/scvelo` | K-Dense | RNA velocity | scVelo |
-| `single-cell/scvi-tools` | K-Dense | 深度生成模型（整合/去噪/多模态） | scVI, scANVI, totalVI |
-| `single-cell/scanpy` | K-Dense | scanpy完整流水线（含15个CLI脚本） | scanpy + scripts工具箱 |
-| `single-cell/research-planner` | aipoch | 单细胞课题设计（方法论） | 零代码，9个references |
+| `general-bio/omicverse-bulk` | OmicVerse V2 | bulk 全流程纯 Python（DE/富集/WGCNA/PPI/批次校正） | `ov.bulk.*`（pyDESeq2/GSEApy/pyWGCNA） |
 
-## 📊 绘图（visualization/，7个）
+## 📊 绘图（visualization/，4个）
 
 | skill | 来源 | 功能 | 关键工具 |
 |---|---|---|---|
+| `visualization/omicverse-plotting` | OmicVerse V2 | 统一绘图 API（80+ 函数） | `ov.pl.*`, `ov.plot_set()` |
 | `visualization/multi-panel-figures` | aipoch | 6面板组合图（A-F） | patchwork, GridSpec |
-| `visualization/volcano-plot` | aipoch | 火山图生成 | ggplot2, matplotlib |
-| `visualization/heatmap` | aipoch | 热图美化（聚类+注释） | seaborn, ComplexHeatmap |
-| `visualization/specialized-omics-plots` | OpenClaw | 组学专用图（dot/violin/track） | ggplot2, matplotlib |
-| `visualization/interactive-visualization` | OpenClaw | 交互式探索图 | plotly, bokeh |
 | `visualization/scientific-schematics` | aipoch | 机制图/流程图/架构图 | scientific-schematics |
 | `visualization/graphical-abstract` | aipoch | 图形摘要布局 | 布局推荐 |
 
@@ -57,23 +59,15 @@
 | `presentation/results-writer` | aipoch | 结果→Results叙述 |
 | `presentation/figure-legend-writer` | aipoch | 独立可读图注 |
 
-## 🧪 通用生信（general-bio/，7个）
-
-| skill | 来源 | 功能 | 关键工具 |
-|---|---|---|---|
-| `general-bio/differential-expression` | aipoch | bulk差异表达 | DESeq2, edgeR, limma |
-| `general-bio/batch-correction-de` | OpenClaw | DE批次校正 | ComBat, ComBat-Seq, limma |
-| `general-bio/batch-correction` | aipoch | 表达矩阵批次校正 | limma, ComBat |
-| `general-bio/gokegg` | aipoch | GO/KEGG富集 | clusterProfiler |
-| `general-bio/gsea` | aipoch | GSEA富集 | fgsea, clusterProfiler |
-| `general-bio/wgcna` | aipoch | 共表达网络 | WGCNA |
-| `general-bio/ppi-network` | aipoch | 蛋白互作网络 | STRING |
-
-## 去重记录
+## 重构去重记录
 
 | 冲突 | 决策 |
 |---|---|
-| scanpy (aipoch 448行 vs K-Dense 511行+15脚本) | **保留 K-Dense**（更新，含CLI工具箱，修正统计） |
-| OpenClaw bio-* vs bioSkills/ 嵌套副本 | 只取扁平 bio-* |
-| single-* 旧版 vs bio-single-cell-* 新版 | 保留新版 |
-| 多面板图 aipoch vs OpenClaw | 保留 aipoch（6面板固定布局） |
+| scanpy (aipoch 448行 vs K-Dense 511行+15脚本) | **全部并入** `single-cell/omicverse-pipeline`（OmicVerse V2 统一 API 取代） |
+| preprocessing/doublet/clustering/annotation/integration/communication/trajectory | **合并为** `single-cell/omicverse-pipeline` |
+| scvi-tools | **合并进** `single-cell/omicverse-pipeline`（`ov.single.batch_correction(method='scvi')`） |
+| scvelo | **重命名重写为** `single-cell/rna-velocity`（`ov.single.Velo` 封装） |
+| spatial preprocessing/io/domains/neighbors/stats/viz/comm/image | **合并为** `spatial/omicverse-spatial`（去卷积另立 `spatial/deconvolution`） |
+| DE/gokegg/gsea/wgcna/ppi/batch-correction(-de) | **合并为** `general-bio/omicverse-bulk`（纯 Python，无 R） |
+| heatmap/volcano/specialized/interactive | **合并为** `visualization/omicverse-plotting`（`ov.pl.*`） |
+| 不可替代（保留） | deconvolution / multiomics / proteomics / perturb-seq / research-planner / multi-panel-figures / scientific-schematics / graphical-abstract / presentation×5 |

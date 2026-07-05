@@ -53,7 +53,7 @@ description: 空间转录组与单细胞生信分析全流程技能库（基于 
 | 空间蛋白组（CODEX/IMC/MIBI） | `spatial/proteomics/SKILL.md` | scimap |
 | 单细胞课题设计 | `single-cell/research-planner/SKILL.md` | 方法论（无代码） |
 | **R/Seurat 单细胞+空转全流程** | `single-cell/scop/SKILL.md` | scop 包（200+ Run* 统一动词，与 omicverse 互补） |
-| **scGPT 基础模型**（跨数据集注释/扰动预测/GRN） | `single-cell/scgpt/SKILL.md` | scGPT 33M 预训练，Nature Methods 2024 |
+| **扰动响应预测**（基因 KO/OE / 化学药物，未做实验） | `single-cell/perturbation-prediction/SKILL.md` | GEARS/CPA/scGPT/scGen + 27法基准 |
 
 ### 📊 通用绘图/示意（omicverse 之外）
 
@@ -96,8 +96,8 @@ ov.pl.embedding(adata, basis='X_umap', color='leiden')
 
 ## 版本与架构
 
-- **版本**：9.2.0（OmicVerse + scop + scGPT 三引擎）
-- **架构演进**：v8.0（42个独立子skill）→ v9.0（omicverse 统一）→ v9.1（+scop R）→ v9.2（+scGPT 基础模型，20 个子skill）
+- **版本**：9.2.0（OmicVerse + scop + 扰动预测专题）
+- **架构演进**：v8.0（42个独立子skill）→ v9.0（omicverse 统一）→ v9.1（+scop R）→ v9.2（+扰动预测专题，撤销过窄的 scGPT 独立，20 个子skill）
 - **引擎**：[OmicVerse V2](https://github.com/Starlitnightly/omicverse)（14模块/694方法/AnnDataOOM/RebuildR）
 - **不可替代**：cell2location、pertpy、scvelo深度调参、空间蛋白组、PPT/写作类
 - 完整 API 速查见 `references/omicverse_guide.md`，路由决策见 `references/workflow_routing.md`

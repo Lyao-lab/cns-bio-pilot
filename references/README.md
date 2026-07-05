@@ -22,7 +22,7 @@
 |---|---|---|---|
 | `single-cell/omicverse-pipeline` | OmicVerse V2 | 单细胞全流程统一 API（Python） | `ov.pp.*` + `ov.single.*` |
 | `single-cell/scop` | [mengxu98/scop](https://github.com/mengxu98/scop) v0.8.9 | R/Seurat 单细胞+空转全流程（200+ Run* 动词，双引擎互补） | Seurat, reticulate, Signac |
-| `single-cell/scgpt` | [bowang-lab/scGPT](https://github.com/bowang-lab/scGPT) v0.2.5 | scGPT 基础模型（33M 细胞预训练，Nature Methods 2024） | scGPT, torch, scvi-tools |
+| `single-cell/perturbation-prediction` | scPerturBench 27法 | 扰动响应预测（基因 KO/OE/化学药物，未见扰动泛化） | GEARS, CPA, scGPT-pert, scGen, pertpy |
 | `single-cell/rna-velocity` | OmicVerse V2 | RNA velocity（封装 scvelo/dynamo） | `ov.single.Velo` |
 | `single-cell/perturb-seq` | OpenClaw | Perturb-seq/CRISPR筛选 | pertpy, Cassiopeia |
 | `single-cell/research-planner` | aipoch | 单细胞课题设计（方法论） | 零代码，9个references |

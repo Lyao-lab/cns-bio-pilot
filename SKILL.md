@@ -60,6 +60,7 @@ description: 生信分析全流程技能库（空间转录组、单细胞、bulk
 | 批次整合 | `omicverse-pipeline`（Harmony/scVI） | `omicverse-spatial` | `omicverse-bulk` |
 | 差异表达 DE | `omicverse-pipeline`（**pseudobulk**） | `omicverse-spatial` | `omicverse-bulk`（pyDEG） |
 | 去卷积 | — | `spatial/deconvolution`（omicverse 未注册 cell2location） | `omicverse-bulk` |
+| 空间域识别/SVG | — | `spatial/omicverse-spatial`（STAGATE/BayesSpace/Moran's I） | — |
 | 拟时序/轨迹 | `omicverse-pipeline` 或 `rna-velocity` | — | — |
 | 细胞通讯 | `omicverse-pipeline` | `omicverse-spatial` | — |
 | 富集(GO/GSEA) | `omicverse-bulk` | `omicverse-bulk` | `omicverse-bulk` |

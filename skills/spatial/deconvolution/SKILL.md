@@ -21,6 +21,19 @@ Before using code patterns, verify installed versions match. If versions differ:
 If code throws ImportError, AttributeError, or TypeError, introspect the installed
 package and adapt the example to match the actual API rather than retrying.
 
+## 方法可行性（实测环境约束）
+
+不同去卷积方法的环境依赖差异大，选方法前先确认环境：
+
+| 方法 | 环境要求 | 实测状态 | 说明 |
+|---|---|---|---|
+| **Tangram** | scanpy + torch | ✅ `sc` 环境可用（1.0.4） | 最易装；`tg.pp_adatas` → `map_cells_to_space` → `project_cell_annotations` |
+| **cell2location** | scvi-tools>=1.3 + anndata>=0.11 | ⚠️ **版本死锁** | cell2location 0.1.5 依赖 scvi，scvi 要 `anndata.io`（0.11+），但 omicverse 2.2.3 pin anndata 0.10.x → 装上但 import 失败。**需独立环境**：`conda create -n c2l python=3.10; pip install cell2location`（不与 omicverse 共存） |
+| **RCTD** | R + spacexr | 未测 | R 4.5.1 在 `D:/Program Files (x86)/R-4.5.1/bin/R.exe`；走 `single-cell/scop` 的 `RunRCTD` |
+| **SPOTlight** | R | 未测 | 同上 |
+
+> **关键教训**：cell2location 与 omicverse 不能共存于同一 conda 环境（anndata 版本冲突）。生产环境应建独立的 `c2l` 环境专门跑 cell2location，结果存成 h5ad 后切回 `sc` 环境继续分析。Tangram 是 omicverse 环境下的首选替代。
+
 # Spatial Deconvolution
 
 Estimate cell type composition in spatial spots using scRNA-seq references.

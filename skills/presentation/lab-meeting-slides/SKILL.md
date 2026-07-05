@@ -290,3 +290,19 @@ A weak output:
 - invents a polished arc from weak input,
 - buries the decision point,
 - or fails to ask for context when the project status is unclear.
+
+## 前置依赖（从哪来）
+
+- **项目状态输入** → 项目摘要 / 进度更新 / figure 列表 / 分析状态 / study plan / manuscript 草稿 / 会议目标（任一或多个）
+- **已有的 figure / 结果**（来自分析 skill）→ `single-cell/omicverse-pipeline`、`spatial/omicverse-spatial`、`general-bio/omicverse-bulk` 等产出的数据和图
+- **出图**（可选，供 slide 引用）→ `visualization/omicverse-plotting`、`visualization/multi-panel-figures`
+- **零代码**——本 skill 只产 slide **结构/文案骨架**，不生成图片
+- 参考：`references/` 下 clarification-first / meeting-goal-selection / slide-priority / data-honesty / next-step-structuring 等规则模块
+
+## 何时离开本 skill（去哪）
+
+- 拿到结构后，实际生成 slide 图片 → `presentation/scientific-slides`（Nano Banana Pro PDF 工作流）或 `document-skills/pptx`（可编辑 PPTX）
+- 需要正式会议 talk（非组会）→ `presentation/scientific-slides`
+- 把进度写成 Results / Methods → `presentation/results-writer` / `presentation/methods-writer`
+- 图注 → `presentation/figure-legend-writer`
+- ⚠️ 本 skill 不生成图像、不编造数据/进度，只给讨论导向的 slide 结构

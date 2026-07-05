@@ -306,9 +306,16 @@ prop_df.to_csv('cell_type_proportions.csv')
 adata_vis.write_h5ad('spatial_deconvolved.h5ad')
 ```
 
-## Related Skills
+## 前置依赖（从哪来）
 
-- spatial-data-io - Load spatial data
-- single-cell/data-io - Load scRNA-seq reference
-- spatial-visualization - Visualize deconvolution results
-- single-cell/markers-annotation - Annotate reference cell types
+- **空转数据加载/预处理** → `spatial/omicverse-spatial`（`ov.io.read_visium` + QC）
+- **单细胞参考集注释** → `single-cell/omicverse-pipeline`（参考集需先注释好 cell_type）
+- **layers['counts']** 必须存在于参考集与空转数据
+
+## 何时离开本 skill（去哪）
+
+- 去卷积结果可视化 → `spatial/omicverse-spatial`（`ov.pl.plot_spatial` 叠加比例）或 `visualization/omicverse-plotting`
+- 组合成发表级 figure → `visualization/multi-panel-figures`
+- 跨样本比较细胞类型比例 → `single-cell/scop`（`RunProportionTest`/`RunMilo`）或 omicverse
+- 写 Methods 描述去卷积流程 → `presentation/methods-writer`
+- 🚨 完成后跑 `scripts/postcheck.py --type deconv <result.h5ad>` 验证质量评估列

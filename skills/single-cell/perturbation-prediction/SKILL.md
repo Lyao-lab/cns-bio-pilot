@@ -206,3 +206,19 @@ srt <- RunscTenifoldKnk(srt)  # 基因模块 knockout 模拟
 - [sc-best-practices 扰动建模](https://www.sc-best-practices.org/conditions/perturbation_modeling.html)
 - [OP3 NeurIPS 2024 基准](https://openproblems.bio/results/perturbation_prediction)
 - [方法清单汇总（xianglin226）](https://github.com/xianglin226/Benchmarking-Single-Cell-Perturbation)
+
+## 前置依赖（从哪来）
+
+- **Perturb-seq / CROP-seq 标准 `AnnData`** → `single-cell/perturb-seq`（实验数据读入+QC）或直接从 `single-cell/omicverse-pipeline` 预处理后传入
+- **必需 obs 列**：`adata.obs['perturbation']`（含 `'control'` 与已知扰动名，多重扰动用 `+` 连接）、`adata.obs['cell_type']`（o.o.d 评估）、`adata.obs['batch']`、化学扰动还需 `adata.obs['dose']`
+- **raw counts** 保留（`layers['counts']`），覆盖 ≥1000 cell/条件，且训练集含足够 control + 已知扰动
+- **GPU 环境**（scGPT finetune / CPA 推荐）：CUDA + 对应模型权重
+
+## 何时离开本 skill（去哪）
+
+- 已做实验、只分析实测扰动响应（差异扰动、扰动一致性）→ `single-cell/perturb-seq`（pertpy 下游分析）
+- 基因必需性 / 功能模块模拟 → `single-cell/scop`（`RunscTenifoldKnk`/`RunscTenifoldNet`）
+- 常规批次校正（非预测新扰动）→ `single-cell/omicverse-pipeline`（Harmony/scVI）
+- 预测结果可视化 / 组合 figure → `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
+- 写 Methods / Results → `presentation/methods-writer` / `presentation/results-writer`
+- 🚨 报告时必须声明评估设置（i.i.d vs o.o.d、DEG 定义、是否含 linear baseline 对照）

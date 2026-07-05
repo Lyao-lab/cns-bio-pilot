@@ -88,3 +88,19 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
 - `--generator <model_id>`: Model used to produce the diagram.
 - `--reviewer <model_id>`: Model used to critique the diagram.
 - **Quality threshold**: A numeric cutoff (example: `8.5/10`) that determines whether refinement continues.
+
+## 前置依赖（从哪来）
+
+- **自然语言描述** → 机制/流程/架构的文字说明（来自 `presentation/results-writer` 产出的方法叙述，或用户直接描述）
+- **可选参考图** → 已有的草图/示意图（辅助生成）
+- **环境**：`OPENROUTER_API_KEY`（必需）；Python 3.10+，依赖 `pillow`/`matplotlib`/`requests`
+- 参考文档：`references/best_practices.md`、`references/diagram_types.md`
+- 脚本入口 `scripts/generate_schematic.py`
+
+## 何时离开本 skill（去哪）
+
+- 把生成的 schematic 拼进发表级 figure → `visualization/multi-panel-figures`
+- 写 schematic 的图注 → `presentation/figure-legend-writer`
+- 嵌入 slide → `presentation/scientific-slides`（`--attach figures/output.png`）
+- 需要论文图形摘要（从 abstract 推布局 + AI 提示词）→ `visualization/graphical-abstract`
+- 注意：本 skill 出的是机制图/示意图；数据驱动的图表（UMAP/火山图/热图）走 `visualization/omicverse-plotting`

@@ -266,3 +266,23 @@ A weak output:
 - inflates support analyses,
 - blurs Results and Discussion,
 - or fails to tell the user that Results Section Structurer should be used first.
+
+## 前置依赖（从哪来）
+
+- **结果结构输入** → Results outline / figure 列表 / figure legends / result summary / analysis report / 现有 Results 草稿（任一或多个）
+- **结果层级需已清晰**——若仅有题目/模糊摘要，不写全文，先要求澄清或建议先做 Results structuring
+- **figure / 分析结果**（来自分析 skill，提供结果内容）→
+  - 单细胞 → `single-cell/omicverse-pipeline`（聚类/DE/通讯/轨迹）
+  - 空转 → `spatial/omicverse-spatial` / `spatial/deconvolution`
+  - bulk → `general-bio/omicverse-bulk`（DEG/富集/WGCNA/PPI）
+  - 扰动 → `single-cell/perturbation-prediction` / `single-cell/perturb-seq`
+- **图注**（配套引用）→ `presentation/figure-legend-writer`
+- 参考：`references/` 下 clarification-first / full-results-writing / results-boundary / citation-support / upload-recommendation 等规则模块
+
+## 何时离开本 skill（去哪）
+
+- 写配套 Methods → `presentation/methods-writer`
+- 写图注 → `presentation/figure-legend-writer`
+- Results 写好后做汇报 slide → `presentation/scientific-slides`
+- 结果出图完善 → `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
+- ⚠️ 本 skill 只写 Results 散文，不做 Discussion 式解读，不编造结果/分析/PMID/DOI

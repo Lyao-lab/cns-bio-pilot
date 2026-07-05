@@ -330,3 +330,19 @@ A good output from this skill should:
 - explicitly separate discovery, validation, and extension
 - preserve factual caution around datasets and references
 - remain executable under the stated assumptions
+
+## 前置依赖（从哪来）
+
+- **研究方向输入** → 用户提供：疾病/表型 + 单细胞兴趣点（机制/细胞状态/标志物/通讯/治疗响应），可附可选信息（组织、平台、纯公共数据约束、湿实验可用性、目标工作量）
+- **无需任何代码或数据文件**——这是零代码课题设计方法论（含 9 个 `references/` 模块）
+- **文献支持（可选）** → 若用户提供已核实引用，按 `references/literature-retrieval-and-citation.md` 纳入；否则只给检索策略，绝不编造 PMID/DOI
+
+## 何时离开本 skill（去哪）
+
+- 拿到 plan 后开始实际数据处理 → `single-cell/omicverse-pipeline`（Python）或 `single-cell/scop`（R/Seurat）
+- 空转课题 → `spatial/omicverse-spatial`
+- bulk 课题 → `general-bio/omicverse-bulk`
+- 扰动相关课题 → `single-cell/perturbation-prediction`（预测）或 `single-cell/perturb-seq`（实测分析）
+- 出图 → `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
+- 写论文 → `presentation/methods-writer` / `presentation/results-writer` / `presentation/figure-legend-writer`
+- 做汇报 → `presentation/scientific-slides`（正式）/ `presentation/lab-meeting-slides`（组会进度）

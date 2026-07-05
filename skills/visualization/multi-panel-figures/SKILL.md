@@ -133,3 +133,22 @@ If the request is simple, compress the structure but keep assumptions and limits
 ```text
 pip install Pillow numpy
 ```
+
+## 前置依赖（从哪来）
+
+- **恰好 6 张分图（panels A–F）** → 来自各分析 skill 的出图：
+  - 单细胞图（UMAP/dotplot/violin）→ `visualization/omicverse-plotting`（`ov.pl.embedding` / `ov.pl.dotplot` / `ov.pl.violin`）
+  - 空转空间图 → `spatial/omicverse-spatial`（`ov.pl.plot_spatial`）
+  - 去卷积比例图 → `spatial/deconvolution`
+  - bulk 火山图/热图 → `general-bio/omicverse-bulk`（`ov.pl.volcano`）
+  - 机制图/示意图 → `visualization/scientific-schematics`
+- **输入格式**：PNG/JPG/BMP/TIFF/GIF；建议分图长宽比相近
+- 脚本入口 `scripts/main.py`（`--input` 6 路径 + `--output`，必填）
+
+## 何时离开本 skill（去哪）
+
+- 写组合 figure 的图注 → `presentation/figure-legend-writer`
+- 写论文 Methods 描述拼图流程 → `presentation/methods-writer`
+- 嵌入汇报 slide → `presentation/scientific-slides`（`--attach figures/composite.png`）
+- 图形摘要（非 6 面板拼图，而是单张摘要图）→ `visualization/graphical-abstract`
+- ⚠️ 仅支持恰好 6 面板；非 6 面板布局目前需手动 matplotlib/patchwork 拼接

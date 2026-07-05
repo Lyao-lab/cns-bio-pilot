@@ -1,103 +1,127 @@
 ---
 name: cns-bio-pilot
-description: 空间转录组与单细胞生信分析全流程技能库（基于 OmicVerse V2 + scop R + scGPT 三引擎）。每当用户提到：空间转录组、空转、spatial transcriptomics、Visium、Xenium、MERFISH、Stereo-seq、Slide-seq、空间去卷积、空间域、spatial domain、单细胞、single-cell、scRNA-seq、聚类、细胞注释、cell type annotation、doublet、批次校正、batch correction、scVI、Harmony、RNA velocity、拟时序、trajectory、细胞通讯、CellChat、Perturb-seq、扰动预测、perturbation prediction、scanpy、squidpy、cell2location、omicverse、scop、Seurat、R 单细胞、scGPT、scgpt、基础模型、foundation model、基因调控网络、GRN、差异表达、DEG、富集分析、GO、KEGG、GSEA、WGCNA、PPI、画图、绘图、火山图、热图、UMAP、多面板图、graphical abstract、机制图、写论文、写 Methods、写 Results、图注、figure legend、做 PPT、做幻灯片、lab meeting、汇报，或要求"帮我分析空转/单细胞数据""设计课题""画发表级图表""写文章""做演示"时，都应触发。核心纪律：OmicVerse优先（统一 ov.* API），R/Seurat 场景用 scop（Run* 动词），基础模型场景用 scGPT；统计严谨（伪bulk DE、FDR校正、严格阈值）；保守措辞（关联≠因果）；Python优先；可复现。
+description: 单细胞与空间转录组（兼 bulk/其他组学）生信分析全流程技能库。每当用户提到：空间转录组、空转、spatial transcriptomics、Visium、Xenium、MERFISH、Stereo-seq、Slide-seq、空间去卷积、空间域、spatial domain、单细胞、single-cell、scRNA-seq、聚类、细胞注释、cell type annotation、doublet、批次校正、batch correction、scVI、Harmony、RNA velocity、拟时序、trajectory、细胞通讯、CellChat、Perturb-seq、扰动预测、perturbation prediction、scanpy、squidpy、cell2location、omicverse、scop、Seurat、scGPT、GEARS、CPA、差异表达、DEG、富集分析、GO、KEGG、GSEA、WGCNA、PPI、画图、绘图、火山图、热图、UMAP、多面板图、graphical abstract、机制图、写论文、写 Methods、写 Results、图注、figure legend、做 PPT、做幻灯片、lab meeting、汇报，或要求"帮我分析空转/单细胞数据""设计课题""画发表级图表""写文章""做演示"时，都应触发。
 ---
 
-# CNS Bio-Pilot v9.0
+# CNS Bio-Pilot
 
-空间转录组 + 单细胞为主、兼顾其他生信与论文产出的技能库。**以 OmicVerse V2 为统一引擎**，核心分析全部走 `ov.*` API；仅在 omicverse 不覆盖时（cell2location 去卷积、Perturb-seq、深度调参）才 fallback 到独立工具。
+单细胞 + 空间转录组（兼 bulk/其他组学）生信分析技能库。三引擎：**OmicVerse**（Python，默认）+ **scop**（R/Seurat）+ **scGPT/扰动模型**（深度学习）。本文件是**路由器**——读它确定走哪个子 skill，不要在此执行分析。
 
-## OmicVerse 优先原则（核心范式）
+## Loading Protocol（强制）
 
-1. **先装 omicverse**：`pip install omicverse` （V2 含 AnnDataOOM Rust 后端 + RebuildR R→Python 移植）
-2. **分析走 ov.* API**：QC→`ov.pp.qc`，归一化→`ov.pp.preprocess`，聚类→`ov.pp.leiden`，去卷积→`ov.space.Deconvolution`，DE→`ov.bulk.pyDEG`，绘图→`ov.pl.*`
-3. **大数据用 AnnDataOOM**：`ov.read(path, backend='rust')` 处理百万级细胞，170× 节省内存
-4. **R 包已被移植**：Monocle2→`ov.single.Monocle`，DoubletFinder→`ov.pp.qc(doublets_method='doubletfinder')`，WGCNA→`ov.bulk.pyWGCNA`，无需 R 环境
-5. **统一绘图**：`ov.pl.*` 80+ 函数，`ov.plot_set()` 初始化样式
+1. **永远只读**：本 SKILL.md + 命中的 **1 个**子 skill + 该子 skill 声明的 references
+2. **禁止**一次读多个子 skill（上下文爆炸）
+3. 子 skill 路径见 `skill-index.json`（紧凑索引）或下方路由表
+4. 子 skill 内的 references/scripts **按需读取**，不前置加载
 
-> 完整 API 映射见 `references/omicverse_guide.md`
+## Quick Route — 先读这个（6 步）
 
-## 核心原则（强制）
-
-1. **真实数据优先**：真实实验数据，mock 仅用于测试
-2. **统计严谨**：单细胞 DE 用 pseudobulk（不要 per-cell Wilcoxon）；FDR 校正（BH）；报告总检验数
-3. **严格阈值**：DE: Padj<0.05 & |Log2FC|>1.0；相关: Padj<0.05 & |r|>0.5
-4. **关联≠因果**：用 "associated with"，无证据不用 "regulates/causes"
-5. **Python优先**：omicverse 已移植绝大多数 R 包，优先 `ov.*`；仅 omicverse 无对应时用 R
-6. **批次校正纪律**：校正后 embedding 仅用于可视化/聚类，**绝不**用于 DE/富集
-7. **保守措辞**：biomarker 类结论须验证队列；"potential candidate" 优先
-8. **可复现**：保留 raw counts 到 `layers['counts']`；记录 ov 版本与种子
-9. **空转特有**：去卷积报告质量评估；空间域需生物学验证
-
-## 工作流路由表
-
-根据需求读取对应子 skill。**所有分析优先尝试 omicverse API。**
-
-### 🧬 OmicVerse 统一流水线（核心，5个 skill 覆盖原 30+ 功能）
-
-| 用户需求 | 读取 | omicverse API |
-|---|---|---|
-| 单细胞全流程（QC→聚类→注释→整合→通讯→轨迹） | `single-cell/omicverse-pipeline/SKILL.md` | `ov.pp.*` + `ov.single.*` |
-| 空转全流程（除去卷积） | `spatial/omicverse-spatial/SKILL.md` | `ov.space.*` + `ov.io.read_*` |
-| 空转去卷积（cell2location 等独立工具） | `spatial/deconvolution/SKILL.md` | cell2location（omicverse 未注册） |
-| bulk 全流程（DE→富集→WGCNA→PPI） | `general-bio/omicverse-bulk/SKILL.md` | `ov.bulk.pyDEG/pyGSEA/pyWGCNA/pyPPI` |
-| 统一绘图（80+ 函数） | `visualization/omicverse-plotting/SKILL.md` | `ov.pl.*` + `ov.plot_set()` |
-
-### 🔬 需独立工具的场景（omicverse 未完全覆盖，保留专用 skill）
-
-| 用户需求 | 读取 | 说明 |
-|---|---|---|
-| Perturb-seq / CRISPR 筛选 | `single-cell/perturb-seq/SKILL.md` | pertpy（omicverse 未覆盖） |
-| RNA velocity 深度调参 | `single-cell/rna-velocity/SKILL.md` | `ov.single.Velo` 封装 scvelo，深度调参用原生 |
-| 高分辨率空转（Stereo-seq/Visium HD） | `spatial/multiomics/SKILL.md` | 含 cellpose 等 |
-| 空间蛋白组（CODEX/IMC/MIBI） | `spatial/proteomics/SKILL.md` | scimap |
-| 单细胞课题设计 | `single-cell/research-planner/SKILL.md` | 方法论（无代码） |
-| **R/Seurat 单细胞+空转全流程** | `single-cell/scop/SKILL.md` | scop 包（200+ Run* 统一动词，与 omicverse 互补） |
-| **扰动响应预测**（基因 KO/OE / 化学药物，未做实验） | `single-cell/perturbation-prediction/SKILL.md` | GEARS/CPA/scGPT/scGen + 27法基准 |
-
-### 📊 通用绘图/示意（omicverse 之外）
-
-| 用户需求 | 读取 | 说明 |
-|---|---|---|
-| 多面板组合图（A-F 发表级） | `visualization/multi-panel-figures/SKILL.md` | PIL 拼图 |
-| 机制图/流程图 | `visualization/scientific-schematics/SKILL.md` | LLM 生成 |
-| 图形摘要 | `visualization/graphical-abstract/SKILL.md` | 布局推荐 |
-
-### 📑 PPT/文稿（与 omicverse 无关，全保留）
-
-| 用户需求 | 读取 |
-|---|---|
-| 研究汇报 PPT | `presentation/scientific-slides/SKILL.md` |
-| 组会幻灯片 | `presentation/lab-meeting-slides/SKILL.md` |
-| 写 Methods | `presentation/methods-writer/SKILL.md` |
-| 写 Results | `presentation/results-writer/SKILL.md` |
-| 图注 | `presentation/figure-legend-writer/SKILL.md` |
-
-## 典型工作流（omicverse 统一）
-
-**单细胞完整流程**（一个 skill 一站式）：
-```python
-import omicverse as ov
-ov.plot_set()
-adata = ov.read('data.h5ad', backend='rust')  # 大数据用 AnnDataOOM
-ov.pp.qc(adata, doublets_method='scrublet')    # QC + doublet 一步
-ov.pp.preprocess(adata, mode='shiftlog', n_HVGs=2000)
-ov.pp.scale(adata); ov.pp.pca(adata, layer='scaled')
-ov.pp.neighbors(adata); ov.pp.umap(adata)
-ov.pp.leiden(adata, resolution='auto')         # auto_resolution
-ov.single.batch_correction(adata, method='harmony')  # 多批次
-# 注释/通讯/轨迹见 omicverse-pipeline/SKILL.md
-ov.pl.embedding(adata, basis='X_umap', color='leiden')
+```
+① 判断数据类型  → 见「路由：数据类型轴」
+② 判断分析任务  → 见「路由：任务轴」
+③ ①×② 交叉命中 → 锁定子 skill 路径
+④ Pre-Routing Checks → 确认环境/数据前提（见下）
+⑤ 读命中的子 skill SKILL.md → 执行
+⑥ Postcheck → 跑 scripts/postcheck.py 验证科学严谨性
 ```
 
-**空转完整流程**：`spatial/omicverse-spatial` 一站式（含空间域、SVG、可视化），去卷积单独用 `spatial/deconvolution`
+## Pre-Routing Checks（路由前必跑）
 
-**bulk 完整流程**：`ov.bulk.pyDEG` → `ov.bulk.pyGSEA` → `ov.bulk.pyWGCNA` → `ov.pl.volcano/geneset_plot`
+匹配路由**之前**先排雷——这些是绝大多数生信错误的根因：
+
+| 检查项 | 怎么查 | 不满足怎么办 |
+|---|---|---|
+| **raw counts 保留？** | `'counts' in adata.layers` | 🚨 DE/velocity 的生死线——先备份 `adata.layers['counts']=adata.X.copy()` |
+| **多批次？** | `adata.obs['batch'].nunique()>1` | 决定是否走 batch_correction；且**校正后 embedding 禁用于 DE** |
+| **数据规模** | `adata.n_obs` | >100k → 考虑 AnnDataOOM（`ov.read(backend='rust')`） |
+| **环境就绪** | `python -c "import omicverse"` | 缺包 → 见子 skill 的安装段 |
+| **GPU**（深度学习任务） | `torch.cuda.is_available()` | scGPT/GEARS finetune 必须 GPU；无则降级 CPU 推理或换方法 |
+| **spliced/unspliced**（velocity） | `'spliced' in adata.layers` | scvelo 必须；缺 → 先跑 velocyto/kb_python |
+
+## 路由：数据类型轴（先判断这个）
+
+```
+数据有空间坐标 / 组织切片？
+├─ YES → 空间转录组（spatial/）
+│   └─ 需去卷积？→ spatial/deconvolution（🚨 cell2location 无 ov 封装，强制此 skill）
+│   其余 → spatial/omicverse-spatial
+├─ NO，但是细胞×基因矩阵（scRNA-seq）
+│   └─ 单细胞（single-cell/）
+└─ NO，样本级表达矩阵（bulk/microarray）
+    └─ bulk（general-bio/omicverse-bulk）
+```
+
+## 路由：任务轴（再判断这个）
+
+| 任务 | 单细胞 | 空转 | bulk |
+|---|---|---|---|
+| QC/预处理/聚类 | `single-cell/omicverse-pipeline` | `spatial/omicverse-spatial` | `general-bio/omicverse-bulk` |
+| 细胞注释 | `omicverse-pipeline`（CellTypist/SingleR） | — | — |
+| 批次整合 | `omicverse-pipeline`（Harmony/scVI） | `omicverse-spatial` | `omicverse-bulk` |
+| 差异表达 DE | `omicverse-pipeline`（🚨 pseudobulk） | `omicverse-spatial` | `omicverse-bulk`（pyDEG） |
+| 去卷积 | — | 🚨 `spatial/deconvolution` | `omicverse-bulk` |
+| 拟时序/轨迹 | `omicverse-pipeline` 或 `rna-velocity` | — | — |
+| 细胞通讯 | `omicverse-pipeline` | `omicverse-spatial` | — |
+| 富集(GO/GSEA) | `omicverse-bulk` | `omicverse-bulk` | `omicverse-bulk` |
+| 扰动预测 | 🚨 `perturbation-prediction`（独立专题） | — | — |
+| 高分辨率平台 | — | `spatial/multiomics` | — |
+| 空间蛋白组 | — | `spatial/proteomics` | — |
+| Perturb-seq 分析 | `perturb-seq` | — | — |
+| 绘图 | `visualization/omicverse-plotting`（ov.pl） | 同左 | 同左 |
+| 多面板组合图 | `visualization/multi-panel-figures` | 同左 | 同左 |
+| 机制图/示意图 | `visualization/scientific-schematics` | 同左 | 同左 |
+| 图形摘要 | `visualization/graphical-abstract` | 同左 | 同左 |
+| PPT | `presentation/scientific-slides` 或 `lab-meeting-slides` | 同左 | 同左 |
+| 写作 | `presentation/methods-writer`/`results-writer`/`figure-legend-writer` | 同左 | 同左 |
+| 课题设计 | `single-cell/research-planner` | 同左 | 同左 |
+
+### 🚨 Special Routing Rules（覆盖规则，优先级高于上表）
+
+- **任何 DE** → 先确认 `layers['counts']` 存在；单细胞 DE 强制 pseudobulk（`ov.single` 或 `RunDEtest(cells.group.by=...)`），**禁** per-cell Wilcoxon
+- **cell2location 去卷积** → omicverse 未注册，**强制** `spatial/deconvolution`
+- **批次校正后** → embedding（X_scVI/X_harmony）**仅**可视化/聚类，**禁** DE/富集
+- **RNA velocity** → 必须 spliced/unspliced layers；缺则先 velocyto
+- **scGPT finetune** → GPU 必须；轻量 zero-shot 用 `ov.fm.scgpt`
+
+## When to Use / When NOT to Use（引擎选择）
+
+| 情况 | 用 | 不用 |
+|---|---|---|
+| 默认 Python scRNA/空转分析 | **OmicVerse**（`ov.*`） | — |
+| R/Seurat 环境，或 scop 独有工具（CytoTRACE/Milo/scCODA/SecAct/Giotto/SmoothClust/EcoTyper） | **scop**（`single-cell/scop`） | omicverse（无对应） |
+| 跨数据集注释 / 扰动预测 / GRN attention | **scGPT/扰动模型** | 常规注释（CellTypist 够） |
+| 常规批次校正 | Harmony/scVI（omicverse 内） | scGPT（杀鸡用牛刀） |
+| 常规轨迹 | Monocle/Slingshot（omicverse 内） | scGPT |
+| 百万细胞 | **AnnDataOOM**（`ov.read(backend='rust')`） | 标准 AnnData（OOM） |
+
+## 核心原则（强制，postcheck.py 可机检项标 ✅）
+
+1. **真实数据优先**：mock 仅测试
+2. **统计严谨**：单细胞 DE 用 pseudobulk ✅；FDR 校正（BH）✅；报告总检验数
+3. **严格阈值**：DE Padj<0.05 & |Log2FC|>1.0 ✅；相关 Padj<0.05 & |r|>0.5
+4. **关联≠因果**：用 "associated with" ✅，无证据不用 "regulates/causes"
+5. **Python优先**：omicverse（已移植 Monocle/WGCNA/DoubletFinder）；仅无对应时用 R
+6. **批次校正纪律**：校正 embedding 禁 DE/富集 ✅
+7. **保守措辞**：biomarker 须验证队列；"potential candidate" 优先
+8. **可复现**：保留 `layers['counts']` ✅；记录版本与种子 ✅
+9. **空转特有**：去卷积报质量评估 ✅；空间域需生物学验证
+
+> ✅ = `scripts/postcheck.py` 自动检查；其余靠人工。**分析完成后必须跑 postcheck**。
 
 ## 版本与架构
 
-- **版本**：9.2.0（OmicVerse + scop + 扰动预测专题）
-- **架构演进**：v8.0（42个独立子skill）→ v9.0（omicverse 统一）→ v9.1（+scop R）→ v9.2（+扰动预测专题，撤销过窄的 scGPT 独立，20 个子skill）
-- **引擎**：[OmicVerse V2](https://github.com/Starlitnightly/omicverse)（14模块/694方法/AnnDataOOM/RebuildR）
-- **不可替代**：cell2location、pertpy、scvelo深度调参、空间蛋白组、PPT/写作类
-- 完整 API 速查见 `references/omicverse_guide.md`，路由决策见 `references/workflow_routing.md`
+- **版本**：10.0.0（结构工程重构：双轴路由 + postcheck 闭环 + loading protocol）
+- **引擎**：[OmicVerse V2](https://github.com/Starlitnightly/omicverse) + [scop](https://github.com/mengxu98/scop) + scGPT/扰动模型
+- **子 skill**：20 个（见 `skill-index.json` 紧凑索引，或 `references/README.md` 全集目录）
+- **架构演进**：v8（42独立）→ v9（omicverse 统一 + scop + 扰动专题）→ **v10（结构工程：路由/闭环/协议）**
+
+## 索引文件职责
+
+| 文件 | 角色 | 何时读 |
+|---|---|---|
+| `SKILL.md`（本文件） | **路由权威** | 总是先读 |
+| `skill-index.json` | 紧凑索引（name/triggers/engine/path） | 需要快速定位子 skill 时 |
+| `references/workflow_routing.md` | 决策树详情 | 路由表命中模糊、需细化时 |
+| `references/omicverse_guide.md` | OmicVerse API 速查 | 用 ov.* 时 |
+| `references/README.md` | 子 skill 全集目录 | 浏览全部能力时 |
+| `scripts/postcheck.py` | 科学严谨性自动校验 | **分析完成后必跑** |

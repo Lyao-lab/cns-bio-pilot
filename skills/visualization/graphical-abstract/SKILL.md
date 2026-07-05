@@ -296,3 +296,18 @@ Use the following fixed structure for non-trivial requests:
 7. Next Checks
 
 If the request is simple, you may compress the structure, but still keep assumptions and limits explicit when they affect correctness.
+
+## 前置依赖（从哪来）
+
+- **论文摘要** → `--abstract` 文本或 stdin（来自已写好的 `presentation/results-writer` 产出的 Results，或整篇 manuscript 的摘要段）
+- **可选**：`--style` 视觉风格（scientific/minimal/colorful/sketch）、`--format` 输出格式（json/markdown/text）
+- Python 3.8+，标准库（re/json/argparse/sys）；OpenAI API 可选（增强分析）
+- 脚本入口 `scripts/main.py`
+
+## 何时离开本 skill（去哪）
+
+- 拿到布局 blueprint + AI 提示词后，实际生成图形摘要图 → Midjourney / DALL-E（外部工具，用产出的提示词）
+- 需要机制图 / 流程图 / 架构图（而非摘要图）→ `visualization/scientific-schematics`（`generate_schematic.py`，含生成→审查→精炼循环）
+- 把多张分图拼成发表级 figure → `visualization/multi-panel-figures`
+- 写图注描述生成的图形摘要 → `presentation/figure-legend-writer`
+- 放进汇报 slide → `presentation/scientific-slides`（`--attach` 嵌入）

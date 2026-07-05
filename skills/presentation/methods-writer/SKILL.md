@@ -119,3 +119,22 @@ Provide:
 → IMRAD structure: [references/imrad_structure.md](references/imrad_structure.md)
 → Reporting guidelines detail: [references/reporting_guidelines.md](references/reporting_guidelines.md)
 → Writing principles: [references/writing_principles.md](references/writing_principles.md)
+
+## 前置依赖（从哪来）
+
+- **研究协议 / 分析流程** → 用户提供的 study description / protocol / 现有 Methods 草稿
+- **分析流程细节**（用于如实转写）来自各分析 skill：
+  - 单细胞 → `single-cell/omicverse-pipeline`（QC/聚类/批次/注释/通讯/轨迹参数与版本）
+  - 空转 → `spatial/omicverse-spatial`（`ov.io.read_*`、spatial_neighbors、SVG、去卷积）
+  - 去卷积 → `spatial/deconvolution`（cell2location/Tangram/RCTD 参数与参考集）
+  - bulk → `general-bio/omicverse-bulk`（pyDESeq2/pyGSEA/pyWGCNA/pyPPI/ComBat）
+  - 扰动 → `single-cell/perturbation-prediction`（GEARS/CPA/scGPT 评估设置）
+- **可选**：target journal、study type、reporting guideline（CONSORT/STROBE/PRISMA/TRIPOD/ARRIVE/STARD）、统计细节
+- 缺失细节用占位符 `[AUTHOR TO SPECIFY: ...]`，绝不编造
+
+## 何时离开本 skill（去哪）
+
+- 写配套的 Results 章节 → `presentation/results-writer`
+- 写图注 → `presentation/figure-legend-writer`
+- Methods 写好后做汇报 → `presentation/scientific-slides`
+- ⚠️ 本 skill 只写 Methods 段落式散文；不写整篇 manuscript，不编造结果/统计/p值

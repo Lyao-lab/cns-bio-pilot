@@ -120,3 +120,19 @@ ov.pl.dotplot(adata, var_names=...)    # 基因—条件点图
 - `pyWGCNA` 的 power 软阈值：样本量 <20 时自动选择不稳，建议手动指定 12-20。
 - `pyPPI` species 参数务必对齐：human/mouse 基因符号大小写不同（human 全大写）。
 - 批次效应如果与 condition 完全混杂（不可分离），任何校正都救不回——这是设计问题，不是工具问题。
+
+## 前置依赖（从哪来）
+
+- **counts 表达矩阵** → 样本×基因的整数 count 矩阵（FASTQ→STAR/HISAT 比对 + featureCounts 产出，或 GEO 下载）
+- **`AnnData`：`adata.X` = counts，`adata.obs['condition']` 分组列，`adata.obs['batch']` 批次列**
+- **`adata.layers['counts']`** 必须在归一化前保存（DE/批次协变量要用原始整数 counts）
+- 若数据来自单细胞 → 先 `single-cell/omicverse-pipeline` 做 pseudobulk 聚合（`sc.pp.aggregate_and_filter`），再喂本 skill
+
+## 何时离开本 skill（去哪）
+
+- DEG/富集结果可视化 → `visualization/omicverse-plotting`（`ov.pl.volcano` / `ov.pl.complexheatmap` / `ov.pl.dotplot`）
+- 组合成发表级 figure → `visualization/multi-panel-figures`
+- 写 Methods 描述 bulk 流程 → `presentation/methods-writer`
+- 写 Results 叙述 → `presentation/results-writer`
+- 写图注 → `presentation/figure-legend-writer`
+- 做成 talk slide → `presentation/scientific-slides`（DEG 火山图/热图用 `--attach` 嵌入 results slide）

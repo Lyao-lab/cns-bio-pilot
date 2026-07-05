@@ -319,3 +319,22 @@ srt <- LoadScopDataset("pbmc3k")
 - **Conservative claims**: communication/trajectory/CNV are hypotheses — "associated with", not "regulates".
 - **Spatial deconvolution**: report method + reference + quality metric; cross-check with marker co-expression.
 - **Reproducibility**: record scop + Seurat versions; `sessionInfo()`; set seeds where tools expose them.
+
+## 前置依赖（从哪来）
+
+- **scRNA-seq 原始数据** → Cell Ranger / STARsolo 输出的 10x 矩阵（`Read10X`）或 `.h5`/`.loom`/`.h5ad`（`h5ad_to_srt` / `loom_to_srt`）
+- **空转数据** → Visium/Xenium 输出（`Load10X_Spatial`），或从 AnnData 转 `adata_to_srt`
+- **注释参考集**（可选，`RunSingleR`/`RunSciBet`/`RunCellTypist`）→ 已注释的参考 Seurat 对象或 celldex/CellTypist 模型
+- **loom 文件**（RNA velocity 用）→ velocyto 产出，供 `RunSCVELO`
+- **spatial 邻居图**（spatial 流程用）→ `RunSpatialNeighborhood` 必须先跑，所有空间域/SVG/通讯都依赖它
+
+## 何时离开本 skill（去哪）
+
+- Python/AnnData 原生大规模分析（>百万细胞）→ `single-cell/omicverse-pipeline`（AnnDataOOM 后端）
+- cell2location 独立去卷积（omicverse 未注册）→ `spatial/deconvolution`
+- 高分辨率空转（Stereo-seq / Visium HD）专门流程 → `spatial/multiomics`
+- 空间蛋白组（CODEX/IMC）→ `spatial/proteomics`
+- 扰动预测（未做实验）→ `single-cell/perturbation-prediction`；实测扰动分析 → `single-cell/perturb-seq`
+- 把 Seurat 结果转回 Python 画图 → `srt_to_adata` 后走 `visualization/omicverse-plotting`
+- 组合发表级 figure → `visualization/multi-panel-figures`
+- 写 Methods / 图注 → `presentation/methods-writer` / `presentation/figure-legend-writer`

@@ -116,3 +116,21 @@ When information is missing, use explicit placeholders:
 
 → Templates by chart type: [references/legend_templates.md](references/legend_templates.md)
 → Academic style guide: [references/academic_style_guide.md](references/academic_style_guide.md)
+
+## 前置依赖（从哪来）
+
+- **图描述** → 用户描述图表内容/上传图片/口述（来自各出图 skill 产出的 figure）
+- **可选补充**：图号、图类型、样本量、统计检验、显著性阈值、缩写
+- **图本身**（已完成）来自：
+  - 组合 figure → `visualization/multi-panel-figures`
+  - 单细胞/空转/bulk 图 → `visualization/omicverse-plotting`
+  - 机制图 → `visualization/scientific-schematics`
+  - 图形摘要 → `visualization/graphical-abstract`
+- 缺失信息（n/统计/误差棒）用占位符 `[AUTHOR TO SPECIFY: ...]`，绝不编造
+
+## 何时离开本 skill（去哪）
+
+- 写论文 Results 描述这些图 → `presentation/results-writer`
+- 写 Methods 描述图的统计方法 → `presentation/methods-writer`
+- 把图+图注做成汇报 slide → `presentation/scientific-slides`（`--attach` 嵌入图片）
+- 图注只写文字，不做数据解读（interpretation 走 results-writer/discussion）

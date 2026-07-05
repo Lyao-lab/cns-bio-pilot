@@ -3,6 +3,12 @@ name: scop-single-cell
 description: Use scop (mengxu98/scop) R package for end-to-end single-cell and spatial omics analysis. Triggers on: 单细胞分析、scop、R 单细胞、Seurat 工作流、scop 流水线、RunPCA、RunUMAP、RunHarmony、RunCellTypist、RunSCENIC、RunMonocle、RunCellChat、RunGiotto、RunBayesSpace、RunCytoTRACE、RunSlingshot、RunDEtest、FindAllMarkers、standard_scop、integration_scop. Covers QC, doublet, normalization, dimensionality reduction, batch integration (Harmony/CCA/scVI/BBKNN/MNN/LIGER/fastMNN/Scanorama), cell annotation (SingleR/CellTypist/SciBet/scmap), DE, trajectory (Monocle2/3/Slingshot/PAGA/Palantir/CytoTRACE/CellRank/WOT), RNA velocity (SCVELO), cell-cell communication (CellChat/CellphoneDB/LIANA/Nichenetr/MultiNichenetr/SecAct), GRN (SCENIC/SCENICPlus/GENIE3/GRNBoost2), enrichment (GSEA/GSVA), CNV, metabolism, and spatial (Giotto/BayesSpace/BANKSY/STdeconvolve/SpatialDWLS/RCTD/CSIDE/CytoSPACE/SmoothClust). When the user wants R/Seurat-based scRNA-seq or spatial analysis via scop, read this skill.
 ---
 
+## When NOT to use this skill
+- 用户要纯 Python/AnnData 原生大规模分析（>百万细胞，AnnDataOOM 后端）→ 改用 `single-cell/omicverse-pipeline`
+- 用户要 cell2location 去卷积（omicverse 未注册，scop 也无）→ 改用 `spatial/deconvolution`
+- 用户要预测未做的扰动实验 → 改用 `single-cell/perturbation-prediction`
+- 用户要 Perturb-seq 实测数据下游分析 → 改用 `single-cell/perturb-seq`
+
 # scop — Single-Cell & Spatial Omics Analysis Pipeline (R)
 
 `scop` is an R package ([mengxu98/scop](https://github.com/mengxu98/scop), v0.8.9, GPL-3) providing a unified, end-to-end pipeline for single-cell and spatial omics. It wraps hundreds of community tools under consistent `Run*` verbs on the **Seurat** object. Use this when the user prefers R/Seurat or needs a tool that omicverse does not cover.

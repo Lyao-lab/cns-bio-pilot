@@ -3,6 +3,12 @@ name: omicverse-single-cell-pipeline
 description: 单细胞全流程（QC→doublet→降维聚类→注释→批次校正→通讯→轨迹）基于 OmicVerse V2 统一 API，无需在 scanpy/Seurat/scVI/CellTypist 间切换。一个 import omicverse as ov 覆盖 90% 常规分析。
 ---
 
+## When NOT to use this skill
+- 用户要 cell2location 空间去卷积 → 改用 `spatial/deconvolution`（omicverse 未注册该方法）
+- 用户要 R/Seurat 环境或 CytoTRACE/Milo/SecAct/Giotto 等 scop 独有工具 → 改用 `single-cell/scop`
+- 用户要预测未做的扰动实验（未见基因/药物 KO）→ 改用 `single-cell/perturbation-prediction`
+- 用户要 Perturb-seq 已做实验的下游分析（差异扰动响应、Mixscape）→ 改用 `single-cell/perturb-seq`
+
 # OmicVerse 单细胞全流程
 
 **合并自原 skill**：`single-cell/preprocessing`、`doublet-detection`、`clustering`、`cell-annotation`、`batch-integration`、`cell-communication`、`trajectory-inference`、`scanpy`、`scvi-tools`。这些功能在 OmicVerse V2 中已有统一封装，本 skill 是它们的官方推荐入口。RNA velocity 见 `single-cell/rna-velocity`，perturb-seq 见 `single-cell/perturb-seq`。

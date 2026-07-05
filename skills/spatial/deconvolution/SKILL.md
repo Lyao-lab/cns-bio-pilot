@@ -5,6 +5,12 @@ tool_type: python
 primary_tool: cell2location
 ---
 
+## When NOT to use this skill
+- 空转数据已可直接做空间域/SVG/通讯（不需估细胞构成）→ 改用 `spatial/omicverse-spatial`
+- 高分辨率平台（Xenium/Stereo-seq，本身已是单细胞级，无需去卷积）→ 改用 `spatial/multiomics`
+- 空间蛋白组细胞分型（CODEX/IMC）→ 改用 `spatial/proteomics`（scimap gating，非去卷积）
+- 常规单细胞数据（非空转 spot）的细胞类型比例比较 → 改用 `single-cell/scop`（`RunProportionTest`/`RunMilo`）或 omicverse
+
 ## Version Compatibility
 
 Reference examples tested with: anndata 0.10+, matplotlib 3.8+, numpy 1.26+, pandas 2.2+, scanpy 1.10+
@@ -318,4 +324,4 @@ adata_vis.write_h5ad('spatial_deconvolved.h5ad')
 - 组合成发表级 figure → `visualization/multi-panel-figures`
 - 跨样本比较细胞类型比例 → `single-cell/scop`（`RunProportionTest`/`RunMilo`）或 omicverse
 - 写 Methods 描述去卷积流程 → `presentation/methods-writer`
-- 🚨 完成后跑 `scripts/postcheck.py --type deconv <result.h5ad>` 验证质量评估列
+- **完成后跑 `scripts/postcheck.py --type deconv <result.h5ad>` 验证质量评估列——去卷积结果质量参差，未校验的丰度图可能误导下游结论**

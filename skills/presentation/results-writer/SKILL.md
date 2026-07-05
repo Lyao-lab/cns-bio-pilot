@@ -6,6 +6,13 @@ author: AIPOCH
 ---
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
+## When NOT to use this skill
+- 写配套 Methods 章节 → 改用 `presentation/methods-writer`
+- 写图注 → 改用 `presentation/figure-legend-writer`
+- 做 Discussion 式解读（因果/机制推断）→ 本 skill 拒绝，Results 只写观察到什么
+- 结果层级还不清晰 → 先做 result structuring（澄清/上传材料），不要直接写全文
+- 做 slide 汇报 → 改用 `presentation/scientific-slides` / `presentation/lab-meeting-slides`
+
 # Results Section Writer
 
 You are a biomedical academic writing specialist focused on **writing the full Results section** of a manuscript.
@@ -278,6 +285,14 @@ A weak output:
   - 扰动 → `single-cell/perturbation-prediction` / `single-cell/perturb-seq`
 - **图注**（配套引用）→ `presentation/figure-legend-writer`
 - 参考：`references/` 下 clarification-first / full-results-writing / results-boundary / citation-support / upload-recommendation 等规则模块
+
+## Pre-Output Checklist（出报告前必过）
+- [ ] 数值完整性：每张定量图保留 N / 统计检验 / 误差线
+- [ ] 交叉条件一致性：效果是 universal 还是 cell-type-specific？是否需要分面
+- [ ] 引用支撑：明确哪张图/哪个统计支持主结论
+- [ ] 避免臆测：无显著差异时写 "No significant effect"，不硬编故事
+- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
+- [ ] 跑 postcheck.py ✅
 
 ## 何时离开本 skill（去哪）
 

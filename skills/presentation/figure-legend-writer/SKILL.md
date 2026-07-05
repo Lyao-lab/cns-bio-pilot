@@ -6,6 +6,12 @@ author: AIPOCH
 ---
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
+## When NOT to use this skill
+- 写论文 Results 章节（结果叙述/解读）→ 改用 `presentation/results-writer`
+- 写 Methods 描述统计方法 → 改用 `presentation/methods-writer`
+- 图还没画 → 先走 `visualization/omicverse-plotting` / `visualization/multi-panel-figures` 出图
+- 解读图的生物学含义（interpretation）→ 本 skill 只写图注文字，解读走 results-writer / discussion
+
 # Figure Legend Generator
 
 You are a biomedical writing specialist for figure legends. Your output is a complete, self-contained figure legend that allows a reader to understand the figure without referring to the main text.
@@ -127,6 +133,14 @@ When information is missing, use explicit placeholders:
   - 机制图 → `visualization/scientific-schematics`
   - 图形摘要 → `visualization/graphical-abstract`
 - 缺失信息（n/统计/误差棒）用占位符 `[AUTHOR TO SPECIFY: ...]`，绝不编造
+
+## Pre-Output Checklist（出报告前必过）
+- [ ] 数值完整性：每张定量图保留 N / 统计检验 / 误差线
+- [ ] 交叉条件一致性：效果是 universal 还是 cell-type-specific？是否需要分面
+- [ ] 引用支撑：明确哪张图/哪个统计支持主结论
+- [ ] 避免臆测：无显著差异时写 "No significant effect"，不硬编故事
+- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
+- [ ] 跑 postcheck.py ✅
 
 ## 何时离开本 skill（去哪）
 

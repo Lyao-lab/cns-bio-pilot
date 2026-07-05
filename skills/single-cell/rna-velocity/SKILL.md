@@ -3,6 +3,12 @@ name: omicverse-rna-velocity
 description: RNA velocity 基于 OmicVerse V2 的 ov.single.Velo（统一封装 scvelo 与 dynamo），从 spliced/unspliced 层推断细胞状态转移方向、潜在时间与驱动基因。深度调参或代谢标记数据时 fallback 到原生 scvelo/dynamo。
 ---
 
+## When NOT to use this skill
+- 只要拟时序/轨迹（不需 spliced/unspliced 剪接动力学）→ 改用 `single-cell/omicverse-pipeline`（`ov.single.Monocle` / PAGA）
+- 没有 spliced/unspliced layers 且无法补跑 velocyto/kb_python → 不能用 RNA velocity，改用拟时序
+- 用户在 R/Seurat 环境且需 SCVELO 之外的速度工具 → 改用 `single-cell/scop`（`RunSCVELO`）
+- 只要把速度图拼成发表级 figure → 先出图，再走 `visualization/multi-panel-figures`
+
 # OmicVerse RNA Velocity
 
 **由原 `single-cell/scvelo` 重命名重写**。OmicVerse V2 通过 `ov.single.Velo` 统一了 scvelo 与 dynamo 两个引擎，本 skill 是其官方推荐入口。

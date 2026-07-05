@@ -3,6 +3,12 @@ name: omicverse-bulk-pipeline
 description: Bulk RNA-seq / 表达矩阵全流程（差异表达→富集→WGCNA→PPI→批次校正）基于 OmicVerse V2，纯 Python，无需 R 环境和 DESeq2/clusterProfiler/WGCNA R 包。一个 import omicverse as ov 覆盖 90% bulk 分析。
 ---
 
+## When NOT to use this skill
+- 数据是单细胞（细胞×基因矩阵）→ 改用 `single-cell/omicverse-pipeline`；如需 bulk-style DE 先做 pseudobulk 聚合再喂本 skill
+- 数据是空间转录组 → 改用 `spatial/omicverse-spatial`
+- 坚持 R 环境（DESeq2/clusterProfiler/WGCNA 原生 R 包）→ 改用 `single-cell/scop`（部分 bulk 工具可走 R）
+- 只要做 GO/GSEA 富集而结果来自单细胞 DEG → 先 pseudobulk，再走本 skill 富集段
+
 # OmicVerse Bulk 全流程
 
 **合并自原 skill**：`general-bio/differential-expression`、`gokegg`、`gsea`、`wgcna`、`ppi-network`、`batch-correction`、`batch-correction-de`。OmicVerse V2 用 pyDESeq2/pyGSEApy/pyWGCNA 把这些 R 工具原生 Python 化，本 skill 是它们的统一入口。

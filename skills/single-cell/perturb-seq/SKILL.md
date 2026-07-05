@@ -5,6 +5,12 @@ tool_type: python
 primary_tool: Pertpy
 ---
 
+## When NOT to use this skill
+- 用户要预测**未做**实验的扰动响应（未见基因/药物的 in silico KO）→ 改用 `single-cell/perturbation-prediction`（GEARS/CPA/scGPT）
+- 只做常规 scRNA-seq 预处理/聚类/注释（无 CRISPR guide）→ 改用 `single-cell/omicverse-pipeline`
+- 只做基因必需性/功能模块模拟（无实测 Perturb-seq 数据）→ 改用 `single-cell/scop`（`RunscTenifoldKnk`）
+- bulk CRISPR screen（无单细胞读出）→ 不属本 skill 范围（走 bulk screen 分析如 MAGeCK）
+
 ## Version Compatibility
 
 Reference examples tested with: MAGeCK 0.5+, pandas 2.2+, pertpy 0.7+, scanpy 1.10+

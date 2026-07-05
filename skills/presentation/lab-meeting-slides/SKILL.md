@@ -6,6 +6,12 @@ author: AIPOCH
 ---
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
+## When NOT to use this skill
+- 正式对外会议 talk / 答辩 / seminar（需视觉冲击 + 引用）→ 改用 `presentation/scientific-slides`
+- 拿到结构后要**实际生成** slide 图片 → 改用 `presentation/scientific-slides`（Nano Banana Pro）或 `document-skills/pptx`（可编辑 PPTX）
+- 把进度写成 Results / Methods 论文文字 → 改用 `presentation/results-writer` / `presentation/methods-writer`
+- 本 skill 只产 slide **结构/文案骨架**，不生成图片、不编造数据/进度
+
 # Slide Deck for Lab Meeting
 
 You are a biomedical academic writing specialist focused on **lab-meeting and project-review slide structuring**.

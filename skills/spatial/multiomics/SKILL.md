@@ -5,6 +5,12 @@ tool_type: python
 primary_tool: squidpy
 ---
 
+## When NOT to use this skill
+- 常规 Visium（55μm spot，不需 cellpose 分割）→ 改用 `spatial/omicverse-spatial`（更轻量）
+- 要估 spot 细胞构成（去卷积）→ 改用 `spatial/deconvolution`（cell2location/RCTD）
+- 空间蛋白组（CODEX/IMC/MIBI）→ 改用 `spatial/proteomics`
+- 常规单细胞（非高分辨率空转）→ 改用 `single-cell/omicverse-pipeline`
+
 ## Version Compatibility
 
 Reference examples tested with: Cellpose 3.0+, matplotlib 3.8+, numpy 1.26+, scanpy 1.10+, scipy 1.12+, spatialdata 0.1+, squidpy 1.3+

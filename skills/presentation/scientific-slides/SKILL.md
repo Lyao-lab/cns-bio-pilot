@@ -9,6 +9,13 @@ metadata:
 
 # Scientific Slides
 
+## When NOT to use this skill
+- 内部组会 / 进度汇报（非正式，需讨论导向结构）→ 改用 `presentation/lab-meeting-slides`
+- 写论文 Methods / Results / 图注文字 → 改用 `presentation/methods-writer` / `presentation/results-writer` / `presentation/figure-legend-writer`
+- 单独制作发表级 figure（不是 slide）→ 改用 `visualization/multi-panel-figures`
+- 画机制图/流程图/架构图（非 slide）→ 改用 `visualization/scientific-schematics`
+- 论文图形摘要 → 改用 `visualization/graphical-abstract`
+
 > **路由层 SKILL.md**——本文件只放「该干啥 + 代码骨架 + 索引」。深度细节（8 大能力、6 阶段工作流、坑、脚本/提示词全集）下沉到 `references/`，按需加载。
 
 ## Overview
@@ -264,6 +271,14 @@ python scripts/generate_schematic.py "your diagram description" -o figures/outpu
 - **论文初稿**（可选）→ `presentation/results-writer` / `presentation/methods-writer` 写好的文字，可改写成 slide 文案
 - **技术示意图**（可选）→ `visualization/scientific-schematics` 生成的机制图/流程图，可 `--attach` 进 slide
 - **环境**：`OPENROUTER_API_KEY` 环境变量（Nano Banana Pro），见 `references/nano_banana_pro_reference.md`
+
+## Pre-Output Checklist（出报告前必过）
+- [ ] 数值完整性：每张定量图保留 N / 统计检验 / 误差线
+- [ ] 交叉条件一致性：效果是 universal 还是 cell-type-specific？是否需要分面
+- [ ] 引用支撑：明确哪张图/哪个统计支持主结论
+- [ ] 避免臆测：无显著差异时写 "No significant effect"，不硬编故事
+- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
+- [ ] 跑 postcheck.py ✅
 
 ## 何时离开本 skill（去哪）
 

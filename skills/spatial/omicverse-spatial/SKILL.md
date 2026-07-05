@@ -3,6 +3,12 @@ name: omicverse-spatial-pipeline
 description: 空间转录组全流程（IO→空间邻域→QC→空间域→SVG→通讯→可视化）基于 OmicVerse V2 统一 API，覆盖 Visium/Xenium/Nanostring/VisiumHD。一个 import omicverse as ov 完成 90% 常规空转分析。
 ---
 
+## When NOT to use this skill
+- 用户要 spot/细胞去卷积（cell2location/RCTD/Tangram 估细胞构成）→ 改用 `spatial/deconvolution`（omicverse 未注册 cell2location）
+- 高分辨率平台（Stereo-seq / Slide-seq / Visium HD 亚细胞）+ cellpose 分割 → 改用 `spatial/multiomics`
+- 空间蛋白组（CODEX/IMC/MIBI）→ 改用 `spatial/proteomics`（scimap，非空转）
+- 常规单细胞（无空间坐标）→ 改用 `single-cell/omicverse-pipeline`
+
 # OmicVerse 空间转录组全流程
 
 **合并自原 skill**：`spatial/preprocessing`、`data-io`、`domains`、`neighbors`、`statistics`、`visualization`、`communication`、`image-analysis`。这些在 OmicVerse V2 中已有统一封装。**去卷积不在本 skill**——cell2location/RCTD 等仍需 `spatial/deconvolution`。高分辨率平台见 `spatial/multiomics`，空间蛋白组见 `spatial/proteomics`。

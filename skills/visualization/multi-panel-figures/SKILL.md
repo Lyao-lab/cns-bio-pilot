@@ -6,6 +6,12 @@ author: AIPOCH
 ---
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
+## When NOT to use this skill
+- 分图还没生成，要从数据出图（UMAP/火山图/热图）→ 改用 `visualization/omicverse-plotting`（ov.pl.*）先出分图
+- 要机制图/流程图（非数据图）→ 改用 `visualization/scientific-schematics`
+- 要论文图形摘要（单张摘要图布局 + AI 提示词）→ 改用 `visualization/graphical-abstract`
+- 面板数 ≠ 6（如 2×2 / 3×3）→ 本 skill 固定 6 面板，非 6 面板需手动 matplotlib/patchwork 拼接
+
 # Multi-Panel Figure Assembler
 
 Assemble 6 sub-figures (A–F) into a high-resolution composite figure with consistent styling, labels, and publication-ready output.
@@ -144,6 +150,14 @@ pip install Pillow numpy
   - 机制图/示意图 → `visualization/scientific-schematics`
 - **输入格式**：PNG/JPG/BMP/TIFF/GIF；建议分图长宽比相近
 - 脚本入口 `scripts/main.py`（`--input` 6 路径 + `--output`，必填）
+
+## Pre-Output Checklist（出图前必过）
+- [ ] 数值完整性：每张定量图保留 N / 统计检验 / 误差线
+- [ ] 轴标签/图例/色盲友好：坐标轴有标签与单位，图例可独立读懂，配色对色盲安全（避免纯红绿）
+- [ ] 引用支撑：明确哪张图/哪个统计支持主结论
+- [ ] 避免臆测：无显著差异时写 "No significant effect"，不硬编故事
+- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
+- [ ] 跑 postcheck.py ✅
 
 ## 何时离开本 skill（去哪）
 

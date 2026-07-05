@@ -5,6 +5,12 @@ tool_type: python
 primary_tool: scimap
 ---
 
+## When NOT to use this skill
+- 数据是空间转录组（Visium/Xenium/Stereo-seq）而非蛋白 → 改用 `spatial/omicverse-spatial` 或 `spatial/multiomics`
+- 要估空转 spot 的细胞类型构成（去卷积）→ 改用 `spatial/deconvolution`
+- 常规单细胞 scRNA-seq（蛋白强度矩阵无空间坐标）→ 改用 `single-cell/omicverse-pipeline`
+- 只做蛋白表达普通流式/CyTOF 分析（非空间）→ 不属本 skill 范围
+
 ## Version Compatibility
 
 Reference examples tested with: anndata 0.10+, scanpy 1.10+, squidpy 1.3+

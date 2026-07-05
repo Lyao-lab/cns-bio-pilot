@@ -6,6 +6,12 @@ author: AIPOCH
 ---
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
+## When NOT to use this skill
+- 数据驱动的图表（UMAP/火山图/热图/dotplot）→ 改用 `visualization/omicverse-plotting`（ov.pl.*）
+- 论文图形摘要（从 abstract 推布局 + AI 提示词）→ 改用 `visualization/graphical-abstract`
+- 6 面板组合发表级 figure（已有分图要拼）→ 改用 `visualization/multi-panel-figures`
+- 需要 Nano Banana Pro 生成带研究背景的 slide 视觉 → 改用 `presentation/scientific-slides`
+
 # Scientific Schematics Skill
 
 ## When to Use
@@ -96,6 +102,14 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
 - **环境**：`OPENROUTER_API_KEY`（必需）；Python 3.10+，依赖 `pillow`/`matplotlib`/`requests`
 - 参考文档：`references/best_practices.md`、`references/diagram_types.md`
 - 脚本入口 `scripts/generate_schematic.py`
+
+## Pre-Output Checklist（出图前必过）
+- [ ] 数值完整性：若示意图含定量元素（如比例条/箭头粗细），保留 N / 统计依据
+- [ ] 轴标签/图例/色盲友好：标注清晰，配色对色盲安全（避免纯红绿）
+- [ ] 引用支撑：机制图所依据的文献/数据来源明确
+- [ ] 避免臆测：未经验证的步骤标为 "hypothesized"，不画成既定事实
+- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
+- [ ] 跑 postcheck.py ✅
 
 ## 何时离开本 skill（去哪）
 

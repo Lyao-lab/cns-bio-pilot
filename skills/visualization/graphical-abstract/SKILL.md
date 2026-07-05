@@ -6,6 +6,12 @@ author: AIPOCH
 ---
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
+## When NOT to use this skill
+- 要机制图/流程图/架构图（非摘要图，需生成→审查→精炼循环）→ 改用 `visualization/scientific-schematics`
+- 要数据驱动的图表（UMAP/火山图/热图）→ 改用 `visualization/omicverse-plotting`
+- 要把多张分图拼成发表级 figure → 改用 `visualization/multi-panel-figures`
+- 已拿到布局 blueprint + AI 提示词，要**实际生成**图片 → 走 Midjourney / DALL-E 外部工具（本 skill 只出布局建议）
+
 # Graphical Abstract Wizard
 
 This Skill analyzes academic paper abstracts and generates graphical abstract layout recommendations, including element suggestions, visual arrangements, and AI art prompts for Midjourney and DALL-E.
@@ -296,6 +302,14 @@ Use the following fixed structure for non-trivial requests:
 7. Next Checks
 
 If the request is simple, you may compress the structure, but still keep assumptions and limits explicit when they affect correctness.
+
+## Pre-Output Checklist（出图前必过）
+- [ ] 数值完整性：摘要图若引用定量结果，标注 N / 统计来源
+- [ ] 轴标签/图例/色盲友好：元素标注清晰，配色对色盲安全（避免纯红绿）
+- [ ] 引用支撑：摘要所依据的核心结论有对应正文图/统计
+- [ ] 避免臆测：未证实的机制标为 "proposed"，不画成已确认
+- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
+- [ ] 跑 postcheck.py ✅
 
 ## 前置依赖（从哪来）
 

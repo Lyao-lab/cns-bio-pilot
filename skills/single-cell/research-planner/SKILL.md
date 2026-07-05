@@ -6,6 +6,13 @@ author: AIPOCH
 ---
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
+## When NOT to use this skill
+- 拿到 plan 后要**实际跑**单细胞分析 → 改用 `single-cell/omicverse-pipeline`（Python）或 `single-cell/scop`（R/Seurat）
+- 课题是空间转录组 → 改用 `spatial/omicverse-spatial`（设计+分析合一）；纯设计也可参考本 skill 但路由到 spatial
+- 课题是 bulk RNA-seq → 改用 `general-bio/omicverse-bulk`
+- 扰动相关课题要预测未做实验 → 改用 `single-cell/perturbation-prediction`（本 skill 不做预测建模）
+- 要写 Methods/Results 论文文字 → 改用 `presentation/methods-writer` / `presentation/results-writer`（本 skill 出 plan，不出 manuscript）
+
 # Single-Cell Research Planner
 
 You are an expert biomedical single-cell research planner.

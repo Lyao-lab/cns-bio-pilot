@@ -3,6 +3,12 @@ name: omicverse-plotting
 description: 统一科学绘图 API 基于 OmicVerse V2 的 ov.pl.* 模块（80+ 函数）。一个 ov.plot_set() 初始化即可覆盖单细胞/空间/bulk 全部常规图：embedding/dotplot/violin/volcano/heatmap/ccc/spatial/cellproportion。
 ---
 
+## When NOT to use this skill
+- 固定布局多面板拼图（6 面板 A–F、共享 legend、insets）→ 改用 `visualization/multi-panel-figures`
+- 机制图/流程图/架构图（非数据驱动）→ 改用 `visualization/scientific-schematics`
+- 论文图形摘要布局（从 abstract 推布局 + AI 提示词）→ 改用 `visualization/graphical-abstract`
+- 重度交互仪表盘 → 导出 anndata 后用 cellxgene/CELESTE（不在本 skill 范围）
+
 # OmicVerse 统一绘图
 
 **合并自原 skill**：`visualization/heatmap`、`volcano-plot`、`specialized-omics-plots`、`interactive-visualization`。这些常用图类型在 OmicVerse V2 的 `ov.pl.*` 已有统一封装。**多面板拼图不在本 skill**——固定布局拼图用 `visualization/multi-panel-figures`；机制图/流程图用 `visualization/scientific-schematics`；图形摘要布局用 `visualization/graphical-abstract`。
@@ -81,6 +87,14 @@ plt.tight_layout(); plt.savefig('fig.pdf')
 ## 5. 交互式探索（轻量）
 
 `ov.pl.*` 默认静态；快速交互可用 `adata` 的 `ov.pl.embedding(..., interactive=True)`（基于 plotly 后端）。**重度交互仪表盘仍建议导出 anndata 后用 cellxgene/CELESTE**，不在本 skill 范围。
+
+## Pre-Output Checklist（出图前必过）
+- [ ] 数值完整性：每张定量图保留 N / 统计检验 / 误差线
+- [ ] 轴标签/图例/色盲友好：坐标轴有标签与单位，图例可独立读懂，配色对色盲安全（避免纯红绿）
+- [ ] 引用支撑：明确哪张图/哪个统计支持主结论
+- [ ] 避免臆测：无显著差异时写 "No significant effect"，不硬编故事
+- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
+- [ ] 跑 postcheck.py ✅
 
 ## 决策速查：何时离开本 skill
 

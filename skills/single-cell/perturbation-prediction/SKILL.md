@@ -3,6 +3,12 @@ name: perturbation-prediction
 description: 预测单细胞基因/化学扰动的转录组响应（Perturb-seq/CROP-seq/药物处理）。Triggers on: 扰动预测、perturbation prediction、Perturb-seq、CROP-seq、gene knockout prediction、gene perturbation、knockout 预测、过表达预测、overexpression、化学扰动、chemical perturbation、药物响应预测、drug response prediction、unseen perturbation、未见扰动、GEARS、scGPT perturbation、CPA、scGen、scPreGAN、CellOT、scPRAM、biolord、scDisInFact、AttentionPert、GenePert、scPerturBench、in silico perturbation. Covers genetic (CRISPR KO/OE) and chemical (drug/dose) perturbation response prediction, cellular-context generalization (i.i.d/o.o.d) and unseen-perturbation generalization. When the user wants to predict how cells respond to a perturbation they have NOT experimentally tested, read this skill.
 ---
 
+## When NOT to use this skill
+- 已做了扰动实验，只需分析实测结果（差异扰动响应、Mixscape 分类、guide QC）→ 改用 `single-cell/perturb-seq`
+- 只想做常规批次校正（不是预测新扰动）→ 改用 `single-cell/omicverse-pipeline`（Harmony/scVI）
+- 只要做基因必需性/功能模块模拟 → 改用 `single-cell/scop`（`RunscTenifoldKnk`/`RunscTenifoldNet`）
+- 预测结果出图 / 组合成发表级 figure → 先做完预测，再走 `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
+
 # 单细胞扰动响应预测（Perturbation Prediction）
 
 预测**未做实验**的扰动（基因敲除/过表达、药物处理）会产生的单细胞转录组响应。基于 [scPerturBench](https://github.com/bm2-lab/scPerturBench)（27 法 × 29 数据集，Nature Methods 2025）和 2025 年争议文献的实证结论。
@@ -87,7 +93,7 @@ adata = sc.read_h5ad("perturb_seq.h5ad")
 # 质控同常规 scRNA-seq（见 omicverse-pipeline），保留 raw counts
 ```
 
-### Step 1: 先跑 linear baseline（强制对照）
+### Step 1: 先跑 linear baseline（必跑对照——2025 争议显示简单模型常超 DL）
 
 ```python
 # scPerturBench 的 linearModel 环境
@@ -183,7 +189,7 @@ srt <- RunscTenifoldKnk(srt)  # 基因模块 knockout 模拟
     └─ CellOT（神经最优传输）/ SCREEN
 ```
 
-## Discipline（强制）
+## Discipline（每条都带原因）
 
 1. **必跑 linear baseline**：scPerturBench 证明简单模型常超 DL；不报告 baseline = 不可发表
 2. **报告评估设置**：i.i.d vs o.o.d，DEG 定义，是否 held-out 控制/扰动
@@ -221,4 +227,4 @@ srt <- RunscTenifoldKnk(srt)  # 基因模块 knockout 模拟
 - 常规批次校正（非预测新扰动）→ `single-cell/omicverse-pipeline`（Harmony/scVI）
 - 预测结果可视化 / 组合 figure → `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
 - 写 Methods / Results → `presentation/methods-writer` / `presentation/results-writer`
-- 🚨 报告时必须声明评估设置（i.i.d vs o.o.d、DEG 定义、是否含 linear baseline 对照）
+- **报告时必须声明评估设置（i.i.d vs o.o.d、DEG 定义、是否含 linear baseline 对照）——这是科学错误红线**：2025 年 Nature Methods 争议的核心就是不同评估设置下结论可反转，不声明等于不可复现、不可比较

@@ -24,6 +24,8 @@ ov.plot_set()
 
 ## 1. 数据 IO（按平台）
 
+> **网络受限备选**：`sq.datasets.visium_hne_adata()` 等内置数据集源站可能 403。备选：① 用 `st` 环境的 `squidpy.read_visium('本地解压目录/')` 读本地下载的 spaceranger 输出；② 从 GEO 下载 `.h5ad` 后 `sc.read_h5ad()`。
+
 ```python
 # Visium 标准
 adata = ov.space.read_visium_10x('visium_sample/')

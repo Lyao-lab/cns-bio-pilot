@@ -23,6 +23,8 @@ ov.plot_set()  # 统一全局绘图样式（字体/配色/dpi）
 import scanpy as sc   # ov 基于 scanpy/anndata，少量操作仍需 sc
 ```
 
+> **前置依赖**：`ov.single.*`（find_markers/annotation 等）需要 `ipywidgets`——若报 `ModuleNotFoundError: No module named 'ipywidgets'`，先 `pip install ipywidgets`。无 GPU 时 ov 会自动降级 CPU 模式（可正常跑，只是 scVI/scGPT finetune 慢）。
+
 ## 1. 加载数据（保留 layers['counts']）
 
 ```python

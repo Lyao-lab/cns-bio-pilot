@@ -27,6 +27,21 @@ description: 生信分析全流程技能库（空间转录组、单细胞、bulk
 
 ## Pre-Routing Checks（路由前必跑）
 
+### 环境前提（conda 环境映射）
+
+不同任务在不同 conda 环境，跑错环境会 `ModuleNotFoundError`：
+
+| 任务类型 | conda 环境 | 关键包 | 激活 |
+|---|---|---|---|
+| 单细胞（omicverse 主力） | `sc` | omicverse 2.2.3 + scanpy + scvelo | `conda activate sc` |
+| 空转（squidpy） | `st` | squidpy 1.2.2 + scanpy | `conda activate st` |
+| R/scop | `scop_env` | scanpy + R/scop | `conda activate scop_env` |
+| cell2location 去卷积 | 需新建 | cell2location（三个环境都缺） | `conda create -n c2l python=3.10` |
+
+> postcheck.py 也要用**装了 anndata 的环境**跑（如 `sc`），否则报"anndata 未安装"。
+
+### 数据/代码前提
+
 匹配路由**之前**先排雷——这些是绝大多数生信错误的根因：
 
 | 检查项 | 怎么查 | 不满足怎么办 |

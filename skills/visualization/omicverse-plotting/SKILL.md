@@ -50,8 +50,10 @@ ov.pl.embedding(adata, basis='X_umap', color='celltype', frameon='small')
 # Marker 点图
 ov.pl.dotplot(adata, var_names=['CD3D','MS4A1','CD68'], groupby='celltype')
 
-# 火山图（deg DataFrame: log2FC, pvalue/padj）
-ov.pl.volcano(adata.uns['deg'], pval_thresh=0.05, log2fc_thresh=1)
+# 火山图（deg DataFrame 列名必须为 'log2FC' 和 'qvalue'/'pvalue'，不符先 rename）
+ov.pl.volcano(deg_df, pval_name='qvalue', fc_name='log2FC',
+              pval_threshold=0.05, fc_min=-1.5, fc_max=1.5,
+              plot_genes_num=10)  # 标注 top10 基因名
 
 # 热图（PyComplexHeatmap 封装）
 ov.pl.marker_heatmap(adata, n_top=5, groupby='celltype')

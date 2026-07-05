@@ -24,7 +24,16 @@ ov.plot_set()
 
 ## 1. 数据 IO（按平台）
 
-> **网络受限备选**：`sq.datasets.visium_hne_adata()` 等内置数据集源站可能 403。备选：① 用 `st` 环境的 `squidpy.read_visium('本地解压目录/')` 读本地下载的 spaceranger 输出；② 从 GEO 下载 `.h5ad` 后 `sc.read_h5ad()`。
+> **网络可达性实测分级**（2026-07 实测，受限网络环境）：
+> | 数据源 | 可达性 | 用法 |
+> |---|---|---|
+> | `sc.datasets.visium_sge(sample_id)` | ✅ 稳定 | 10x 官方 CDN，Visium 公开样本首选 |
+> | `sq.datasets.visium_hne_adata()` | ❌ 403 | squidpy 自建 CDN，受限网络不可达 |
+> | `ov.datasets.hg_forebrain_glutamatergic()` | ❌ 失败 | loom 文件下载异常 |
+> | 本地 spaceranger 输出 | ✅ 最稳 | `squidpy.read_visium('目录/')` |
+> | GEO 直链（h5ad） | ⚠️ 取决于网络 | `sc.read_h5ad()` |
+>
+> **策略**：首选 `sc.datasets.visium_sge`；失败则从 GEO/10x 官网手动下载 spaceranger 输出到本地，用 `sq.read_visium()` 读。单细胞参考集同理——优先本地，CDN 不可靠时用 GEOparse 下原始 fastq/counts 自行处理。
 
 ```python
 # Visium 标准

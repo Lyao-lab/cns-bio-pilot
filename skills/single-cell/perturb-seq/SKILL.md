@@ -1,6 +1,6 @@
 ---
 name: bio-single-cell-perturb-seq
-description: Analyze Perturb-seq and CROP-seq CRISPR screening data integrated with scRNA-seq. Use when identifying gene function through pooled genetic perturbations in single cells.
+description: 分析【已经做好的】Perturb-seq / CROP-seq / CRISPR 筛选实验数据——基因功能鉴定、扰动响应差异、扰动一致性等下游分析。当用户已有 Perturb-seq 数据要做下游分析时触发。
 tool_type: python
 primary_tool: Pertpy
 ---

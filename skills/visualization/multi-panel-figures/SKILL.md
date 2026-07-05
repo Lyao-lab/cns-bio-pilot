@@ -1,6 +1,6 @@
 ---
 name: multi-panel-figure-assembler
-description: Assemble 6 sub-figures (A–F) into a high-resolution composite figure with consistent labels, padding, and publication-ready DPI.
+description: 把 6 张子图（A-F 面板）拼成高分辨率、标签统一、留白一致的发表级组合 figure。当用户要做多面板组合图、figure assembly、A-F 拼图、发表级 composite figure、组图拼接时触发。
 license: MIT
 author: AIPOCH
 ---

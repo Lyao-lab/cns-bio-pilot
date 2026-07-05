@@ -1,6 +1,6 @@
 ---
 name: perturbation-prediction
-description: 预测单细胞基因/化学扰动的转录组响应（Perturb-seq/CROP-seq/药物处理）。Triggers on: 扰动预测、perturbation prediction、Perturb-seq、CROP-seq、gene knockout prediction、gene perturbation、knockout 预测、过表达预测、overexpression、化学扰动、chemical perturbation、药物响应预测、drug response prediction、unseen perturbation、未见扰动、GEARS、scGPT perturbation、CPA、scGen、scPreGAN、CellOT、scPRAM、biolord、scDisInFact、AttentionPert、GenePert、scPerturBench、in silico perturbation. Covers genetic (CRISPR KO/OE) and chemical (drug/dose) perturbation response prediction, cellular-context generalization (i.i.d/o.o.d) and unseen-perturbation generalization. When the user wants to predict how cells respond to a perturbation they have NOT experimentally tested, read this skill.
+description: 【预测未做实验的】单细胞扰动响应——用已有数据训练，推断未测过的基因敲除/过表达或药物处理的转录组变化。当用户要预测未见扰动、in silico knockout、药物响应预测、unseen perturbation 时触发；算法含 GEARS/scGPT-perturbation/CPA/scGen 等。
 ---
 
 ## When NOT to use this skill

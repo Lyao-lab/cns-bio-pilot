@@ -1,6 +1,6 @@
 ---
 name: slide-deck-for-lab-meeting
-description: Structures research progress into focused and actionable slides for lab meetings or project reviews without inventing missing content.
+description: 把研究进度组织成聚焦、可执行的组会/lab meeting/项目评审幻灯片结构。当用户要做组会汇报、lab meeting、进度汇报、project review、周报月报 PPT 时触发。
 license: MIT
 author: AIPOCH
 ---

@@ -1,6 +1,6 @@
 ---
 name: methods-section-writer
-description: Turns your protocol and analysis workflow into publication-ready Methods text. Use when writing or revising the Methods section of a biomedical manuscript, ensuring it complies with reporting guidelines (CONSORT, STROBE, PRISMA, TRIPOD), matches what is in the Results section, and satisfies journal-specific word limits and declarations. Also triggers on "write my methods", "revise my methods section", "how to report my statistics", "what do I need to include in methods for [study type]", or "make my methods CONSORT-compliant".
+description: 撰写论文【Methods 章节】——把协议和分析流程转为发表级 Methods 文字，符合报告规范（CONSORT/STROBE/PRISMA/TRIPOD）、与 Results 一致、满足期刊字数与声明要求。当用户要写 Methods、方法学、STAR Methods、write my methods、报告统计方法时触发。
 license: MIT
 author: AIPOCH
 ---

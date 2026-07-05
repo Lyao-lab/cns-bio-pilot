@@ -1,6 +1,6 @@
 ---
 name: cns-bio-pilot
-description: 单细胞与空间转录组（兼 bulk/其他组学）生信分析全流程技能库。每当用户提到：空间转录组、空转、spatial transcriptomics、Visium、Xenium、MERFISH、Stereo-seq、Slide-seq、空间去卷积、空间域、spatial domain、单细胞、single-cell、scRNA-seq、聚类、细胞注释、cell type annotation、doublet、批次校正、batch correction、scVI、Harmony、RNA velocity、拟时序、trajectory、细胞通讯、CellChat、Perturb-seq、扰动预测、perturbation prediction、scanpy、squidpy、cell2location、omicverse、scop、Seurat、scGPT、GEARS、CPA、差异表达、DEG、富集分析、GO、KEGG、GSEA、WGCNA、PPI、画图、绘图、火山图、热图、UMAP、多面板图、graphical abstract、机制图、写论文、写 Methods、写 Results、图注、figure legend、做 PPT、做幻灯片、lab meeting、汇报，或要求"帮我分析空转/单细胞数据""设计课题""画发表级图表""写文章""做演示"时，都应触发。
+description: 生信分析全流程技能库（空间转录组、单细胞、bulk 组学 + 绘图 + 论文/PPT 产出）。当用户要做生信分析、处理单细胞或空转数据、画发表级图表、写论文/PPT 时触发。本 skill 是路由器——触发后读取它来确定走哪个子 skill，具体分析在子 skill 中进行。
 ---
 
 # CNS Bio-Pilot

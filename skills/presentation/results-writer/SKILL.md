@@ -1,6 +1,6 @@
 ---
 name: results-section-writer
-description: Writes the full Results section of a biomedical manuscript from a sufficiently clear result structure, figure inventory, or analysis summary while preserving evidence boundaries and result hierarchy.
+description: 撰写论文【Results 章节】——从已有的结果结构/图表清单/分析摘要生成完整的 Results 叙述，保留证据边界与结果层级。当用户要写 Results、结果章节、结果叙述、results section 时触发。
 license: MIT
 author: AIPOCH
 ---

@@ -1,6 +1,6 @@
 ---
 name: graphical-abstract-wizard
-description: Generate graphical abstract layout recommendations based on paper abstracts.
+description: 生成论文图形摘要（Graphical Abstract）的布局推荐。当用户要做 graphical abstract、图形摘要、论文摘要图、TOC 图、投稿摘要图时触发。基于论文 abstract 文本推荐面板布局，不生成图像本身。
 license: MIT
 author: AIPOCH
 ---

@@ -153,7 +153,7 @@ def _flow_slide(s, d, preset):
     tb = s.shapes.add_textbox(Inches(1), Inches(3.2), Inches(11), Inches(1))
     tf = tb.text_frame; tf.word_wrap = True
     p = tf.paragraphs[0]
-    p.text = arrow.join(steps); p.font.size = Pt(20); p.font.color.rgb = preset["accent"]
+    p.text = arrow.join(steps); p.font.size = Pt(18); p.font.color.rgb = preset["accent"]
     p.alignment = PP_ALIGN.CENTER; p.font.bold = True
 
 def _bullets_slide(s, d, preset):

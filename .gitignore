@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Data / artifacts (never commit real data)
+*.h5ad
+*.h5
+*.tsv
+*.xlsx
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.npy
+*.npz
+*.rds
+*.loom
+*.mtx
+*.h5seurat

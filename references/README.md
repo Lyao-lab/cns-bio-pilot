@@ -1,8 +1,8 @@
 # cns-bio-pilot 子skill 完整索引
 
-19 个精选子skill，按类别组织。每个 skill 路径相对于本 skill 根目录。
+20 个精选子skill，按类别组织。每个 skill 路径相对于本 skill 根目录。
 
-> **架构说明**：双引擎——OmicVerse V2（Python，`ov.*` API）+ scop（R，`Run*` 动词，基于 Seurat）。核心分析优先 OmicVerse；R/Seurat 场景或 scop 独有工具（CytoTRACE/Milo/scCODA/SecAct/Giotto/SmoothClust/EcoTyper/scTenifold 等）用 scop。其余为不可替代的领域工具。
+> **架构说明**：三引擎——OmicVerse V2（Python，`ov.*` API）+ scop（R，`Run*` 动词，基于 Seurat）+ scGPT（基础模型，深度学习）。核心分析优先 OmicVerse；R/Seurat 场景或 scop 独有工具用 scop；基础模型场景（跨数据集注释/扰动预测/GRN）用 scGPT。其余为不可替代的领域工具。
 
 ## 🧬 OmicVerse V2 统一流程（5个）
 
@@ -16,12 +16,13 @@
 | `visualization/omicverse-plotting` | heatmap/volcano-plot/specialized-omics-plots/interactive-visualization | 统一绘图（80+ 函数） | `ov.plot_set()`, `ov.pl.*` |
 | `single-cell/rna-velocity` | scvelo（重命名重写） | RNA velocity | `ov.single.Velo(adata, mode='scvelo')` |
 
-## 🔬 单细胞（single-cell/，5个）
+## 🔬 单细胞（single-cell/，6个）
 
 | skill | 来源 | 功能 | 关键工具 |
 |---|---|---|---|
 | `single-cell/omicverse-pipeline` | OmicVerse V2 | 单细胞全流程统一 API（Python） | `ov.pp.*` + `ov.single.*` |
 | `single-cell/scop` | [mengxu98/scop](https://github.com/mengxu98/scop) v0.8.9 | R/Seurat 单细胞+空转全流程（200+ Run* 动词，双引擎互补） | Seurat, reticulate, Signac |
+| `single-cell/scgpt` | [bowang-lab/scGPT](https://github.com/bowang-lab/scGPT) v0.2.5 | scGPT 基础模型（33M 细胞预训练，Nature Methods 2024） | scGPT, torch, scvi-tools |
 | `single-cell/rna-velocity` | OmicVerse V2 | RNA velocity（封装 scvelo/dynamo） | `ov.single.Velo` |
 | `single-cell/perturb-seq` | OpenClaw | Perturb-seq/CRISPR筛选 | pertpy, Cassiopeia |
 | `single-cell/research-planner` | aipoch | 单细胞课题设计（方法论） | 零代码，9个references |

@@ -136,6 +136,7 @@ description: 生信分析全流程技能库（空间转录组、单细胞、bulk
 9. **保守措辞**：biomarker 须验证队列；"potential candidate" 优先
 10. **可复现**：保留 `layers['counts']` ✅；记录版本与种子 ✅
 11. **空转特有**：去卷积报质量评估 ✅；空间域需生物学验证
+12. **发表级绘图审美**：遵循 CNS figure guidelines——300 DPI+、Arial/Helvetica、Okabe-Ito 色盲安全配色（禁红绿编码）、矢量 PDF 首选、多图配色一致。详见 `references/figure_aesthetics.md`。`ov.plot_set()` 后需手动补 DPI=300 + Okabe-Ito + font.type=42 ✅
 
 > ✅ = `scripts/postcheck.py` 自动检查；其余靠人工。**分析完成后必须跑 postcheck**。
 
@@ -154,5 +155,6 @@ description: 生信分析全流程技能库（空间转录组、单细胞、bulk
 | `skill-index.json` | 紧凑索引（name/triggers/engine/path） | 需要快速定位子 skill 时 |
 | `references/workflow_routing.md` | 决策树详情 | 路由表命中模糊、需细化时 |
 | `references/omicverse_guide.md` | OmicVerse API 速查 | 用 ov.* 时 |
+| `references/figure_aesthetics.md` | CNS 发表级绘图审美规范（DPI/字体/配色/色盲） | **任何绘图前必读** |
 | `references/README.md` | 子 skill 全集目录 | 浏览全部能力时 |
 | `scripts/postcheck.py` | 科学严谨性自动校验 | **分析完成后必跑** |

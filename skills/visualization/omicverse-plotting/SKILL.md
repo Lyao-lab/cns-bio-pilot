@@ -17,13 +17,27 @@ description: 统一科学绘图 API 基于 OmicVerse V2 的 ov.pl.* 模块（80+
 
 ## 0. 初始化（必做）
 
+> **绘图审美规范**：发表级图必须遵循 CNS 标准（300 DPI、Arial、Okabe-Ito 色盲配色、矢量 PDF）。详见 `references/figure_aesthetics.md`——**绘图前必读**。
+
 ```python
 import omicverse as ov
 ov.plot_set()   # 全局：字体、字号、dpi、默认配色、矢量友好的 pdf 渲染
 import matplotlib.pyplot as plt
+
+# ov.plot_set() 不覆盖的发表级补充（CNS 必须）：
+plt.rcParams.update({
+    'figure.dpi': 300, 'savefig.dpi': 300,        # 默认100不够
+    'savefig.bbox': 'tight',                       # 去白边（嵌PPT必做）
+    'pdf.fonttype': 42, 'ps.fonttype': 42,         # TrueType嵌入（编辑可改）
+    'font.family': 'Arial',                        # CNS强制 sans-serif
+})
+# 色盲安全配色（Okabe-Ito 8色，禁红绿编码）
+OKABE_ITO = ['#E69F00','#56B4E9','#009E73','#F0E442',
+             '#0072B2','#D55E00','#CC79A7','#000000']
+plt.rcParams['axes.prop_cycle'] = plt.cycler(color=OKABE_ITO)
 ```
 
-`ov.plot_set()` 一次调用统一风格；之后所有 `ov.pl.*` 与 scanpy 图都自动套用。
+`ov.plot_set()` + 上述补充一次调用统一风格；之后所有 `ov.pl.*` 与 scanpy 图都自动套用。
 
 ## 1. 常用图类型 API 速查
 

@@ -1,6 +1,6 @@
 ---
 name: cns-bio-pilot
-description: 生信分析全流程技能库（空间转录组、单细胞、bulk 组学 + 绘图 + 论文/PPT 产出）。当用户要做生信分析、处理单细胞或空转数据、画发表级图表、写论文/PPT 时触发。核心原则：基于事实，不懂就问，不猜测不虚构（数据集/accession/参数/结论必须有出处）。本 skill 是路由器——触发后读取它来确定走哪个子 skill，具体分析在子 skill 中进行。
+description: 生信分析全流程技能库（空间转录组、单细胞、bulk 组学 + 绘图 + 论文/PPT 产出）。当用户要做生信分析、处理单细胞或空转数据、画发表级图表、写论文/PPT 时触发。核心原则：基于事实不懂就问不虚构；不重复造轮子（先检索 PubMed/GitHub/PyPI/R 库是否已有实现，实在没有才改造相似算法，GEO 下载用 GEOparse）。本 skill 是路由器——触发后读取它来确定走哪个子 skill，具体分析在子 skill 中进行。
 ---
 
 # CNS Bio-Pilot
@@ -52,6 +52,19 @@ description: 生信分析全流程技能库（空间转录组、单细胞、bulk
 | **环境就绪** | `python -c "import omicverse"` | 缺包 → 见子 skill 的安装段 |
 | **GPU**（深度学习任务） | `torch.cuda.is_available()` | scGPT/GEARS finetune 必须 GPU；无则降级 CPU 推理或换方法 |
 | **spliced/unspliced**（velocity） | `'spliced' in adata.layers` | scvelo 必须；缺 → 先跑 velocyto/kb_python |
+
+### 方法实现前提（强制：实现前先检索，原则 2）
+
+**写任何自定义分析代码前，必须先确认无现成实现**——按此顺序检索，命中即用，不自己写：
+
+| 顺序 | 检索源 | 怎么查 | 命中则 |
+|---|---|---|---|
+| 1 | omicverse / scop 封装 | `dir(ov.pp)` / `dir(ov.single)` / `dir(ov.bulk)` / scop `Run*` | 直接调，最省 |
+| 2 | 成熟独立包 | PyPI / [libraries.io](https://libraries.io) / GitHub awesome-single-cell | `pip install` 后用 |
+| 3 | R/Bioconductor | [bioconductor.org](https://bioconductor.org/packages) 搜索 | R 脚本调 |
+| 4 | 改造相似算法 | PubMed 方法学文献 + GitHub | 改造时注明"基于 X 改造" |
+
+> **从头实现是最后手段**——必须先确认前 4 步都无果，并向用户说明"为什么所有现有方法都不适用"。GEO 数据下载用 GEOparse，不自写下载器；DEG 用 pydeseq2/edgeR，不手写统计。
 
 ## 路由：数据类型轴（先判断这个）
 
@@ -113,15 +126,16 @@ description: 生信分析全流程技能库（空间转录组、单细胞、bulk
 ## 核心原则（原因贯穿下文；postcheck.py 可机检项标 ✅）
 
 1. **基于事实，不懂就问，不猜测不虚构**：所有数据集名/accession/样本量/细胞类型标签/工具参数/生物学结论必须有出处——来自数据本身、官方文档、或文献。**任何不确定时，先问用户，不要猜**。绝不编造数据集元信息、accession 号、样本可用性、文献引用、API 签名、或分析结果。不确定的 API 参数用 `inspect.signature(func)` 或 `help()` 核实，不凭印象调用 ✅
-2. **真实数据优先**：mock 仅测试
-3. **统计严谨**：单细胞 DE 用 pseudobulk ✅；FDR 校正（BH）✅；报告总检验数
-4. **严格阈值**：DE Padj<0.05 & |Log2FC|>1.0 ✅；相关 Padj<0.05 & |r|>0.5
-5. **关联≠因果**：用 "associated with" ✅，无证据不用 "regulates/causes"
-6. **Python优先**：omicverse（已移植 Monocle/WGCNA/DoubletFinder）；仅无对应时用 R
-7. **批次校正纪律**：校正 embedding 不用于 DE/富集——校正旨在去批次，会一并移除真实生物学差异，用回 DE 会把疾病/处理信号也抹掉 ✅
-8. **保守措辞**：biomarker 须验证队列；"potential candidate" 优先
-9. **可复现**：保留 `layers['counts']` ✅；记录版本与种子 ✅
-10. **空转特有**：去卷积报质量评估 ✅；空间域需生物学验证
+2. **不重复造轮子，先检索后实现**：实现任何方法前，**必须先检索**是否已有现成实现——查 PubMed（方法学文献）、GitHub（`awesome-single-cell` / 主题 awesome 列表）、PyPI（`pip search` 替代：[libraries.io](https://libraries.io) / Bioconda）、CRAN/Bioconductor、omicverse/scop 是否已封装。检索顺序：**omicverse/scop 封装 > 成熟独立包 > R/Bioconductor > 改造相似算法 > 从头实现**。只有确认无现成方法时，才借鉴最相似的已有算法改造；改造时必须在报告里注明"基于 X 方法改造"及差异。**从头实现是最后手段，需向用户说明为什么所有现有方法都不适用**。GEO 数据下载用 GEOparse，不自写下载器
+3. **真实数据优先**：mock 仅测试
+4. **统计严谨**：单细胞 DE 用 pseudobulk ✅；FDR 校正（BH）✅；报告总检验数
+5. **严格阈值**：DE Padj<0.05 & |Log2FC|>1.0 ✅；相关 Padj<0.05 & |r|>0.5
+6. **关联≠因果**：用 "associated with" ✅，无证据不用 "regulates/causes"
+7. **Python优先**：omicverse（已移植 Monocle/WGCNA/DoubletFinder）；仅无对应时用 R——与原则 2 联动：先查 omicverse/scop 有无封装
+8. **批次校正纪律**：校正 embedding 不用于 DE/富集——校正旨在去批次，会一并移除真实生物学差异，用回 DE 会把疾病/处理信号也抹掉 ✅
+9. **保守措辞**：biomarker 须验证队列；"potential candidate" 优先
+10. **可复现**：保留 `layers['counts']` ✅；记录版本与种子 ✅
+11. **空转特有**：去卷积报质量评估 ✅；空间域需生物学验证
 
 > ✅ = `scripts/postcheck.py` 自动检查；其余靠人工。**分析完成后必须跑 postcheck**。
 

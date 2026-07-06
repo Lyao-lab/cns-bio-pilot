@@ -1,6 +1,6 @@
 ---
 name: cns-bio-pilot
-description: 生信分析全流程技能库（空间转录组、单细胞、bulk 组学 + 绘图 + 论文/PPT 产出）。当用户要做生信分析、处理单细胞或空转数据、画发表级图表、写论文/PPT 时触发。本 skill 是路由器——触发后读取它来确定走哪个子 skill，具体分析在子 skill 中进行。
+description: 生信分析全流程技能库（空间转录组、单细胞、bulk 组学 + 绘图 + 论文/PPT 产出）。当用户要做生信分析、处理单细胞或空转数据、画发表级图表、写论文/PPT 时触发。核心原则：基于事实，不懂就问，不猜测不虚构（数据集/accession/参数/结论必须有出处）。本 skill 是路由器——触发后读取它来确定走哪个子 skill，具体分析在子 skill 中进行。
 ---
 
 # CNS Bio-Pilot
@@ -112,15 +112,16 @@ description: 生信分析全流程技能库（空间转录组、单细胞、bulk
 
 ## 核心原则（原因贯穿下文；postcheck.py 可机检项标 ✅）
 
-1. **真实数据优先**：mock 仅测试
-2. **统计严谨**：单细胞 DE 用 pseudobulk ✅；FDR 校正（BH）✅；报告总检验数
-3. **严格阈值**：DE Padj<0.05 & |Log2FC|>1.0 ✅；相关 Padj<0.05 & |r|>0.5
-4. **关联≠因果**：用 "associated with" ✅，无证据不用 "regulates/causes"
-5. **Python优先**：omicverse（已移植 Monocle/WGCNA/DoubletFinder）；仅无对应时用 R
-6. **批次校正纪律**：校正 embedding 不用于 DE/富集——校正旨在去批次，会一并移除真实生物学差异，用回 DE 会把疾病/处理信号也抹掉 ✅
-7. **保守措辞**：biomarker 须验证队列；"potential candidate" 优先
-8. **可复现**：保留 `layers['counts']` ✅；记录版本与种子 ✅
-9. **空转特有**：去卷积报质量评估 ✅；空间域需生物学验证
+1. **基于事实，不懂就问，不猜测不虚构**：所有数据集名/accession/样本量/细胞类型标签/工具参数/生物学结论必须有出处——来自数据本身、官方文档、或文献。**任何不确定时，先问用户，不要猜**。绝不编造数据集元信息、accession 号、样本可用性、文献引用、API 签名、或分析结果。不确定的 API 参数用 `inspect.signature(func)` 或 `help()` 核实，不凭印象调用 ✅
+2. **真实数据优先**：mock 仅测试
+3. **统计严谨**：单细胞 DE 用 pseudobulk ✅；FDR 校正（BH）✅；报告总检验数
+4. **严格阈值**：DE Padj<0.05 & |Log2FC|>1.0 ✅；相关 Padj<0.05 & |r|>0.5
+5. **关联≠因果**：用 "associated with" ✅，无证据不用 "regulates/causes"
+6. **Python优先**：omicverse（已移植 Monocle/WGCNA/DoubletFinder）；仅无对应时用 R
+7. **批次校正纪律**：校正 embedding 不用于 DE/富集——校正旨在去批次，会一并移除真实生物学差异，用回 DE 会把疾病/处理信号也抹掉 ✅
+8. **保守措辞**：biomarker 须验证队列；"potential candidate" 优先
+9. **可复现**：保留 `layers['counts']` ✅；记录版本与种子 ✅
+10. **空转特有**：去卷积报质量评估 ✅；空间域需生物学验证
 
 > ✅ = `scripts/postcheck.py` 自动检查；其余靠人工。**分析完成后必须跑 postcheck**。
 

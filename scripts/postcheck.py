@@ -25,7 +25,9 @@ cns-bio-pilot postcheck — 科学严谨性自动校验
   [SLIDES] 演示文稿
     S1  关键数值图保留 N / 统计检验标注                  原则 2/3
   [LANG]  措辞
-    L1  无未授权因果词 (regulates/causes/induces)       原则 4 🚨
+    L1  无未授权因果词 (regulates/causes/induces)       原则 5 🚨
+  [FACT] 虚构检测（原则 1：基于事实，不猜测不虚构）
+    F1  无虚构信号（example/demo/test 占位、编造的 accession）   原则 1 🚨
 """
 import argparse
 import json
@@ -222,7 +224,59 @@ def check_language(text, report):
     else:
         report.add("L1", "FAIL",
                    f"因果词过密 {causal_hits[:5]}——无证据时强制用 'associated with'，"
-                   "原则 4 违反")
+                   "原则 5 违反")
+
+
+# 虚构信号（原则 1：基于事实，不猜测不虚构）
+FABRICATION_RE = re.compile(
+    r'\b(GSE\d{5}|GSM\d{6,})\b'  # accession 格式
+    r'|(e\.g\.|例如|比如|假设|example data|demo dataset|test_data|mock_data|placeholder)',
+    re.IGNORECASE,
+)
+# 疑似编造的"普适结论"措辞（无数据支撑的断言）
+OVERCLAIM_RE = re.compile(
+    r'(clearly shows|definitely|proves?\s+that|it\s+is\s+well\s+known|'
+    r'明显表明|充分证明|众所周知|确定性地)',
+    re.IGNORECASE,
+)
+
+
+def check_fabrication(text, report):
+    """F1: 检测虚构信号（原则 1：基于事实，不懂就问，不猜测不虚构）。
+
+    扫描代码/报告/图注里的：
+    - 占位符（example/demo/test/mock/placeholder）混入正式输出
+    - 过度断言（clearly/proves/well-known，无数据支撑的普适论断）
+    - accession 格式（GSE/GSM）——提示用户核实真实存在性
+    """
+    if not isinstance(text, str) or not text.strip():
+        return
+    fab_hits = FABRICATION_RE.findall(text)
+    overclaim_hits = OVERCLAIM_RE.findall(text)
+    # 提取命中的具体词
+    fab_words = [h if isinstance(h, str) else (h[0] or h[1] or "") for h in fab_hits]
+    fab_words = [w for w in fab_words if w]
+    has_issue = False
+    if fab_words:
+        # 区分严重度：accession 格式仅 WARN（需人工核实），占位符 FAIL
+        accessions = [w for w in fab_words if re.match(r'GSE\d|GSM\d', w, re.I)]
+        placeholders = [w for w in fab_words if w not in accessions]
+        if placeholders:
+            report.add("F1", "FAIL",
+                       f"检测到占位/虚构信号 {placeholders[:5]}——"
+                       "正式输出不应含 example/demo/mock/test_data。原则 1 违反（不虚构）")
+            has_issue = True
+        if accessions:
+            report.add("F1", "WARN",
+                       f"检测到 accession 格式 {accessions[:3]}——"
+                       "请核实该编号真实存在且数据匹配（不编造 accession）")
+    if overclaim_hits:
+        report.add("F1", "WARN",
+                   f"检测到过度断言 {overclaim_hits[:3]}——"
+                   "无数据支撑的普适论断违反原则 1（基于事实）。改为具体数据支持的陈述")
+    if not fab_words and not overclaim_hits:
+        report.add("F1", "PASS", "无虚构/占位/过度断言信号（基于事实）")
+
 
 
 def check_code_for_corrected_de(code_text, report):
@@ -293,8 +347,10 @@ def main():
     elif ttype == "slides":
         check_slides(target, report)
     elif ttype == "code":
-        check_code_for_corrected_de(Path(target).read_text(encoding="utf-8", errors="ignore"), report)
-        check_language(Path(target).read_text(encoding="utf-8", errors="ignore"), report)
+        code_text = Path(target).read_text(encoding="utf-8", errors="ignore")
+        check_code_for_corrected_de(code_text, report)
+        check_language(code_text, report)
+        check_fabrication(code_text, report)
 
     sys.exit(report.summary())
 

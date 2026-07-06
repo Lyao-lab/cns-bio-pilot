@@ -65,11 +65,11 @@ MORLANDI = ['#88C0D0','#BF616A','#A3BE8C','#D08770',
 plt.rcParams['axes.prop_cycle'] = plt.cycler(color=MORLANDI)
 ```
 
-**连续表达（热图/表达量）—— 蓝-白-红共识渐变（高表达=红，符合生信共识）**：
+**连续表达（热图/表达量）—— 蓝-黄-红经典渐变（低=蓝，中=黄，高=红，单细胞热图惯例）**：
 ```python
 from matplotlib.colors import LinearSegmentedColormap
-EXPR_CMAP = LinearSegmentedColormap.from_list('bwr_consensus',
-    ['#2C5F8D','#88C0D0','#F5F5F5','#E8927A','#B83A3A'], N=256)
+EXPR_CMAP = LinearSegmentedColormap.from_list('byr',
+    ['#2C5F8D','#5DA0C8','#F5F5DC','#E8B84A','#C0392B'], N=256)
 # 用法：ax.imshow(data, cmap=EXPR_CMAP) 或 sc.pl.heatmap(..., cmap=EXPR_CMAP)
 ```
 
@@ -80,7 +80,7 @@ DIVERGING_CMAP = LinearSegmentedColormap.from_list('log2fc',
 # vmin=-3, vmax=3 确保 0 居中为白
 ```
 
-**双轨原理**：离散分类用柔和莫兰迪（区分清晰不刺眼）；连续数值用蓝白红（符合"高表达=红"的生信阅读直觉，且蓝-红对色盲可辨，比红绿安全）。
+**双轨原理**：离散分类用柔和莫兰迪（区分清晰不刺眼）；连续数值用蓝-黄-红（符合"高表达=红"的生信阅读直觉，中段黄色过渡自然，是单细胞热图最经典渐变）。
 
 **Okabe-Ito 备选**（需严格色盲合规时，如期刊强制）：
 ```python

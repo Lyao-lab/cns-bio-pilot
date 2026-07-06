@@ -23,6 +23,7 @@ description: 统一科学绘图 API 基于 OmicVerse V2 的 ov.pl.* 模块（80+
 import omicverse as ov
 ov.plot_set()   # 全局：字体、字号、dpi、默认配色、矢量友好的 pdf 渲染
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 # ov.plot_set() 不覆盖的发表级补充（CNS 必须）：
 plt.rcParams.update({
@@ -31,10 +32,19 @@ plt.rcParams.update({
     'pdf.fonttype': 42, 'ps.fonttype': 42,         # TrueType嵌入（编辑可改）
     'font.family': 'Arial',                        # CNS强制 sans-serif
 })
-# 色盲安全配色（Okabe-Ito 8色，禁红绿编码）
-OKABE_ITO = ['#E69F00','#56B4E9','#009E73','#F0E442',
-             '#0072B2','#D55E00','#CC79A7','#000000']
-plt.rcParams['axes.prop_cycle'] = plt.cycler(color=OKABE_ITO)
+
+# 用户选定双轨配色（详见 references/figure_aesthetics.md）
+# ① 离散分类（UMAP/聚类型/空间域）—— 莫兰迪 Nord 柔和
+MORLANDI = ['#88C0D0','#BF616A','#A3BE8C','#D08770',
+            '#B48EAD','#EBCB8B','#5E81AC','#D8DEE9']
+plt.rcParams['axes.prop_cycle'] = plt.cycler(color=MORLANDI)
+# ② 连续表达（热图/表达量）—— 蓝-白-红共识（高=红）
+EXPR_CMAP = LinearSegmentedColormap.from_list('bwr_consensus',
+    ['#2C5F8D','#88C0D0','#F5F5F5','#E8927A','#B83A3A'], N=256)
+# ③ 发散（log2FC）—— 蓝-白-红，0=白中点
+DIVERGING_CMAP = LinearSegmentedColormap.from_list('log2fc',
+    ['#2C5F8D','#88C0D0','#FFFFFF','#D08770','#8B2C2C'], N=256)
+# 用法：离散用 MORLANDI（自动套 axes.prop_cycle）；热图 cmap=EXPR_CMAP；log2FC cmap=DIVERGING_CMAP
 ```
 
 `ov.plot_set()` + 上述补充一次调用统一风格；之后所有 `ov.pl.*` 与 scanpy 图都自动套用。

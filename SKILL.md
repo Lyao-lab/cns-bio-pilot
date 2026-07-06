@@ -136,7 +136,7 @@ description: 生信分析全流程技能库（空间转录组、单细胞、bulk
 9. **保守措辞**：biomarker 须验证队列；"potential candidate" 优先
 10. **可复现**：保留 `layers['counts']` ✅；记录版本与种子 ✅
 11. **空转特有**：去卷积报质量评估 ✅；空间域需生物学验证
-12. **发表级绘图审美**：遵循 CNS figure guidelines——300 DPI+、Arial/Helvetica、双轨配色（离散分类=莫兰迪 Nord 柔和；连续表达=蓝黄红经典，低=蓝/中=黄/高=红；发散 log2FC=蓝白红）、矢量 PDF 首选、多图配色一致。详见 `references/figure_aesthetics.md`。`ov.plot_set()` 后需手动补 DPI=300 + 双轨配色 + font.type=42 ✅
+12. **发表级绘图审美**：遵循 CNS figure guidelines——300 DPI+、Arial/Helvetica、双轨配色（离散分类=莫兰迪 Nord 柔和；连续表达=莫兰迪化蓝黄红，低饱和，低=蓝/中=米黄/高=暗红；发散 log2FC=蓝白红）、矢量 PDF 首选、多图配色一致。详见 `references/figure_aesthetics.md`。`ov.plot_set()` 后需手动补 DPI=300 + 双轨配色 + font.type=42 ✅
 
 > ✅ = `scripts/postcheck.py` 自动检查；其余靠人工。**分析完成后必须跑 postcheck**。
 

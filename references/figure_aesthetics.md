@@ -65,11 +65,11 @@ MORLANDI = ['#88C0D0','#BF616A','#A3BE8C','#D08770',
 plt.rcParams['axes.prop_cycle'] = plt.cycler(color=MORLANDI)
 ```
 
-**连续表达（热图/表达量）—— 蓝-黄-红经典渐变（低=蓝，中=黄，高=红，单细胞热图惯例）**：
+**连续表达（热图/表达量）—— 莫兰迪化蓝-黄-红（低饱和，低=蓝/中=米黄/高=暗红，与离散配色统一）**：
 ```python
 from matplotlib.colors import LinearSegmentedColormap
-EXPR_CMAP = LinearSegmentedColormap.from_list('byr',
-    ['#2C5F8D','#5DA0C8','#F5F5DC','#E8B84A','#C0392B'], N=256)
+EXPR_CMAP = LinearSegmentedColormap.from_list('byr_morlandi',
+    ['#5E81AC','#8FBCD4','#ECEFF4','#D08770','#9B5A5A'], N=256)
 # 用法：ax.imshow(data, cmap=EXPR_CMAP) 或 sc.pl.heatmap(..., cmap=EXPR_CMAP)
 ```
 

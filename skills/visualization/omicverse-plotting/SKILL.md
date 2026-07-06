@@ -38,9 +38,9 @@ plt.rcParams.update({
 MORLANDI = ['#88C0D0','#BF616A','#A3BE8C','#D08770',
             '#B48EAD','#EBCB8B','#5E81AC','#D8DEE9']
 plt.rcParams['axes.prop_cycle'] = plt.cycler(color=MORLANDI)
-# ② 连续表达（热图/表达量）—— 蓝-黄-红经典（低=蓝，中=黄，高=红）
-EXPR_CMAP = LinearSegmentedColormap.from_list('byr',
-    ['#2C5F8D','#5DA0C8','#F5F5DC','#E8B84A','#C0392B'], N=256)
+# ② 连续表达（热图/表达量）—— 莫兰迪化蓝黄红（低饱和，与离散统一）
+EXPR_CMAP = LinearSegmentedColormap.from_list('byr_morlandi',
+    ['#5E81AC','#8FBCD4','#ECEFF4','#D08770','#9B5A5A'], N=256)
 # ③ 发散（log2FC）—— 蓝-白-红，0=白中点
 DIVERGING_CMAP = LinearSegmentedColormap.from_list('log2fc',
     ['#2C5F8D','#88C0D0','#FFFFFF','#D08770','#8B2C2C'], N=256)

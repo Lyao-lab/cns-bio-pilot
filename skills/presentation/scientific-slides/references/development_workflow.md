@@ -1,6 +1,6 @@
 # Workflow for Presentation Development
 
-> 下沉自原 SKILL.md 的「Workflow for Presentation Development」6 阶段 + 「Integration with Other Skills」+ 「Quick Start Guide」。
+> Sunk from the original SKILL.md "Workflow for Presentation Development" 6 stages + "Integration with Other Skills" + "Quick Start Guide".
 
 ## Stage 1: Planning (Before Creating Slides)
 

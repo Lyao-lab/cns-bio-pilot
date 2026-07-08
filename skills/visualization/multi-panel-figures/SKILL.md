@@ -7,10 +7,10 @@ author: AIPOCH
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
 ## When NOT to use this skill
-- 分图还没生成，要从数据出图（UMAP/火山图/热图）→ 改用 `visualization/omicverse-plotting`（ov.pl.*）先出分图
-- 要机制图/流程图（非数据图）→ 改用 `visualization/scientific-schematics`
-- 要论文图形摘要（单张摘要图布局 + AI 提示词）→ 改用 `visualization/graphical-abstract`
-- 面板数 ≠ 6（如 2×2 / 3×3）→ 本 skill 固定 6 面板，非 6 面板需手动 matplotlib/patchwork 拼接
+- Sub-figures not yet generated; need to plot from data (UMAP/volcano/heatmap) → use `visualization/omicverse-plotting` (ov.pl.*) to generate sub-figures first
+- Need mechanism/flowchart diagrams (non-data figures) → use `visualization/scientific-schematics`
+- Need a paper graphical abstract (single summary-figure layout + AI prompts) → use `visualization/scientific-schematics` (graphical-abstract mode)
+- Panel count ≠ 6 (e.g., 2×2 / 3×3) → this skill is fixed at 6 panels; non-6-panel layouts require manual matplotlib/patchwork assembly
 
 # Multi-Panel Figure Assembler
 
@@ -140,29 +140,38 @@ If the request is simple, compress the structure but keep assumptions and limits
 pip install Pillow numpy
 ```
 
-## 前置依赖（从哪来）
+## Prerequisites (where inputs come from)
 
-- **恰好 6 张分图（panels A–F）** → 来自各分析 skill 的出图：
-  - 单细胞图（UMAP/dotplot/violin）→ `visualization/omicverse-plotting`（`ov.pl.embedding` / `ov.pl.dotplot` / `ov.pl.violin`）
-  - 空转空间图 → `spatial/omicverse-spatial`（`ov.pl.plot_spatial`）
-  - 去卷积比例图 → `spatial/deconvolution`
-  - bulk 火山图/热图 → `general-bio/omicverse-bulk`（`ov.pl.volcano`）
-  - 机制图/示意图 → `visualization/scientific-schematics`
-- **输入格式**：PNG/JPG/BMP/TIFF/GIF；建议分图长宽比相近
-- 脚本入口 `scripts/main.py`（`--input` 6 路径 + `--output`，必填）
+- **Exactly 6 sub-figures (panels A–F)** → from each analysis skill's plot output:
+  - Single-cell plots (UMAP/dotplot/violin) → `visualization/omicverse-plotting` (`ov.pl.embedding` / `ov.pl.dotplot` / `ov.pl.violin`)
+  - Spatial plots → `spatial/omicverse-spatial` (`ov.pl.plot_spatial`)
+  - Deconvolution proportion plots → `spatial/deconvolution`
+  - Bulk volcano/heatmap → `general-bio/omicverse-bulk` (`ov.pl.volcano`)
+  - Mechanism/schematic figures → `visualization/scientific-schematics`
+- **Input formats**: PNG/JPG/BMP/TIFF/GIF; sub-figures should have similar aspect ratios
+- Script entry `scripts/main.py` (`--input` 6 paths + `--output`, required)
 
-## Pre-Output Checklist（出图前必过）
-- [ ] 数值完整性：每张定量图保留 N / 统计检验 / 误差线
-- [ ] 轴标签/图例/色盲友好：坐标轴有标签与单位，图例可独立读懂，配色对色盲安全（避免纯红绿）
-- [ ] 引用支撑：明确哪张图/哪个统计支持主结论
-- [ ] 避免臆测：无显著差异时写 "No significant effect"，不硬编故事
-- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
-- [ ] 跑 postcheck.py ✅
+## Pre-Output Checklist (must pass before exporting a figure)
+- [ ] Numerical integrity: each quantitative plot retains N / statistical test / error bars
+- [ ] Axis labels / legend / colorblind-friendly: axes have labels and units, legend is self-contained, palette is colorblind-safe (avoid pure red-green)
+- [ ] Citation support: clearly indicate which figure / statistic supports the main conclusion
+- [ ] Avoid speculation: when no significant difference, write "No significant effect"; don't fabricate a story
+- [ ] Correlation ≠ causation: use "associated with"; regulates/causes requires experimental evidence
+- [ ] Run postcheck.py ✅
 
-## 何时离开本 skill（去哪）
+## When to leave this skill (where to go)
 
-- 写组合 figure 的图注 → `presentation/figure-legend-writer`
-- 写论文 Methods 描述拼图流程 → `presentation/methods-writer`
-- 嵌入汇报 slide → `presentation/scientific-slides`（`--attach figures/composite.png`）
-- 图形摘要（非 6 面板拼图，而是单张摘要图）→ `visualization/graphical-abstract`
-- ⚠️ 仅支持恰好 6 面板；非 6 面板布局目前需手动 matplotlib/patchwork 拼接
+- Write the composite-figure legend → `presentation/figure-legend-writer`
+- Write the paper Methods description of the assembly workflow → `presentation/methods-writer`
+- Embed into a report slide → `presentation/scientific-slides` (`--attach figures/composite.png`)
+- Graphical abstract (not a 6-panel assembly, but a single summary figure) → `visualization/scientific-schematics` (graphical-abstract mode)
+- ⚠️ Only exactly 6 panels are supported; non-6-panel layouts currently require manual matplotlib/patchwork assembly
+
+## Key pitfalls
+
+- **Panel count hard-coded to 6**: A–F; non-6-panel (e.g., 2×2/3×3) is not supported — use manual `matplotlib.gridspec` or `patchwork`
+- **Sub-figures must be generated first**: produce 6 PNGs with `visualization/omicverse-plotting` first; this skill only assembles
+- **Panel labels (A/B/C) uniform size**: 8pt bold, top-left — LLMs easily overlook label consistency
+- **Shared legend extracted separately**: when 6 panels share one palette (e.g., same cell-type colors), draw the legend only once and place it on the right/bottom
+- **Trim sub-figure margins**: use tight bbox, otherwise ugly white frames appear — export each sub-figure with `bbox_inches='tight'`
+- **Uniform DPI**: 6 sub-figures with different DPI produce uneven sharpness — standardize at 300 DPI

@@ -1,13 +1,13 @@
 ---
 name: scop-single-cell
-description: Use scop (mengxu98/scop) R package for end-to-end single-cell and spatial omics analysis. Triggers on: 单细胞分析、scop、R 单细胞、Seurat 工作流、scop 流水线、RunPCA、RunUMAP、RunHarmony、RunCellTypist、RunSCENIC、RunMonocle、RunCellChat、RunGiotto、RunBayesSpace、RunCytoTRACE、RunSlingshot、RunDEtest、FindAllMarkers、standard_scop、integration_scop. Covers QC, doublet, normalization, dimensionality reduction, batch integration (Harmony/CCA/scVI/BBKNN/MNN/LIGER/fastMNN/Scanorama), cell annotation (SingleR/CellTypist/SciBet/scmap), DE, trajectory (Monocle2/3/Slingshot/PAGA/Palantir/CytoTRACE/CellRank/WOT), RNA velocity (SCVELO), cell-cell communication (CellChat/CellphoneDB/LIANA/Nichenetr/MultiNichenetr/SecAct), GRN (SCENIC/SCENICPlus/GENIE3/GRNBoost2), enrichment (GSEA/GSVA), CNV, metabolism, and spatial (Giotto/BayesSpace/BANKSY/STdeconvolve/SpatialDWLS/RCTD/CSIDE/CytoSPACE/SmoothClust). When the user wants R/Seurat-based scRNA-seq or spatial analysis via scop, read this skill.
+description: 用 scop R 包做单细胞 + 空间转录组全流程（200+ Run* 动词，基于 Seurat）——QC/整合/注释/DE/轨迹/通讯/GRN/CNV/代谢/空转。当用户要用 R、Seurat、scop、R 单细胞、RunPCA/RunUMAP/RunHarmony/RunCellChat/RunSCENIC/standard_scop/integration_scop 等 Run* 动词、或在 R 生态做 CytoTRACE/Milo/SecAct/Giotto/SmoothClust 等 omicverse 无对应工具时触发。
 ---
 
 ## When NOT to use this skill
-- 用户要纯 Python/AnnData 原生大规模分析（>百万细胞，AnnDataOOM 后端）→ 改用 `single-cell/omicverse-pipeline`
-- 用户要 cell2location 去卷积（omicverse 未注册，scop 也无）→ 改用 `spatial/deconvolution`
-- 用户要预测未做的扰动实验 → 改用 `single-cell/perturbation-prediction`
-- 用户要 Perturb-seq 实测数据下游分析 → 改用 `single-cell/perturb-seq`
+- Pure Python/AnnData-native large-scale analysis (>1M cells, AnnDataOOM backend) → `single-cell/omicverse-pipeline`
+- cell2location deconvolution (not registered in omicverse, absent from scop too) → `spatial/deconvolution`
+- Predict unmeasured perturbation experiments → `single-cell/perturbation-prediction`
+- Downstream analysis of measured Perturb-seq data → `single-cell/perturb-seq`
 
 # scop — Single-Cell & Spatial Omics Analysis Pipeline (R)
 
@@ -127,6 +127,9 @@ i <- fastMNN_integrate(obj_list); i <- fastMNN5_integrate(obj_list)
 i <- LIGER_integrate(obj_list); i <- Scanorama_integrate(obj_list)
 i <- Conos_integrate(obj_list); i <- Coralysis_integrate(obj_list)
 i <- MultiMAP_integrate(obj_list); i <- WNN_integrate(obj_list)  # weighted multi-modal
+```
+
+> **Integration-method ranking (2024-2026 benchmarks)**: **Harmony / scVI / scANVI** are the SOTA defaults for the vast majority of single-cell integration. BBKNN is **only** worth considering for ultra-fast >500k-cell alignment; Luecken et al. (Nat Methods 2022) and OpenProblems v2 show it is otherwise outperformed. fastMNN is acceptable but no longer first-choice. **Combat is for bulk only — not recommended for scRNA-seq.**
 i <- CSS_integrate(obj_list); i <- GLUE_integrate(obj_list)
 i <- Harmony5_integrate(obj_list); i <- Seurat_integrate(obj_list)
 i <- Uncorrected_integrate(obj_list)                          # control
@@ -216,8 +219,10 @@ srt <- RunDorothea(srt)          # TF activity (DoRothEA)
 srt <- RunCNV(srt)                       # inferCNV-style
 srt <- RunMetabolism(srt)                # scMetabolism-style
 srt <- RunscMalignantFinder(srt); srt <- RunscMalignantRegion(srt)
-srt <- RunscTenifoldKnk(srt)             # malignant gene-module knockout
+srt <- RunscTenifoldKnk(srt)             # malignant gene-module knockout (R scTenifoldKnk)
 ```
+
+> **Note**: `scTenifoldKnk` is the R lightweight screening path within GRN-based virtual knockout. For Python GRN-KO (CellOracle / SCENIC+) or ML-based perturbation prediction (GEARS / CPA / scGPT), use `single-cell/perturbation-prediction` Route B / Route A instead.
 
 ## Composition / Differential Abundance
 
@@ -326,21 +331,31 @@ srt <- LoadScopDataset("pbmc3k")
 - **Spatial deconvolution**: report method + reference + quality metric; cross-check with marker co-expression.
 - **Reproducibility**: record scop + Seurat versions; `sessionInfo()`; set seeds where tools expose them.
 
-## 前置依赖（从哪来）
+## Prerequisites (where data comes from)
 
-- **scRNA-seq 原始数据** → Cell Ranger / STARsolo 输出的 10x 矩阵（`Read10X`）或 `.h5`/`.loom`/`.h5ad`（`h5ad_to_srt` / `loom_to_srt`）
-- **空转数据** → Visium/Xenium 输出（`Load10X_Spatial`），或从 AnnData 转 `adata_to_srt`
-- **注释参考集**（可选，`RunSingleR`/`RunSciBet`/`RunCellTypist`）→ 已注释的参考 Seurat 对象或 celldex/CellTypist 模型
-- **loom 文件**（RNA velocity 用）→ velocyto 产出，供 `RunSCVELO`
-- **spatial 邻居图**（spatial 流程用）→ `RunSpatialNeighborhood` 必须先跑，所有空间域/SVG/通讯都依赖它
+- **scRNA-seq raw data** → 10x matrices from Cell Ranger / STARsolo (`Read10X`), or `.h5`/`.loom`/`.h5ad` (`h5ad_to_srt` / `loom_to_srt`)
+- **Spatial data** → Visium/Xenium output (`Load10X_Spatial`), or convert from AnnData via `adata_to_srt`
+- **Annotation reference** (optional, for `RunSingleR`/`RunSciBet`/`RunCellTypist`) → annotated reference Seurat object or celldex/CellTypist model
+- **loom file** (for RNA velocity) → produced by velocyto, consumed by `RunSCVELO`
+- **Spatial neighbor graph** (for the spatial workflow) → `RunSpatialNeighborhood` MUST run first; all spatial domain / SVG / communication steps depend on it
 
-## 何时离开本 skill（去哪）
+## When to leave this skill (where to go)
 
-- Python/AnnData 原生大规模分析（>百万细胞）→ `single-cell/omicverse-pipeline`（AnnDataOOM 后端）
-- cell2location 独立去卷积（omicverse 未注册）→ `spatial/deconvolution`
-- 高分辨率空转（Stereo-seq / Visium HD）专门流程 → `spatial/multiomics`
-- 空间蛋白组（CODEX/IMC）→ `spatial/proteomics`
-- 扰动预测（未做实验）→ `single-cell/perturbation-prediction`；实测扰动分析 → `single-cell/perturb-seq`
-- 把 Seurat 结果转回 Python 画图 → `srt_to_adata` 后走 `visualization/omicverse-plotting`
-- 组合发表级 figure → `visualization/multi-panel-figures`
-- 写 Methods / 图注 → `presentation/methods-writer` / `presentation/figure-legend-writer`
+- Python/AnnData-native large-scale analysis (>1M cells) → `single-cell/omicverse-pipeline` (AnnDataOOM backend)
+- Standalone cell2location deconvolution (not registered in omicverse) → `spatial/deconvolution`
+- Dedicated high-res spatial workflow (Stereo-seq / Visium HD) → `spatial/multiomics`
+- Spatial proteomics (CODEX/IMC) → `spatial/proteomics`
+- Perturbation prediction (unmeasured experiments) → `single-cell/perturbation-prediction`; measured-perturbation analysis → `single-cell/perturb-seq`
+- Move Seurat results back to Python for plotting → `srt_to_adata`, then `visualization/omicverse-plotting`
+- Assemble publication-grade multi-panel figures → `visualization/multi-panel-figures`
+- Write Methods / figure legends → `presentation/methods-writer` / `presentation/figure-legend-writer`
+
+## Key pitfalls
+
+- **scop ≠ Seurat**: scop is a wrapper layer with 200+ Run* verbs; calling Seurat functions directly does NOT go through this skill — LLMs easily confuse `RunPCA(scop)` with `Seurat::RunPCA`.
+- **Python ↔ R object conversion**: `srt_to_adata` / `adata_to_srt` is the boundary and may drop metadata/assay — verify obs/var columns before and after conversion.
+- **Run* argument pass-through**: each Run* wraps a native R function whose parameter names may differ (e.g. `RunHarmony` vs `harmony::RunHarmony`) — check `?scop::RunX` for the real signature, do not rely on memory.
+- **SCENIC+/CellChat and similar downstream tools are version-sensitive**: scop depends on SCENIC+ v1.x and CellChat v2; mismatched versions crash Run* — confirm the R environment versions.
+- **DE still requires pseudobulk**: `RunDEtest` defaults to per-cell Wilcoxon; for publication-grade single-cell DE switch to pseudobulk (aggregate by sample × cell type, then DESeq2/edgeR) — meta-methodology principle ③.
+- **scop-only tools are the differentiator**: CytoTRACE/Milo/SecAct/EcoTyper/Giotto/SmoothClust have no omicverse equivalent — when the user wants these, route to scop, not omicverse.
+- **Spatial analysis lives in scop**: RunGiotto/RunBayesSpace/RunRCTD here vs the omicverse-spatial Python route — results are not directly comparable.

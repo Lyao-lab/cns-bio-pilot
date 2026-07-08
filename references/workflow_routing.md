@@ -1,171 +1,137 @@
-# 工作流路由决策指南
+# Workflow Routing Decision Guide
 
-详细的路由决策逻辑，帮助判断用户需求该走哪个子 skill。
+Routing logic to decide which sub-skill handles a user request.
 
-## 判断数据类型（第一步）
+## Step 1: Identify Data Type
 
 ```
-数据有空间坐标/组织切片图像？
-├─ YES → 空间转录组路线（spatial/）
-│   判断平台：
-│   ├─ Visium (10x) → spatial/data-io 支持
-│   ├─ Xenium (10x) → spatial/data-io 支持
-│   ├─ MERFISH → spatial/data-io 支持
-│   ├─ Slide-seq / Stereo-seq → spatial/multiomics（高分辨率）
-│   ├─ CODEX/IMC/MIBI（蛋白） → spatial/proteomics
-│   └─ 其他 → spatial/data-io 通用
+Does the data have spatial coordinates / tissue section images?
+├─ YES → Spatial transcriptomics route (spatial/)
+│   Identify platform:
+│   ├─ Visium (10x) → spatial/omicverse-spatial (full pipeline incl. IO)
+│   ├─ Xenium (10x) → spatial/omicverse-spatial
+│   ├─ MERFISH → spatial/omicverse-spatial or spatial/multiomics (high-res)
+│   ├─ Slide-seq / Stereo-seq / Visium HD → spatial/multiomics (high-res, needs cellpose)
+│   ├─ CODEX/IMC/MIBI (protein) → spatial/proteomics
+│   └─ Other → spatial/omicverse-spatial (generic)
 │
-└─ NO → 判断是否有细胞×基因矩阵
-    ├─ YES（单细胞级别） → 单细胞路线（single-cell/）
-    └─ NO（bulk/矩阵是样本级） → 通用生信路线（general-bio/）
+└─ NO → Is there a cell × gene matrix?
+    ├─ YES (single-cell level) → Single-cell route (single-cell/)
+    └─ NO (bulk / sample-level matrix) → General bioinformatics route (general-bio/)
 ```
 
-## 空间转录组完整路线
+## Spatial Transcriptomics Route
 
 ```
-1. 加载数据        → spatial/data-io
-   ├─ 检查：adata.obsm['spatial'] 存在？
-   └─ 输出：spatially-aware AnnData
+1. Full-pipeline entry (IO→QC→spatial neighbors→SVG→spatial domains→communication→visualization)
+   → spatial/omicverse-spatial (Visium/Xenium/Nanostring/VisiumHD, OmicVerse V2)
 
-2. 质控预处理      → spatial/preprocessing
-   ├─ 过滤低质量 spot
-   ├─ 归一化（注意：保留 raw counts 到 layers['counts']）
-   └─ HVG 选择
+2. Branches (by goal):
+   ├─ Estimate spot cell composition (deconvolution)
+   │   → spatial/deconvolution (ov.space.Deconvolution wraps cell2location/Tangram/RCTD/Starfysh/flashdeconv)
+   │   ⚠️ Mandatory marker-proportion QC + postcheck
+   │
+   ├─ High-res platforms (Stereo-seq/Visium HD/Slide-seq/MERFISH, needs cellpose segmentation)
+   │   → spatial/multiomics (squidpy + cellpose + SpatialData)
+   │
+   ├─ Spatial proteomics (CODEX/IMC/MIBI)
+   │   → spatial/proteomics (scimap phenotyping + gating)
 
-3. 空间邻域图      → spatial/neighbors
-   └─ 计算 k-NN / 空间权重图（squidpy.gr.spatial_neighbors）
-
-4. 分支（按目标）：
-   ├─ 想知道每个 spot 的细胞构成
-   │   → spatial/deconvolution（cell2location/Tanggram/RCTD）
-   │   ⚠️ 必须报告去卷积质量评估
-   │
-   ├─ 想划分组织区域
-   │   → spatial/domains（squidpy/BayesSpace/STAGATE）
-   │   ⚠️ 空间域需生物学验证，不能纯算法
-   │
-   ├─ 想看细胞间信号
-   │   → spatial/communication（空间CellChat/NicheNet）
-   │
-   ├─ 想算空间变异基因
-   │   → spatial/statistics（Moran's I, Geary's C）
-   │
-   └─ 想分析配对的组织图像
-       → spatial/image-analysis（H&E配准/形态学特征）
-
-5. 可视化          → spatial/visualization
-   └─ 组织切片叠加表达/注释
+3. Visualization   → ov.pl.plot_spatial or visualization/omicverse-plotting
 ```
 
-## 单细胞完整路线
+## Single-cell Route
 
 ```
-1. 质控            → single-cell/preprocessing
-   └─ 紧接着 → single-cell/doublet-detection（去 doublet）
+1. Full-pipeline entry (QC→doublet→dim reduction→clustering→annotation→batch→communication→trajectory)
+   → single-cell/omicverse-pipeline (OmicVerse V2 unified API)
+   └─ Multi-batch integration sub-decision:
+       ├─ Fast / CPU → Harmony (ov.single.batch_correction(method='harmony'))
+       ├─ Large-scale / GPU / complex batch → scVI (method='scvi')
+       └─ Annotation has labels → scANVI
 
-2. 降维聚类        → single-cell/clustering
-   ├─ PCA → 邻居图 → Leiden/Louvain → UMAP/tSNE
-   └─ 多批次？ → 先 single-cell/batch-integration
-       ├─ 快速/CPU → Harmony
-       ├─ 大规模/GPU → scVI (single-cell/scvi-tools)
-       └─ 参考图谱 → scANVI
+2. RNA velocity (needs spliced/unspliced) → single-cell/rna-velocity
+   └─ Downstream fate inference → CellRank 2 (ov.single.cellrank_fate)
 
-3. 细胞命名        → single-cell/cell-annotation
-   ├─ 有参考 → CellTypist/SingleR/Azimuth
-   └─ 无参考 → marker 基因手动注释
+3. Downstream analysis (by goal):
+   ├─ Cell-cell signaling → ov.single.run_liana (LIANA consensus) or run_cellphonedb_v5
+   ├─ CRISPR perturbation (measured) → single-cell/perturb-seq
+   ├─ Perturbation prediction (no experiment) → single-cell/perturbation-prediction (run linear baseline)
+   └─ R/Seurat ecosystem or scop-only tools (CytoTRACE/Milo/SCENIC+) → single-cell/scop
 
-4. 下游分析（按目标）：
-   ├─ 发育/时间序列
-   │   ├─ 拟时序 → single-cell/trajectory-inference (Monocle/PAGA)
-   │   └─ RNA velocity → single-cell/scvelo（剪接动力学）
-   │
-   ├─ 细胞间信号
-   │   → single-cell/cell-communication (CellChat/NicheNet/LIANA)
-   │
-   ├─ CRISPR 扰动实验
-   │   → single-cell/perturb-seq (pertpy/Cassiopeia)
-   │
-   └─ 多模态（CITE-seq/多组学）
-       → single-cell/scvi-tools (totalVI)
+4. DE analysis (key discipline)
+   ├─ ⚠️ No per-cell Wilcoxon (pseudoreplication, meta-methodology principle ③)
+   ├─ Use pseudobulk (aggregate by sample × cell_type → DESeq2/edgeR)
+   └─ DE on raw counts, never on batch-corrected embedding
 
-5. DE 分析（重要纪律）
-   ├─ ⚠️ 不要 per-cell Wilcoxon
-   ├️ 用 pseudobulk（按样本+细胞类型聚合后 DESeq2/edgeR）
-   └️ 或 mixed model（muscat/NEBULA）
-
-6. scanpy 用户      → single-cell/scanpy（15个CLI脚本工具箱）
+5. Study design (before analysis) → single-cell/research-planner (zero-code methodology)
 ```
 
-## 通用生信路线（bulk/其他）
+## General Bioinformatics Route (bulk / other)
 
 ```
-有表达矩阵 + 分组？
-├─ 差异表达 → general-bio/differential-expression
-│   ├─ 有批次 → 先 general-bio/batch-correction-de
-│   └─ DESeq2/edgeR/limma
+Expression matrix + grouping?
+├─ Full pipeline → general-bio/omicverse-bulk (pyDESeq2/GSEApy/pyWGCNA/pyPPI/batch_correction, pure Python)
+│   ├─ DE: ov.bulk.pyDEG (PyDESeq2-based, scverse-maintained)
+│   ├─ Enrichment: ov.bulk.pyGSEA / GSEApy + decoupleR
+│   ├─ Co-expression: pyWGCNA (bulk) / hdWGCNA (sc, via R/scop)
+│   └─ PPI: ov.bulk.pyPPI / STRING
 │
-├─ 拿到基因列表后：
-│   ├─ GO/KEGG → general-bio/gokegg
-│   ├─ GSEA（需排序列表） → general-bio/gsea
-│   ├─ 共表达模块 → general-bio/wgcna
-│   └─ 蛋白互作 → general-bio/ppi-network
-│
-└─ 多数据集合并 → general-bio/batch-correction
+└─ Requires native R (DESeq2/clusterProfiler) → single-cell/scop (some bulk tools)
 ```
 
-## 绘图路线
+## Plotting Route
 
 ```
-要画什么？
-├─ 多张图组合成发表级 figure → visualization/multi-panel-figures
-├─ 差异结果 → visualization/volcano-plot
-├─ 表达模式 → visualization/heatmap
-├─ 单细胞/组学专用（dot/violin/track） → visualization/specialized-omics-plots
-├─ 网页/交互探索 → visualization/interactive-visualization
-├─ 机制/流程示意图 → visualization/scientific-schematics
-└─ 论文 Graphical Abstract → visualization/graphical-abstract
+What to plot?
+├─ Data-driven figures (UMAP/volcano/heatmap/dot/violin) → visualization/omicverse-plotting (ov.pl.* 80+ functions)
+├─ 6-panel publication figures (A-F assembly) → visualization/multi-panel-figures
+├─ Mechanism / workflow / architecture schematics → visualization/scientific-schematics (AI generate→review loop)
+└─ Paper Graphical Abstract → visualization/scientific-schematics (graphical-abstract mode)
+
+> Read references/figure_aesthetics.md before any plotting (dual-track palette + CJK fallback + no title/legend overlap)
 ```
 
-## 论文产出路线
+## Publication Output Route
 
 ```
-分析做完后要产出什么？
-├─ 正式汇报 PPT → presentation/scientific-slides（beamer/pptx）
-├─ 组会幻灯片 → presentation/lab-meeting-slides
-├─ Methods 文字 → presentation/methods-writer
-├─ Results 叙述 → presentation/results-writer
-├─ 图注 → presentation/figure-legend-writer
-└─ 课题设计（分析前） → single-cell/research-planner
+What to produce after analysis?
+├─ Formal presentation PPT → presentation/scientific-slides (beamer/pptx)
+├─ Lab-meeting slides → presentation/scientific-slides (lab-meeting mode)
+├─ Methods text → presentation/methods-writer
+├─ Results narrative → presentation/results-writer
+├─ Figure legends → presentation/figure-legend-writer
+└─ Study design (before analysis) → single-cell/research-planner
 ```
 
-## 常见陷阱与强制规则
+## Common Pitfalls & Mandatory Rules
 
-1. **批次校正后数据禁用于 DE**：Harmony/scVI 校正后的 embedding 只用于聚类/可视化，DE 必须用 raw counts（pseudobulk）
-2. **空转去卷积要验证**：报告 cell2location 的 reconstruction quality、对照已知 marker
-3. **空间域不是聚类**：必须用空间感知方法（squidpy spatial neighbors + 图聚类），不能用普通 Leiden
-4. **RNA velocity 需剪接信息**：spliced/unspliced layers 必须存在（velocyto/KB 输出），没有则不能用 scvelo
-5. **细胞注释保守**：reference-based（CellTypist/SingleR）优于 marker 手动；低置信度标 "Unknown"
-6. **所有图保留原始数据**：N、统计检验、Padj 必须在图注或图内可见
+1. **Never DE on batch-corrected data**: Harmony/scVI-corrected embeddings are for clustering/visualization only; DE uses raw counts (pseudobulk)
+2. **Validate spatial deconvolution**: report cell2location reconstruction quality, cross-check known markers
+3. **Spatial domains ≠ clustering**: must use spatial-aware methods (squidpy spatial neighbors + graph clustering), not plain Leiden
+4. **RNA velocity needs splicing info**: spliced/unspliced layers must exist (velocyto/KB output); otherwise scvelo cannot run
+5. **Conservative annotation**: reference-based (CellTypist/SingleR) beats manual markers; mark low-confidence as "Unknown"
+6. **All figures preserve raw data**: N, statistical test, Padj must be visible in figure or legend
 
-## Signal Patterns & 陷阱校验
+## Signal Patterns & Pitfall Checks
 
-结果看着对，但其实踩了坑。看到左边的现象时，用右边的命令校验。
+Results look right but the analysis is broken. When you see the left column, run the right column to verify.
 
-| 现象（看起来） | 常见位置 | 关键信号 | 校验方法 |
+| Symptom (looks fine) | Typical stage | Key signal | How to verify |
 |---|---|---|---|
-| UMAP 分群清晰、DE 却全不显著 | scRNA DE | batch-corrected embedding 被误用于 DE | `grep "use_rep.*X_scVI\|X_harmony" 脚本.py`；应为 raw counts + pseudobulk |
-| doublet 比例突然 >15% | QC 阶段 | 可能是 ambient RNA 或整倍体细胞而非真 doublet | 检查 cell cycle score；降阈值重跑 scrublet |
-| cell2location abundance 全 NaN/0 | 空转去卷积 | reference signature 未在 raw_counts 上训练 | 检查 ref_adata.X 是否 log 后的（应为 raw） |
-| 聚类 resolution 调不高 | scRNA clustering | HVG 数太少 或 batch effect 主导 | 检查 n_hvg；先跑 batch_integration |
-| 细胞注释置信度全低 | annotation | 参考集与查询集物种/组织不匹配 | ConvertHomologs 检查；换匹配参考 |
-| RNA velocity 方向全乱 | velocity | spliced/unspliced 比例失衡 | 检查 velocyto/kb 输出；scv.pl.proportions |
-| 空间域与组织学不对应 | spatial domains | 算法未用空间信息（纯表达聚类） | 确认用了 spatial-aware 方法（STAGATE/BayesSpace 非 K-means） |
-| 富集结果全是 housekeeping 通路 | GO/KEGG | DE 基因数太少 或 未背景校正 | 检查 universe；用 padj<0.05 的基因 |
-| 细胞通讯结果 CellChat p<0.001 全显著 | communication | permutation 次数太少 或 细胞数悬殊 | nboot>=100；检查 group 大小 |
-| WGCNA 模块全和 batch 相关 | WGCNA | batch effect 混入 | trait correlation 加 batch 协变量 |
-| 批次校正后细胞类型分不开 | integration | 过校正（去除了生物学变量） | 用 scIB 评估：batch ASW 降 + cell type ASW 也降 = 过校正 |
-| 火山图基因全挤在中部 | DE 可视化 | Log2FC 阈值过严 或 归一化问题 | 检查 counts 分布；放宽到 |Log2FC|>0.58 做 exploratory |
-| pseudobulk DE 重复/样本为 0 | scRNA DE | 缺 sample 列或按细胞类型聚合时丢样本 | 检查 `adata.obs['sample']`；每条件 ≥3 生物重复 |
-| perturbation 预测"优于 baseline" | perturbation | 训练集泄漏了目标扰动 或 评估在 i.i.d | 检查 held-out 是否含目标扰动；报告 o.o.d 指标 |
-| 轨迹根细胞 marker 表达低 | trajectory | 选错 root 或 细胞排序方向反 | 检查 progenitor marker；调换 root/diffusers |
-| 空间邻域图报错孤立节点 | spatial | 坐标系反 或 n_neighbors 过小 | 检查 `adata.obsm['spatial']`；n_neighbors 提到 6 |
+| UMAP clusters clear, but DE all non-significant | scRNA DE | batch-corrected embedding wrongly used for DE | `grep "use_rep.*X_scVI\|X_harmony" script.py`; should be raw counts + pseudobulk |
+| Doublet rate suddenly >15% | QC | ambient RNA or polyploid cells, not true doublets | check cell cycle score; rerun scrublet at lower threshold |
+| cell2location abundance all NaN/0 | spatial deconv | reference signature not trained on raw_counts | check ref_adata.X is log-transformed (should be raw) |
+| Clustering resolution won't rise | scRNA clustering | too few HVGs or batch effect dominates | check n_hvg; run batch_integration first |
+| Annotation confidence all low | annotation | reference/query species or tissue mismatch | ConvertHomologs check; switch to matched reference |
+| RNA velocity directions scrambled | velocity | spliced/unspliced ratio skewed | check velocyto/kb output; scv.pl.proportions |
+| Spatial domains don't match histology | spatial domains | method ignores space (pure expression clustering) | confirm spatial-aware method (STAGATE/BayesSpace, not K-means) |
+| Enrichment full of housekeeping pathways | GO/KEGG | too few DE genes or no background correction | check universe; use padj<0.05 genes |
+| CellChat p<0.001 everywhere | communication | too few permutations or cell-count imbalance | nboot>=100; check group sizes |
+| WGCNA modules all correlate with batch | WGCNA | batch effect leakage | add batch covariate to trait correlation |
+| Cell types unseparable after batch correction | integration | over-correction (removed biology) | evaluate with scIB: batch ASW down + cell type ASW down = over-correction |
+| Volcano genes bunched at center | DE viz | Log2FC threshold too strict or normalization issue | check counts distribution; relax to |Log2FC|>0.58 for exploratory |
+| Pseudobulk DE replicates/samples = 0 | scRNA DE | missing sample column or samples dropped at cell-type aggregation | check `adata.obs['sample']`; ≥3 bio replicates per condition |
+| Perturbation prediction "beats baseline" | perturbation | training set leaked target perturbation or eval is i.i.d. | check held-out contains target perturbation; report o.o.d. metrics |
+| Trajectory root-cell markers low | trajectory | wrong root or reversed ordering | check progenitor markers; swap root/diffusers |
+| Spatial neighbor graph errors on isolated nodes | spatial | flipped coordinates or n_neighbors too small | check `adata.obsm['spatial']`; raise n_neighbors to 6 |

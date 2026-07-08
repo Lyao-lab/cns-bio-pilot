@@ -1,6 +1,6 @@
 # Core Capabilities
 
-> 下沉自原 SKILL.md 的「Core Capabilities」8 节。详细结构/设计/可视化指南另见同目录其它 references 文件。
+> Sunk from the original SKILL.md "Core Capabilities" 8 sections. For detailed structure / design / visualization guides, see other reference files in the same directory.
 
 ## 1. Presentation Structure and Organization
 

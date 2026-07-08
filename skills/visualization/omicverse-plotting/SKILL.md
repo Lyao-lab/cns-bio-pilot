@@ -4,136 +4,146 @@ description: 统一科学绘图 API 基于 OmicVerse V2 的 ov.pl.* 模块（80+
 ---
 
 ## When NOT to use this skill
-- 固定布局多面板拼图（6 面板 A–F、共享 legend、insets）→ 改用 `visualization/multi-panel-figures`
-- 机制图/流程图/架构图（非数据驱动）→ 改用 `visualization/scientific-schematics`
-- 论文图形摘要布局（从 abstract 推布局 + AI 提示词）→ 改用 `visualization/graphical-abstract`
-- 重度交互仪表盘 → 导出 anndata 后用 cellxgene/CELESTE（不在本 skill 范围）
+- Fixed-layout multi-panel assembly (6 panels A–F, shared legend, insets) → use `visualization/multi-panel-figures`
+- Mechanism/flowchart/architecture diagrams (non-data-driven) → use `visualization/scientific-schematics`
+- Paper graphical-abstract layout (abstract→layout + AI prompts) → use `visualization/scientific-schematics` (graphical-abstract mode)
+- Heavy interactive dashboards → export anndata and use cellxgene/CELESTE (out of scope)
 
-# OmicVerse 统一绘图
+# OmicVerse Unified Plotting
 
-**合并自原 skill**：`visualization/heatmap`、`volcano-plot`、`specialized-omics-plots`、`interactive-visualization`。这些常用图类型在 OmicVerse V2 的 `ov.pl.*` 已有统一封装。**多面板拼图不在本 skill**——固定布局拼图用 `visualization/multi-panel-figures`；机制图/流程图用 `visualization/scientific-schematics`；图形摘要布局用 `visualization/graphical-abstract`。
+**Merged from former skills**: originally heatmap / volcano-plot / specialized-omics-plots / interactive-visualization (these standalone skills no longer exist; functionality is unified under OmicVerse V2 `ov.pl.*`). **Multi-panel assembly is NOT in this skill** — for fixed-layout assembly use `visualization/multi-panel-figures`; for mechanism/flowchart/graphical-abstract use `visualization/scientific-schematics`.
 
-`pip install omicverse`（V2）。基于 matplotlib + seaborn + PyComplexHeatmap。
+`pip install omicverse` (V2). Built on matplotlib + seaborn + PyComplexHeatmap.
 
-## 0. 初始化（必做）
+## 0. Initialization (required)
 
-> **绘图审美规范**：发表级图必须遵循 CNS 标准（300 DPI、Arial、Okabe-Ito 色盲配色、矢量 PDF）。详见 `references/figure_aesthetics.md`——**绘图前必读**。
+> **Plotting aesthetics**: publication-grade figures must follow CNS standards (300 DPI, Arial, Okabe-Ito colorblind palette, vector PDF). See `references/figure_aesthetics.md` — **read before plotting**.
 
 ```python
 import omicverse as ov
-ov.plot_set()   # 全局：字体、字号、dpi、默认配色、矢量友好的 pdf 渲染
+ov.plot_set()   # Global: fonts, sizes, dpi, default palette, vector-friendly pdf rendering
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
-# ov.plot_set() 不覆盖的发表级补充（CNS 必须）：
+# Publication-grade supplements not covered by ov.plot_set() (required for CNS):
 plt.rcParams.update({
-    'figure.dpi': 300, 'savefig.dpi': 300,        # 默认100不够
-    'savefig.bbox': 'tight',                       # 去白边（嵌PPT必做）
-    'pdf.fonttype': 42, 'ps.fonttype': 42,         # TrueType嵌入（编辑可改）
-    'font.family': 'Arial',                        # CNS强制 sans-serif
+    'figure.dpi': 300, 'savefig.dpi': 300,        # default 100 is insufficient
+    'savefig.bbox': 'tight',                       # trim margins (required for PPT embedding)
+    'pdf.fonttype': 42, 'ps.fonttype': 42,         # TrueType embedding (editor-editable)
+    'font.family': 'sans-serif',                   # don't write 'Arial' directly: garbled with Chinese
+    'font.sans-serif': ['Microsoft YaHei', 'Arial', 'DejaVu Sans'],  # YaHei as Chinese fallback
+    'axes.unicode_minus': False,                   # YaHei lacks the minus glyph
 })
+# Final version for an English journal: set font.sans-serif back to ['Arial']; translate Chinese legends to English
 
-# 用户选定双轨配色（详见 references/figure_aesthetics.md）
-# ① 离散分类（UMAP/聚类型/空间域）—— 莫兰迪 Nord 柔和
+# User-selected dual-track palette (see references/figure_aesthetics.md)
+# ① Discrete categorical (UMAP / clusters / spatial domains) — Morandi Nord soft
 MORLANDI = ['#88C0D0','#BF616A','#A3BE8C','#D08770',
             '#B48EAD','#EBCB8B','#5E81AC','#D8DEE9']
 plt.rcParams['axes.prop_cycle'] = plt.cycler(color=MORLANDI)
-# ② 连续表达（热图/表达量）—— 莫兰迪化蓝黄红（低饱和，与离散统一）
+# ② Continuous expression (heatmap / expression level) — Morandi-fied blue-yellow-red (low saturation, unified with discrete)
 EXPR_CMAP = LinearSegmentedColormap.from_list('byr_morlandi',
     ['#5E81AC','#8FBCD4','#ECEFF4','#D08770','#9B5A5A'], N=256)
-# ③ 发散（log2FC）—— 蓝-白-红，0=白中点
+# ③ Diverging (log2FC) — blue-white-red, 0 = white midpoint
 DIVERGING_CMAP = LinearSegmentedColormap.from_list('log2fc',
     ['#2C5F8D','#88C0D0','#FFFFFF','#D08770','#8B2C2C'], N=256)
-# 用法：离散用 MORLANDI（自动套 axes.prop_cycle）；热图 cmap=EXPR_CMAP；log2FC cmap=DIVERGING_CMAP
+# Usage: discrete → MORLANDI (auto-applied via axes.prop_cycle); heatmap → cmap=EXPR_CMAP; log2FC → cmap=DIVERGING_CMAP
 ```
 
-`ov.plot_set()` + 上述补充一次调用统一风格；之后所有 `ov.pl.*` 与 scanpy 图都自动套用。
+`ov.plot_set()` + the above supplements unify the style in one call; all subsequent `ov.pl.*` and scanpy plots inherit it automatically.
 
-## 1. 常用图类型 API 速查
+## 1. Common plot types — API cheat sheet
 
-| 图类型 | API | 典型用途 |
+| Plot type | API | Typical use |
 |---|---|---|
-| Embedding (UMAP/tSNE) | `ov.pl.embedding(adata, basis='X_umap', color=...)` | 聚类/注释展示 |
+| Embedding (UMAP/tSNE) | `ov.pl.embedding(adata, basis='X_umap', color=...)` | Cluster/annotation display |
 | Dot plot | `ov.pl.dotplot(adata, var_names=..., groupby=...)` | marker × cluster |
-| Violin | `ov.pl.violin(adata, keys=..., groupby=...)` | marker 表达分布 |
-| Volcano | `ov.pl.volcano(deg_df)` | DE 结果 |
+| Violin | `ov.pl.violin(adata, keys=..., groupby=...)` | Marker expression distribution |
+| Volcano | `ov.pl.volcano(deg_df)` | DE results |
 | Marker heatmap | `ov.pl.marker_heatmap(adata)` | top markers × clusters |
-| Feature heatmap | `ov.pl.feature_heatmap(adata)` | 任意基因热图 |
-| 通用 complex heatmap | `ov.pl.complexheatmap(data)` | PyComplexHeatmap 封装 |
+| Feature heatmap | `ov.pl.feature_heatmap(adata)` | Arbitrary gene heatmap |
+| Generic complex heatmap | `ov.pl.complexheatmap(data)` | PyComplexHeatmap wrapper |
 | Cell communication | `ov.pl.ccc_heatmap(adata)` | LR pair × cluster |
-| Spatial | `ov.pl.plot_spatial(adata, color=...)` | 组织切片 |
-| Cell proportion | `ov.pl.cellproportion(adata)` | 样本—cluster 比例 |
-| Bar+dot | `ov.pl.bardotplot(adata)` | 比例 + 显著性 |
+| Spatial | `ov.pl.plot_spatial(adata, color=...)` | Tissue section |
+| Cell proportion | `ov.pl.cellproportion(adata)` | Sample—cluster proportion |
+| Bar+dot | `ov.pl.bardotplot(adata)` | Proportion + significance |
 
-## 2. 示例
+## 2. Examples
 
 ```python
-# UMAP 着色
+# UMAP coloring
 ov.pl.embedding(adata, basis='X_umap', color='celltype', frameon='small')
 
-# Marker 点图
+# Marker dot plot
 ov.pl.dotplot(adata, var_names=['CD3D','MS4A1','CD68'], groupby='celltype')
 
-# 火山图（deg DataFrame 列名必须为 'log2FC' 和 'qvalue'/'pvalue'，不符先 rename）
+# Volcano (deg DataFrame columns must be 'log2FC' and 'qvalue'/'pvalue'; rename first if not)
 ov.pl.volcano(deg_df, pval_name='qvalue', fc_name='log2FC',
               pval_threshold=0.05, fc_min=-1.5, fc_max=1.5,
-              plot_genes_num=10)  # 标注 top10 基因名
+              plot_genes_num=10)  # annotate top10 gene names
 
-# 热图（PyComplexHeatmap 封装）
+# Heatmap (PyComplexHeatmap wrapper)
 ov.pl.marker_heatmap(adata, n_top=5, groupby='celltype')
 
-# 细胞比例
+# Cell proportion
 ov.pl.cellproportion(adata, groupby='celltype', sample='sample')
 
-# 空间
+# Spatial
 ov.pl.plot_spatial(adata, color='leiden')
 ```
 
-## 3. 配色系统
+## 3. Palette system
 
 ```python
-ov.pl.palette   # 内置：red_blue, scgpt, agora, etc.
+ov.pl.palette   # Built-in: red_blue, scgpt, agora, etc.
 ov.pl.embedding(adata, basis='X_umap', color='celltype',
                 palette=ov.pl.palette['red_blue'])
-# 自定义连续：cmap='viridis'/'RdBu_r'
+# Custom continuous: cmap='viridis'/'RdBu_r'
 ```
 
-## 4. 多面板组合（轻量）
+## 4. Light multi-panel composition
 
 ```python
-# ov.pl 返回 matplotlib axes，可手动组合
+# ov.pl returns matplotlib axes; compose manually
 fig, axes = plt.subplots(1, 2, figsize=(10, 4))
 ov.pl.embedding(adata, basis='X_umap', color='leiden', ax=axes[0], show=False)
 ov.pl.embedding(adata, basis='X_umap', color='celltype', ax=axes[1], show=False)
 plt.tight_layout(); plt.savefig('fig.pdf')
 ```
 
-> 复杂固定布局（6 面板 ABCDEF、共享 legend、Insets）请走 `visualization/multi-panel-figures`（PIL/GridSpec）。
+> For complex fixed layouts (6 panels ABCDEF, shared legend, insets) use `visualization/multi-panel-figures` (PIL/GridSpec).
 
-## 5. 交互式探索（轻量）
+## 5. Interactive exploration (light)
 
-`ov.pl.*` 默认静态；快速交互可用 `adata` 的 `ov.pl.embedding(..., interactive=True)`（基于 plotly 后端）。**重度交互仪表盘仍建议导出 anndata 后用 cellxgene/CELESTE**，不在本 skill 范围。
+`ov.pl.*` is static by default; for quick interactivity use `ov.pl.embedding(..., interactive=True)` (plotly backend). **Heavy interactive dashboards should still export anndata and use cellxgene/CELESTE** — out of scope.
 
-## Pre-Output Checklist（出图前必过）
-- [ ] 数值完整性：每张定量图保留 N / 统计检验 / 误差线
-- [ ] 轴标签/图例/色盲友好：坐标轴有标签与单位，图例可独立读懂，配色对色盲安全（避免纯红绿）
-- [ ] 引用支撑：明确哪张图/哪个统计支持主结论
-- [ ] 避免臆测：无显著差异时写 "No significant effect"，不硬编故事
-- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
-- [ ] 跑 postcheck.py ✅
+## Pre-Output Checklist (must pass before exporting a figure)
+- [ ] Numerical integrity: each quantitative plot retains N / statistical test / error bars
+- [ ] Axis labels / legend / colorblind-friendly: axes have labels and units, legend is self-contained, palette is colorblind-safe (avoid pure red-green)
+- [ ] Citation support: clearly indicate which figure / statistic supports the main conclusion
+- [ ] Avoid speculation: when no significant difference, write "No significant effect"; don't fabricate a story
+- [ ] Correlation ≠ causation: use "associated with"; regulates/causes requires experimental evidence
+- [ ] Run postcheck.py ✅
 
-## 决策速查：何时离开本 skill
+## Prerequisites (where inputs come from)
 
-| 需求 | 去 |
+- **Analyzed AnnData** (with UMAP/clustering/annotation/DE) → from `single-cell/omicverse-pipeline` / `spatial/omicverse-spatial` / `general-bio/omicverse-bulk`
+- **DE table / marker table** → from each analysis skill's `rank_genes_groups` or pseudobulk DE output
+- **Spatial slice coordinates** → `adata.obsm['spatial']` + `uns['spatial']` H&E
+- **Must read before any plotting** `references/figure_aesthetics.md` (dual-track palette + Chinese fallback + title/legend non-overlap)
+
+## Decision cheat sheet: when to leave this skill
+
+| Need | Go to |
 |---|---|
-| 6 面板组合 / 共享 legend | `visualization/multi-panel-figures` |
-| 机制图 / 流程图 / 架构图 | `visualization/scientific-schematics` |
-| 图形摘要（Graphical Abstract） | `visualization/graphical-abstract` |
+| 6-panel composition / shared legend | `visualization/multi-panel-figures` |
+| Mechanism / flowchart / architecture diagram | `visualization/scientific-schematics` |
+| Graphical Abstract | `visualization/scientific-schematics` (graphical-abstract mode) |
 
-## 关键坑
+## Key pitfalls
 
-- 任何 ov.pl 之前先 `ov.plot_set()`，否则字体/dpi 不统一，多图拼接会错位。
-- `ov.pl.volcano` 的输入是 DataFrame，列名要带 `log2FC` 与 `pvalue`/`padj`；命名不符需先 rename。
-- `complexheatmap` 等同 PyComplexHeatmap，多分组注释通过 `row_split`/`col_split` 传，不是 seaborn 的 row_cluster。
-- 输出矢量图统一用 `.pdf`（论文）/`.svg`（PPT 二次编辑），`dpi=300` 仅栅格时需要。
-- matplotlib 中文/特殊字符需额外配字体，`ov.plot_set()` 默认西文，含中文时手动 `plt.rcParams['font.family']`。
+- Run `ov.plot_set()` before any ov.pl call; otherwise fonts/dpi are inconsistent and multi-panel assembly misaligns.
+- `ov.pl.volcano` input is a DataFrame with columns `log2FC` and `pvalue`/`padj`; rename first if naming differs.
+- `complexheatmap` equals PyComplexHeatmap; multi-group annotation via `row_split`/`col_split`, not seaborn's row_cluster.
+- Export vector figures as `.pdf` (paper) / `.svg` (PPT re-editing); `dpi=300` only needed for raster output.
+- matplotlib Chinese/special characters need extra font config; `ov.plot_set()` defaults to Western fonts — manually set `plt.rcParams['font.family']` when Chinese is present.

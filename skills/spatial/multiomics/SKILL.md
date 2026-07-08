@@ -1,15 +1,15 @@
 ---
 name: bio-spatial-transcriptomics-spatial-multiomics
-description: Analyze high-resolution spatial platforms like Slide-seq, Stereo-seq, and Visium HD. Use when working with subcellular resolution or high-density spatial data.
+description: 高分辨率空转平台（Stereo-seq / Visium HD / Slide-seq / MERFISH）分析——亚细胞分割（cellpose）、binning、多模态对齐（SpatialData）。当用户要做高分辨率空转、subcellular analysis、Stereo-seq、Visium HD、cellpose 分割时触发。
 tool_type: python
 primary_tool: squidpy
 ---
 
 ## When NOT to use this skill
-- 常规 Visium（55μm spot，不需 cellpose 分割）→ 改用 `spatial/omicverse-spatial`（更轻量）
-- 要估 spot 细胞构成（去卷积）→ 改用 `spatial/deconvolution`（cell2location/RCTD）
-- 空间蛋白组（CODEX/IMC/MIBI）→ 改用 `spatial/proteomics`
-- 常规单细胞（非高分辨率空转）→ 改用 `single-cell/omicverse-pipeline`
+- Conventional Visium (55μm spot, no cellpose segmentation needed) → use `spatial/omicverse-spatial` (lighter)
+- Estimating spot cell composition (deconvolution) → use `spatial/deconvolution` (cell2location/RCTD)
+- Spatial proteomics (CODEX/IMC/MIBI) → use `spatial/proteomics`
+- Conventional single-cell (not high-resolution spatial) → use `single-cell/omicverse-pipeline`
 
 ## Version Compatibility
 
@@ -181,7 +181,27 @@ adata = sc.read_h5ad('visium_hd_8um.h5ad')
 
 ## Related Skills
 
-- spatial-transcriptomics/spatial-preprocessing - Standard spatial analysis
-- single-cell/preprocessing - scRNA-seq concepts
-- spatial-transcriptomics/image-analysis - Morphology processing
-- single-cell/cell-annotation - Cell type assignment
+- **Conventional Visium/Xenium (no segmentation)** → `spatial/omicverse-spatial` (lighter; includes SVG/domains/communication)
+- **Deconvolution to estimate cell composition** → `spatial/deconvolution` (cell2location/RCTD, unified wrapper)
+
+## Prerequisites (where it comes from)
+
+- **Raw high-resolution spatial data**: Stereo-seq (SAW pipeline output) / Visium HD (2µm/8µm bin) / Slide-seq / MERFISH
+- **Paired H&E or IF images** (optional, aids cellpose segmentation)
+- **SpatialData framework**: `pip install spatialdata` to load multimodal alignment
+- Tools: squidpy (core) + cellpose (segmentation) + spatialdata (multimodal integration)
+
+## When to leave this skill (where to go)
+
+- Once high-resolution data is segmented into single cells → go to `single-cell/omicverse-pipeline` (analyze as single-cell)
+- Estimate spot/cell type composition → `spatial/deconvolution`
+- Write Methods → `presentation/methods-writer`
+- Multi-panel high-resolution section figures → `visualization/multi-panel-figures`
+
+## Key pitfalls
+
+- **Visium HD bin size choice**: start at 8µm (balances resolution vs noise); 2µm only for detail review; raw 2µm is too noisy
+- **cellpose segmentation needs H&E/IF registration** — pure transcriptome without image gives poor segmentation
+- **Stereo-seq V2 FFPE vs total RNA** use different pipelines; confirm SAW version
+- **SpatialData multimodal alignment** requires coordinate registration first (ground-truth check, meta-methodology principle ①)
+- After finishing, run `scripts/postcheck.py` to verify spatial-coordinate integrity

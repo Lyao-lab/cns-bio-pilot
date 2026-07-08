@@ -7,11 +7,11 @@ author: AIPOCH
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
 ## When NOT to use this skill
-- 写配套 Methods 章节 → 改用 `presentation/methods-writer`
-- 写图注 → 改用 `presentation/figure-legend-writer`
-- 做 Discussion 式解读（因果/机制推断）→ 本 skill 拒绝，Results 只写观察到什么
-- 结果层级还不清晰 → 先做 result structuring（澄清/上传材料），不要直接写全文
-- 做 slide 汇报 → 改用 `presentation/scientific-slides` / `presentation/lab-meeting-slides`
+- Writing the companion Methods section → use `presentation/methods-writer`
+- Writing figure legends → use `presentation/figure-legend-writer`
+- Doing Discussion-style interpretation (causal/mechanistic inference) → this skill refuses; Results only writes what was observed
+- When the result hierarchy is not yet clear → first do result structuring (clarify / upload materials); do not write the full text directly
+- Making presentation slides → use `presentation/scientific-slides` (formal talk / lab meeting dual mode)
 
 # Results Section Writer
 
@@ -274,30 +274,39 @@ A weak output:
 - blurs Results and Discussion,
 - or fails to tell the user that Results Section Structurer should be used first.
 
-## 前置依赖（从哪来）
+## Prerequisites (where inputs come from)
 
-- **结果结构输入** → Results outline / figure 列表 / figure legends / result summary / analysis report / 现有 Results 草稿（任一或多个）
-- **结果层级需已清晰**——若仅有题目/模糊摘要，不写全文，先要求澄清或建议先做 Results structuring
-- **figure / 分析结果**（来自分析 skill，提供结果内容）→
-  - 单细胞 → `single-cell/omicverse-pipeline`（聚类/DE/通讯/轨迹）
-  - 空转 → `spatial/omicverse-spatial` / `spatial/deconvolution`
-  - bulk → `general-bio/omicverse-bulk`（DEG/富集/WGCNA/PPI）
-  - 扰动 → `single-cell/perturbation-prediction` / `single-cell/perturb-seq`
-- **图注**（配套引用）→ `presentation/figure-legend-writer`
-- 参考：`references/` 下 clarification-first / full-results-writing / results-boundary / citation-support / upload-recommendation 等规则模块
+- **Result structure input** → Results outline / figure list / figure legends / result summary / analysis report / existing Results draft (one or more)
+- **The result hierarchy must already be clear** — if only a topic / vague summary is available, do not write the full text; first request clarification or recommend doing Results structuring first
+- **Figures / analysis results** (from analysis skills, providing the result content) →
+  - Single-cell → `single-cell/omicverse-pipeline` (clustering / DE / communication / trajectory)
+  - Spatial → `spatial/omicverse-spatial` / `spatial/deconvolution`
+  - Bulk → `general-bio/omicverse-bulk` (DEG / enrichment / WGCNA / PPI)
+  - Perturbation → `single-cell/perturbation-prediction` / `single-cell/perturb-seq`
+- **Figure legends** (companion references) → `presentation/figure-legend-writer`
+- Reference: rule modules under `references/` — clarification-first / full-results-writing / results-boundary / citation-support / upload-recommendation
 
-## Pre-Output Checklist（出报告前必过）
-- [ ] 数值完整性：每张定量图保留 N / 统计检验 / 误差线
-- [ ] 交叉条件一致性：效果是 universal 还是 cell-type-specific？是否需要分面
-- [ ] 引用支撑：明确哪张图/哪个统计支持主结论
-- [ ] 避免臆测：无显著差异时写 "No significant effect"，不硬编故事
-- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
-- [ ] 跑 postcheck.py ✅
+## Pre-Output Checklist (must pass before delivery)
+- [ ] Numeric integrity: every quantitative figure keeps N / statistical test / error bars
+- [ ] Cross-condition consistency: is the effect universal or cell-type-specific? Faceting needed?
+- [ ] Citation support: state exactly which figure / statistic backs the main conclusion
+- [ ] No speculation: when there is no significant difference, write "No significant effect" — do not fabricate a story
+- [ ] Association ≠ causation: use "associated with"; regulates/causes requires experimental evidence
+- [ ] Run postcheck.py ✅
 
-## 何时离开本 skill（去哪）
+## When to leave this skill (where to go)
 
-- 写配套 Methods → `presentation/methods-writer`
-- 写图注 → `presentation/figure-legend-writer`
-- Results 写好后做汇报 slide → `presentation/scientific-slides`
-- 结果出图完善 → `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
-- ⚠️ 本 skill 只写 Results 散文，不做 Discussion 式解读，不编造结果/分析/PMID/DOI
+- Writing the companion Methods → `presentation/methods-writer`
+- Writing figure legends → `presentation/figure-legend-writer`
+- Building a presentation slide after Results is done → `presentation/scientific-slides`
+- Polishing result figures → `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
+- ⚠️ This skill writes only Results prose; it does not do Discussion-style interpretation and does not fabricate results / analyses / PMID / DOI
+
+## Key pitfalls
+
+- **Results ≠ Discussion**: write only "what was observed" (data layer), not "why" (mechanistic inference). "X increased" ✓; "the increase in X suggests Y pathway activation" ✗ (that belongs in Discussion).
+- **Do not fabricate figures/values**: every quantitative statement must be backed by a corresponding figure/table, annotated `(Fig. X)`; LLMs tend to invent "as shown in Figure 3" when fig 3 does not exist.
+- **Preserve the evidence boundary**: do not use confirmatory language ("we proved", "demonstrates") for exploratory findings; use "we observed", "was associated with".
+- **N / replicate unit must be explicit**: every quantitative result annotates N (donor/sample count, not cell count).
+- **Missing citations use the placeholder** `[CITATION NEEDED: search query]`; never fabricate PMID/DOI — the LLM citation-fabrication rate is ~20%.
+- **Hierarchy discipline**: one finding per paragraph, one figure per finding — stacking multiple findings per paragraph = structural confusion.

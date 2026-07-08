@@ -1,230 +1,311 @@
 ---
 name: perturbation-prediction
-description: 【预测未做实验的】单细胞扰动响应——用已有数据训练，推断未测过的基因敲除/过表达或药物处理的转录组变化。当用户要预测未见扰动、in silico knockout、药物响应预测、unseen perturbation 时触发；算法含 GEARS/scGPT-perturbation/CPA/scGen 等。
+description: 【预测未做实验的】单细胞扰动响应，含两条互补技术路线：① 算法扰动预测（ML-based：GEARS/CPA/scGPT/scGen，需 Perturb-seq 训练数据）；② 虚拟敲除（GRN-based：CellOracle/SCENIC+/scTenifoldKnk，仅需 WT scRNA-seq，通过 GRN 推断+信号传播模拟 KO）。当用户要预测未见扰动、in silico knockout、虚拟敲除、TF 功能筛查、扰动响应预测、unseen perturbation、药物响应预测时触发。
 ---
 
 ## When NOT to use this skill
-- 已做了扰动实验，只需分析实测结果（差异扰动响应、Mixscape 分类、guide QC）→ 改用 `single-cell/perturb-seq`
-- 只想做常规批次校正（不是预测新扰动）→ 改用 `single-cell/omicverse-pipeline`（Harmony/scVI）
-- 只要做基因必需性/功能模块模拟 → 改用 `single-cell/scop`（`RunscTenifoldKnk`/`RunscTenifoldNet`）
-- 预测结果出图 / 组合成发表级 figure → 先做完预测，再走 `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
+- Perturbation experiment already done; only analyze measured results (differential perturbation response, Mixscape classification, guide QC) → `single-cell/perturb-seq`
+- Just routine batch correction (not predicting new perturbations) → `single-cell/omicverse-pipeline` (Harmony/scVI)
+- Plot prediction results / assemble a publication figure → finish prediction first, then `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
 
-# 单细胞扰动响应预测（Perturbation Prediction）
+# Single-Cell Perturbation Prediction — Two Complementary Routes
 
-预测**未做实验**的扰动（基因敲除/过表达、药物处理）会产生的单细胞转录组响应。基于 [scPerturBench](https://github.com/bm2-lab/scPerturBench)（27 法 × 29 数据集，Nature Methods 2025）和 2025 年争议文献的实证结论。
+Predict the single-cell response of **unmeasured** perturbations (gene KO/OE, drug treatment). Two fundamentally different technical routes serve different input-data scenarios — pick by what data you have.
 
-## ⚠️ 关键前置：DL 模型 vs 线性 baseline 的 2025 争议
+## ⚠️ First: choose the route by what data you have
 
-在选算法前必须知道：**2025 年 Nature Methods（Ahmed et al.）报告"DL 模型在转录组级扰动预测上并不优于简单线性模型"**，随后 bioRxiv（Replogle 等）反驳称"DL 在正确评估下确实更优"。结论尚未稳定，因此：
-
-- **不要盲信任何单一 DL 模型的论文宣称**
-- **始终跑一个 linear baseline 作对照**（scPerturBench 的 `linearModel` 环境）
-- **多指标评估**（MSE/PCC-delta/E-distance/Wasserstein/KL/Common-DEGs），单指标易误导
-- 论文报告时**必须声明评估设置**（i.i.d 还是 o.o.d，DEG 定义）
-
-参考：
-- [Ahmed et al., Nature Methods 2025](https://www.nature.com/articles/s41592-025-02772-6)（DL 不胜线性）
-- [bioRxiv 反驳 2025](https://www.biorxiv.org/content/10.1101/2025.10.20.683304v1)（DL 在正确评估下更优）
-- [Bioinformatics 2025 简单对照超越 DL](https://academic.oup.com/bioinformatics/article/41/6/btaf317/8142305)
-
-## 两大预测场景（决定方法选择）
-
-| 场景 | 任务 | 推荐方法族 |
-|---|---|---|
-| **细胞情境泛化**（cellular-context generalization） | 已知扰动，在新细胞类型/批次/细胞系上预测 | scGen / trVAE / biolord / scDisInFact / scPRAM / CPA |
-| **扰动泛化**（perturbation generalization） | 已知细胞情境，预测**未见过的基因/药物**扰动 | GEARS / scGPT / GenePert / AttentionPert / chemCPA |
-
-每个场景还分 **i.i.d**（同分布测试）和 **o.o.d**（分布外测试）—— o.o.d 更难、更接近真实应用，报告时务必注明。
-
-## 方法选型表（27 法精简为实战推荐）
-
-### 🧬 基因扰动（genetic，CRISPR KO/OE）
-
-| 方法 | 类型 | 何时用 | 安装 |
-|---|---|---|---|
-| **GEARS** | GO+共表达图 GNN | **基因扰动首选**，Nature Biotech 2022，多基因组合扰动 | `pip install cell-gears`（omicverse/scop 集成） |
-| **scGPT (perturbation)** | 基础模型 finetune | 大规模/跨数据集；**必须用 perturbation 预训练权重** | `pip install scgpt` + GPU |
-| **GenePert** | GenePT 嵌入 | 2024 新法，基因语义嵌入强 | [zou-group/GenePert](https://github.com/zou-group/GenePert) |
-| **AttentionPert** | 多尺度注意力 | 多重基因扰动（multiplexed） | [BaiDing1234/AttentionPert](https://github.com/BaiDing1234/AttentionPert) |
-| **linearModel** | 线性 baseline | **必跑对照**，常出乎意料地好 | scPerturBench 内置 |
-
-### 💊 化学扰动（chemical，药物/剂量）
-
-| 方法 | 类型 | 何时用 | 安装 |
-|---|---|---|---|
-| **CPA** | 组合解析 VAE | **化学扰动主力**，Multi-bin Mol Syst Biol 2023 | `pip install cpa-tools`（omicverse/scop 集成） |
-| **chemCPA** | CPA + 化学结构 | 药物分子结构感知 | [theislab/chemCPA](https://github.com/theislab/chemCPA) |
-| **scVIDR** | 剂量响应 VAE | 剂量梯度预测 | [BhattacharyaLab/scVIDR](https://github.com/BhattacharyaLab/scVIDR) |
-| **cycleCDR** | 循环一致 | 跨细胞系药物响应 | scPerturBench 内 |
-
-### 🔄 细胞情境泛化（已知扰动，新细胞情境）
-
-| 方法 | 类型 | 何时用 |
-|---|---|---|
-| **scGen** | Conditional VAE | **入门首选**，简单稳定，Nature Methods 2019 |
-| **trVAE** | Transfer VAE | o.o.d 跨批次 |
-| **biolord** | 解析嵌入 | 跨细胞系泛化强（+ bioLord-emCell 增强版） |
-| **scDisInFact** | 解析因子 | 多批次多条件 |
-| **scPRAM** | 注意力机制 | Bioinformatics 2024 |
-| **scPreGAN** | GAN | 早期方法，偶用 |
-| **CellOT** | 神经最优传输 | 分布级建模 |
-
-### 🛠 一站式基准（强烈推荐先跑）
-
-| 资源 | 用途 |
-|---|---|
-| [**scPerturBench**](https://github.com/bm2-lab/scPerturBench) ⭐91 | 27 法统一接口 + 9 conda 环境 + Podman 镜像（40GB，含全部依赖）+ [结果可视化网站](https://bm2-lab.github.io/scPerturBench-reproducibility/) |
-| **pertpy**（scverse） | scRNA 扰动分析统一 API（omicverse 集成），含 GEARS/CPA/scGen wrapper |
-| [**OP3**](https://openproblems.bio/results/perturbation_prediction)（NeurIPS 2024） | 活基准，化学扰动 Kaggle 竞赛方法 |
-
-## 推荐工作流
-
-### Step 0: 数据准备
-
-```python
-# Perturb-seq / CROP-seq 标准 AnnData
-import scanpy as sc
-adata = sc.read_h5ad("perturb_seq.h5ad")
-# 关键字段：
-#   adata.obs['perturbation']   # 'control' | 'geneA' | 'geneA+geneB'（多重）
-#   adata.obs['dose']           # 化学扰动的剂量（药物用）
-#   adata.obs['cell_type']      # 细胞情境（o.o.d 评估用）
-#   adata.obs['batch']          # 批次
-# 质控同常规 scRNA-seq（见 omicverse-pipeline），保留 raw counts
+```
+Do you have Perturb-seq / CROP-seq training data (paired control-perturbation cells)?
+│
+├─ YES → Route A: ML-based perturbation prediction
+│        (GEARS / CPA / scGPT / scGen — needs training perturbations)
+│
+└─ NO  → Route B: GRN-based virtual knockout
+         (CellOracle / SCENIC+ / scTenifoldKnk — only needs WT scRNA-seq)
 ```
 
-### Step 1: 先跑 linear baseline（必跑对照——2025 争议显示简单模型常超 DL）
+| Dimension | **Route A — ML-based** | **Route B — GRN-based virtual KO** |
+|---|---|---|
+| Training data | **Perturb-seq required** (paired control-perturbation) | **Only WT scRNA-seq** (+ optional scATAC) |
+| Mechanism | Learn perturbation response pattern, generalize to unseen | Infer GRN → set TF=0 → iteratively propagate fold-change |
+| Output | End-to-end post-perturbation expression vector | TF→target rewiring + cell-state shift + DRG ranking |
+| Interpretability | Low (black-box NN) | High (every edge / regulon traceable) |
+| Typical use | Drug response, gene essentiality, cross-cell-line prediction | TF function screen, cell-identity mechanism hypothesis, enhancer regulation |
+| Multi-gene combinatorial KO | GEARS explicitly supports | Possible but limited accuracy |
+| Accuracy (when Perturb-seq exists) | Theoretically higher, but empirically often ≤ linear baseline | Mechanistic approximation |
+| Wrapper status | pertpy / omicverse | **Not wrapped** — install standalone |
 
+---
+
+# Route A — ML-based Perturbation Prediction
+
+Based on [scPerturBench](https://github.com/bm2-lab/scPerturBench) (27 methods × 29 datasets, Nature Methods 2025) and the 2025 controversy literature.
+
+## ⚠️ The 2025 DL-vs-linear-baseline controversy
+
+**Nature Methods 2025 (Ahmed et al.) reported "DL models are no better than simple linear models for transcriptome-level perturbation prediction."** A bioRxiv reply (Replogle et al.) argued "DL is in fact better under correct evaluation." Conclusion not yet stable, therefore:
+- **Always run a linear baseline as control** (scPerturBench `linearModel`)
+- **Multi-metric evaluation** (MSE/PCC-delta/E-distance/Wasserstein/KL/Common-DEGs)
+- **Declare evaluation setting** (i.i.d vs o.o.d, DEG definition) when reporting
+
+## Two ML prediction scenarios
+
+| Scenario | Task | Recommended method family |
+|---|---|---|
+| **Cellular-context generalization** | Known perturbation, predict in a new cell type / batch / cell line | scGen / trVAE / biolord / scDisInFact / scPRAM / CPA |
+| **Perturbation generalization** | Known cell context, predict **unseen gene/drug** perturbations | GEARS / scGPT / GenePert / AttentionPert / chemCPA |
+
+## Method selection (27 methods condensed to practical picks)
+
+### 🧬 Genetic perturbation (CRISPR KO/OE)
+
+| Method | Type | When | Install |
+|---|---|---|---|
+| **GEARS** | GO + co-expression graph GNN | **First choice for genetic perturbation**, Nature Biotech 2022; multi-gene combinatorial | `pip install cell-gears` (pertpy-wrapped) |
+| **scGPT (perturbation)** | Foundation-model finetune | Large-scale / cross-dataset; **must use perturbation pretrained weights** | `pip install scgpt` + GPU |
+| **GenePert** | GenePT embedding | 2024 new method, strong gene-semantic embedding | [zou-group/GenePert](https://github.com/zou-group/GenePert) |
+| **AttentionPert** | Multi-scale attention | Multiplexed multi-gene perturbation | [BaiDing1234/AttentionPert](https://github.com/BaiDing1234/AttentionPert) |
+| **linearModel** | Linear baseline | **Mandatory control**, often surprisingly strong | scPerturBench built-in |
+
+### 💊 Chemical perturbation (drug / dose)
+
+| Method | Type | When |
+|---|---|---|
+| **CPA** | Compositional-parsing VAE | **Workhorse for chemical perturbation**, Multi-bin Mol Syst Biol 2023 |
+| **chemCPA** | CPA + chemical structure | Drug molecular-structure aware |
+| **scVIDR** | Dose-response VAE | Dose-gradient prediction |
+| **cycleCDR** | Cycle-consistent | Cross-cell-line drug response |
+
+### 🔄 Cellular-context generalization
+
+| Method | Type | When |
+|---|---|---|
+| **scGen** | Conditional VAE | **Entry-level first choice**, simple and stable, Nature Methods 2019 |
+| **biolord** | Disentangled embedding | Strong cross-cell-line generalization |
+| **scDisInFact** | Disentangled factors | Multi-batch multi-condition |
+| **CellOT** | Neural optimal transport | Distribution-level modeling |
+| **LEMUR** | Cluster-free multi-condition DE on Grassmann manifold | **Ahlmann-Eltze & Huber, Nat Genet 2025** ([s41588-024-01996-0](https://www.nature.com/articles/s41588-024-01996-0)); same lab as the Nat Methods 2025 linear-baseline paper; baseline-flavored, naturally extends to perturbation multi-condition comparison |
+
+## ML route workflow
+
+### Step 0: Data preparation
 ```python
-# scPerturBench 的 linearModel 环境
-# 思路：对每个 DEG，用 control 均值 + 训练集学到的扰动位移向量
-# 30 行代码，CPU 秒级完成
-# 如果 DL 模型打不过它 → 不要发 DL 模型
+# Standard Perturb-seq AnnData
+adata.obs['perturbation']   # 'control' | 'geneA' | 'geneA+geneB'
+adata.obs['dose']           # dose for chemical perturbation
+adata.obs['cell_type']      # cell context (for o.o.d)
+adata.obs['batch']
+# Keep raw counts; ≥1000 cell/condition
 ```
 
-### Step 2: 按场景选 DL 方法
-
+### Step 1: Linear baseline first (mandatory control)
 ```python
-# === 基因扰动（未见基因）→ GEARS ===
+# scPerturBench linearModel env — ~30 lines, CPU seconds
+# Idea: control mean + a perturbation shift vector learned from training set
+# If a DL model cannot beat this → do not publish the DL model
+```
+
+### Step 2: Pick DL method by scenario
+```python
+# Genetic perturbation (unseen gene) → GEARS
 from gears import GEARS
 gear = GEARS(adata, model_dir="./gears_model")
-gear.model_initialize()        # 构建 GO + 共表达图
-gear.train(seed=42)            # GPU 推荐
-pred = gear.predict_perturbation(["GeneX"])  # 预测未做的 KO
+gear.model_initialize(); gear.train(seed=42)
+pred = gear.predict_perturbation(["GeneX"])
 
-# === 化学扰动 → CPA ===
+# Chemical perturbation → CPA
 import cpa
-model = cpa.CPA(adata,
-                covar_keys=['cell_type'],
-                pert_key='perturbation',     # 药物名
-                dose_key='dose',
-                hidden_layers=[128, 128])
-model.train(n_epochs=200)
-pred = model.predict(['DrugY'], dose=10.0)
+model = cpa.CPA(adata, covar_keys=['cell_type'], pert_key='perturbation',
+                dose_key='dose', hidden_layers=[128, 128])
+model.train(n_epochs=200); pred = model.predict(['DrugY'], dose=10.0)
 
-# === 跨细胞情境 → scGen ===
+# Cross-cell-context → scGen
 import scgen
-model = scgen.SCGEN(adata)
-model.train(max_epochs=100)
+model = scgen.SCGEN(adata); model.train(max_epochs=100)
 pred = model.predict_response(adata, ctrl_key='control', stim_key='IFN',
-                              celltype_to_predict='CD4T')  # 新细胞类型
+                              celltype_to_predict='CD4T')
 ```
 
-### Step 3: 多指标评估（不可省）
+### Step 3: Multi-metric evaluation (do not skip)
+```python
+# scPerturBench calPerformance — six complementary metrics, report all:
+# MSE / PCC-delta / E-distance / Wasserstein / KL-divergence / Common-DEGs
+# Distinguish i.i.d vs o.o.d; report DEG definition (e.g. |log2FC|>0.5 & Padj<0.05)
+```
+
+---
+
+# Route B — GRN-based Virtual Knockout
+
+Predict "what happens if gene X is knocked out" using **only WT scRNA-seq** (no Perturb-seq training needed). Infer a gene regulatory network, set the target gene's input to 0, and iteratively propagate the fold-change through the network.
+
+## Common 5-step backbone (shared by CellOracle / SCENIC+)
+
+```
+Step 1  Infer GRN (TF → target edges)
+Step 2  Train a regressor f_g(TF_1..TF_k) → expr_g for each target gene
+Step 3  Apply virtual KO: set the knocked-out gene's expression (as TF) to 0
+Step 4  Iteratively propagate fold-change (n_rounds ≈ 3):
+          fc_g = f_g(TFs_with_X=0) / f_g(TFs_with_X=original)
+          expr_g ← expr_g × fc_g
+Step 5  Downstream: cell-state shift (UMAP displacement, transition probability)
+        → can feed into CellRank 2 for fate mapping
+```
+
+## Three tools (pick by input richness)
+
+### B.1 CellOracle — gold standard (recommends scATAC)
+
+| Field | Value |
+|---|---|
+| Paper | **Kamimoto et al. 2023, *Nature* 614:742–751** |
+| Install | `pip install celloracle` (v0.20.0) — **not wrapped in omicverse/pertpy** |
+| GRN inference | Ridge / Bayesian Ridge regression with TF motif / scATAC prior |
+| Input | WT scRNA-seq + TF→target prior (scATAC strongly recommended; built-in base GRN if no ATAC, lower accuracy) |
+| Output | Per-cell in-silico KO expression matrix + cell-state shift vector + UMAP displacement + TF importance ranking |
 
 ```python
-# scPerturBench 的 calPerformance（pertpyV7 环境）
-# 6 个互补指标，全部报告：
-# - MSE：均方误差（绝对值，依赖归一化）
-# - PCC-delta：位移的 Pearson 相关（方向性）
-# - E-distance：能量距离（分布级）
-# - Wasserstein：分布位移
-# - KL-divergence：分布差异
-# - Common-DEGs：预测与真实 top-DEG 的重叠（生物学最相关）
-# 评估时区分 i.i.d / o.o.d，并报告 DEG 定义（如 |log2FC|>0.5 & Padj<0.05）
+import celloracle as co
+oracle = co.Oracle()
+oracle.import_data(adata)               # WT AnnData
+oracle.do_co_regression(... )           # GRN inference
+oracle.simulate_shift(perturb_condition="TfX", n_propagation=3)
+oracle.estimate_transition_prob(n_mul=50)
+oracle.simulate_random_walks(n_steps=100)  # predict where cells go post-KO
 ```
 
-## omicverse / scop / pertpy 集成
+### B.2 SCENIC+ — enhancer-level eGRN + built-in KO simulation
+
+| Field | Value |
+|---|---|
+| Paper | **Bravo González-Blas et al. 2023, *Nature Methods* 20:1355–1367** |
+| Install | `pip install scenicplus` (still alpha, API 1.0a1) — **not wrapped** |
+| GRN inference | Gradient Boosting / RF regression + eRegulons (TF + targets + target enhancers) |
+| Input | scRNA-seq + **scATAC-seq** (key for eGRN) + motif DB (cisTarget / pycistarget) |
+| Output | Predicted KO fold-change per gene + perturbed expression matrix + regulon activity change |
+
+> ⚠️ The KO API is **module-level functions in `scenicplus.simulation`**, NOT a method on the SCENIC+ object. The often-cited `scplus_obj.simulate_perturbation()` **does not exist**.
 
 ```python
-# omicverse（轻量调用）
-import omicverse as ov
-# ov 单细胞流水线预处理后，扰动分析走 pertpy
-# ov.fm.scgpt 提供 zero-shot embedding（非 finetune）
-
-# pertpy（scverse 统一 API，强烈推荐）
-import pertpy as pt
-pt.tl.GEARS(adata)          # wrapper
-pt.tl.CPA(adata)            # wrapper
-pt.tl.Scgen(adata)          # wrapper
-pt.tl.BulkTrajVCI(adata)    # 评估工具
-
-# scop（R）
-srt <- RunscFEA(srt)        # 代谢通量扰动
-srt <- RunscTenifoldKnk(srt)  # 基因模块 knockout 模拟
+from scenicplus.simulation import train_gene_expression_models, simulate_perturbation
+# 1. Extract TF→target dict + expression matrix from scplus_obj eRegulons
+gene_to_TF = {...}; df_EXP = scplus_obj.to_df(...)
+# 2. Train per-gene GBM regressor
+regressors = train_gene_expression_models(df_EXP, gene_to_TF,
+    regressor_type="GBM",
+    regressor_kwargs={"learning_rate":0.01,"n_estimators":500,"max_features":0.1})
+# 3. Apply KO + iterate fold-change propagation
+simulated = simulate_perturbation(df_EXP, gene_to_perturb="TF_OF_INTEREST",
+    regressors=regressors, n_rounds=3)
 ```
 
-## 决策树
+### B.3 scTenifoldKnk — lightweight R screening (lowest barrier)
 
-```
-要预测什么？
-│
-├─ 已知扰动，新细胞情境（药物跨细胞系/批次）
-│   ├─ 先 scGen（简单稳定）
-│   ├─ 跨细胞系泛化差 → biolord + bioLord-emCell（先验增强）
-│   └─ 多批次 → scDisInFact
-│
-├─ 未见基因扰动（没敲过的基因）
-│   ├─ 单/双基因 → GEARS（图神经网络，GO 先验）
-│   ├─ 大规模/跨数据集 → scGPT perturbation（GPU 必须，用 perturbation 权重）
-│   ├─ 多重扰动（multiplexed）→ AttentionPert
-│   └─ 2024 新法 → GenePert（GenePT 嵌入）
-│
-├─ 未见化学扰动（没测过的药物）
-│   ├─ 主力 → CPA（组合解析）
-│   ├─ 药物结构重要 → chemCPA
-│   └─ 剂量梯度 → scVIDR
-│
-└─ 分布级建模（不只均值）
-    └─ CellOT（神经最优传输）/ SCREEN
+| Field | Value |
+|---|---|
+| Paper | **Osório, Zhong, Cai et al. 2022, *Patterns* 3(3):100456** (Cell Press) — note: not "Iaconis 2024" |
+| Install | R: `install.packages("scTenifoldKnk")` |
+| GRN inference | PCR + low-rank tensor / NMF + manifold alignment |
+| Input | **Only WT scRNA-seq** (≥500 cells; no ATAC, no motif, no prior) |
+| Output | **DRG ranking table** (differentially regulated genes post-KO) — does NOT output cell-state shift or expression matrix |
+
+```r
+library(scTenifoldKnk)
+KO_mat <- scTenifoldKnk(WT_mat, KO = "GeneX")
+# auto: delete GeneX → reconstruct GRN → manifold alignment → DRG ranking
 ```
 
-## Discipline（每条都带原因）
+## GRN-KO method selection
 
-1. **必跑 linear baseline**：scPerturBench 证明简单模型常超 DL；不报告 baseline = 不可发表
-2. **报告评估设置**：i.i.d vs o.o.d，DEG 定义，是否 held-out 控制/扰动
-3. **多指标**：单一 MSE 会误导（均值预测常胜但失去异质性）；至少报 PCC-delta + Common-DEGs + E-distance
-4. **Held-out 严谨**：训练集不能含目标扰动；NON-targeting/control 不能同时进 train 和 test
-5. **保守解读**：预测的是 DEG 趋势，不是绝对表达；体外 → 体内推断需额外验证
-6. **算力预算**：scGPT finetune GPU 1-3h；GEARS CPU 可跑但慢；CPA GPU 推荐；先小子集验证流程
-7. **数据规模**：扰动预测需足够 control + 已知扰动；<1000 cell/条件时所有方法都不稳
+| You have... | First choice | Why |
+|---|---|---|
+| WT scRNA + scATAC | **CellOracle** | scATAC prior gives best TF→target resolution |
+| WT scRNA + scATAC + want enhancer-level | **SCENIC+** | eRegulons include enhancers |
+| Only WT scRNA, want quick screen | **scTenifoldKnk** (R) | Lowest barrier, but only DRG ranking (no cell-state shift) |
+| Only WT scRNA, want full cell-state shift | **CellOracle** with built-in base GRN | Acceptable accuracy without ATAC |
+| Want enhancer-level + Python-only | **SCENIC+** (RNA-only mode reduced) | Lower eGRN quality without ATAC |
 
-## 何时不用这个 skill
+## GRN-KO downstream (fate mapping)
 
-- 已做了扰动实验，只需分析结果 → 用 `single-cell/perturb-seq`（pertpy 的下游分析：差异扰动响应、扰动一致性等）
-- 想做基因必需性/功能 → `scTenifold`（在 scop 里：`RunscTenifoldKnk`/`RunscTenifoldNet`）
-- 常规批次校正（不是预测新扰动）→ `omicverse-pipeline` 的 Harmony/scVI
+The KO-induced transition probability / shift vector from CellOracle/SCENIC+ can feed into **CellRank 2** (`single-cell/rna-velocity` section 3 has `cellrank_fate`) for fate prediction — "after KO, where do cells go?". **RegVelo** (Wang 2026, theislab/regvelo) couples RNA velocity + GRN in a Bayesian deep generative model, a 2025-2026 GRN-KO trend.
 
-## 参考资源
+## ⚠️ GRN-KO honest caveats
 
-- [scPerturBench（27 法基准）](https://github.com/bm2-lab/scPerturBench) + [Nature Methods 2025](https://www.nature.com/articles/s41592-025-02980-0)
-- [pertpy（scverse 统一 API）](https://pertpy.readthedocs.io/)
-- [sc-best-practices 扰动建模](https://www.sc-best-practices.org/conditions/perturbation_modeling.html)
-- [OP3 NeurIPS 2024 基准](https://openproblems.bio/results/perturbation_prediction)
-- [方法清单汇总（xianglin226）](https://github.com/xianglin226/Benchmarking-Single-Cell-Perturbation)
+- **Not wrapped in pertpy/omicverse** — install CellOracle / SCENIC+ / scTenifoldKnk directly
+- **Mechanistic approximation, not measurement** — predictions are hypotheses requiring wet-lab validation
+- **GRN inference is the bottleneck** — garbage GRN in → garbage KO out; invest in ATAC prior when possible. **Multi-method GRN consensus strongly recommended** — run ≥2 (e.g. SCENIC+ + Pando / FigR for Multiome) and report overlap; CausalBench (Chevalley 2025, 97+ citations) and GRETA (Badia-i-Mompel 2024) showed GRN inference uncertainty is high, single-method GRNs are unreliable.
+- **pySCENIC / GRNBoost2 (expression-only) are fallbacks in the Multiome era** — when ATAC is available, SCENIC+ / Pando / FigR give enhancer-level resolution; expression-only GRNs miss distal regulation. Use pySCENIC only as last-resort fallback and treat results with caution.
+- **Multiome GRN alternatives to SCENIC+**: **Pando** (quadbio/Pando) and **FigR** (linear-model-based, fast) — both integrate RNA + ATAC for GRN inference. Domain consensus: SCENIC+ as primary, Pando/FigR as cross-validation.
+- **No benchmark vs ML-based on shared datasets** — Gavriilidis 2024 (CSBJ) treats them as **complementary, not competing**; pick by data availability, not "accuracy ranking"
 
-## 前置依赖（从哪来）
+---
 
-- **Perturb-seq / CROP-seq 标准 `AnnData`** → `single-cell/perturb-seq`（实验数据读入+QC）或直接从 `single-cell/omicverse-pipeline` 预处理后传入
-- **必需 obs 列**：`adata.obs['perturbation']`（含 `'control'` 与已知扰动名，多重扰动用 `+` 连接）、`adata.obs['cell_type']`（o.o.d 评估）、`adata.obs['batch']`、化学扰动还需 `adata.obs['dose']`
-- **raw counts** 保留（`layers['counts']`），覆盖 ≥1000 cell/条件，且训练集含足够 control + 已知扰动
-- **GPU 环境**（scGPT finetune / CPA 推荐）：CUDA + 对应模型权重
+# Cross-route: when to use which (decision tree)
 
-## 何时离开本 skill（去哪）
+```
+What do you want to predict?
+│
+├─ Have Perturb-seq training data?
+│   ├─ YES → Route A (ML-based)
+│   │   ├─ Unseen genetic perturbation → GEARS / scGPT-perturbation / GenePert
+│   │   ├─ Unseen chemical → CPA / chemCPA / scVIDR
+│   │   ├─ Known perturbation, new cell context → scGen / biolord / scDisInFact
+│   │   └─ Always run linear baseline first (Nature Methods 2025)
+│   │
+│   └─ NO → Route B (GRN-based virtual KO)
+│       ├─ Have scATAC → CellOracle (best) or SCENIC+ (enhancer-level)
+│       ├─ WT scRNA only, want full shift → CellOracle with base GRN
+│       └─ WT scRNA only, quick screen → scTenifoldKnk (R, DRG ranking)
+│
+└─ Both routes are hypotheses, not ground truth — wet-lab validation required
+```
 
-- 已做实验、只分析实测扰动响应（差异扰动、扰动一致性）→ `single-cell/perturb-seq`（pertpy 下游分析）
-- 基因必需性 / 功能模块模拟 → `single-cell/scop`（`RunscTenifoldKnk`/`RunscTenifoldNet`）
-- 常规批次校正（非预测新扰动）→ `single-cell/omicverse-pipeline`（Harmony/scVI）
-- 预测结果可视化 / 组合 figure → `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
-- 写 Methods / Results → `presentation/methods-writer` / `presentation/results-writer`
-- **报告时必须声明评估设置（i.i.d vs o.o.d、DEG 定义、是否含 linear baseline 对照）——这是科学错误红线**：2025 年 Nature Methods 争议的核心就是不同评估设置下结论可反转，不声明等于不可复现、不可比较
+---
+
+# Discipline (each item with its reason)
+
+1. **Route A only — Always run the linear baseline**: scPerturBench proves simple models often beat DL; no baseline = unpublishable, meta-methodology principle ④.
+2. **Route A only — Report evaluation setting**: i.i.d vs o.o.d, DEG definition, whether controls/perturbations are held out.
+3. **Route A only — Multiple metrics**: a single MSE misleads; report at least PCC-delta + Common-DEGs + E-distance.
+4. **Route A only — Rigorous hold-out**: training set must not contain the target perturbation.
+5. **Route B only — GRN inference is the bottleneck**: invest in scATAC prior when possible; garbage GRN → garbage KO.
+6. **Both routes — Conservative interpretation**: predictions are DEG trend / mechanism hypothesis, not absolute truth; in-vitro → in-vivo extrapolation needs extra validation.
+7. **Both routes — Compute budget**: scGPT/GEARS/CPA finetune GPU 1-3h; CellOracle/SCENIC+ GBM training 10-60 min; scTenifoldKnk CPU minutes.
+8. **Both routes — Data scale**: Route A needs ≥1000 cell/condition; Route B needs ≥500 cells for stable GRN.
+
+## Prerequisites (where data comes from)
+
+- **Route A (ML-based)**: standard Perturb-seq / CROP-seq AnnData with `obs['perturbation']` (includes `'control'` and known names; multiplexed with `+`), `obs['cell_type']`, `obs['batch']`; chemical perturbation needs `obs['dose']`. Raw counts preserved, ≥1000 cell/condition, GPU for DL finetune.
+- **Route B (GRN-KO)**: WT scRNA-seq AnnData with at least basic preprocessing (QC, normalization, clustering); scATAC-seq strongly recommended for CellOracle/SCENIC+; motif database (cisTarget/pycistarget) for SCENIC+.
+
+## When to leave this skill
+
+- Perturbation experiment done; only analyze measured response → `single-cell/perturb-seq` (pertpy Mixscape / differential perturbation)
+- Plot predictions / assemble figure → `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
+- Write Methods / Results → `presentation/methods-writer` / `presentation/results-writer`
+- **Declare evaluation setting (Route A) or GRN quality (Route B) when reporting — scientific red line.** Conclusions can reverse under different settings (2025 Nature Methods); GRN-KO conclusions depend entirely on the input GRN quality.
+
+## Key pitfalls
+
+- **Route A — Always run linear baseline** (scPerturBench `linearModel`) — Nature Methods 2025 proves DL may not beat linear; no baseline = unpublishable, meta-methodology principle ④.
+- **Route A — i.i.d vs o.o.d**: i.i.d (same perturbation in train/test split) trivially easy; o.o.d (unseen perturbation) is the real test — reporting only i.i.d = implicit cherry-picking.
+- **Route A — Training-set leakage**: careless train/test split lets target perturbation info leak; "prediction" becomes "memorization."
+- **Route A — DEG definition sensitivity**: top-K vs Padj<0.05 & |LFC|>1 can reverse conclusions; declare the DEG definition.
+- **Route A — scGPT/Geneformer zero-shot perturbation is limited** (2025 Genome Biology evaluation) — do not trust zero-shot predictions.
+- **Route B — Not wrapped in pertpy/omicverse**: install CellOracle/SCENIC+/scTenifoldKnk directly; do not look for them inside `ov.single.*` or `pt.tl.*`.
+- **Route B — SCENIC+ KO is module-level functions** (`scenicplus.simulation.train_gene_expression_models` / `simulate_perturbation`), NOT a method on the SCENIC+ object — the often-cited `scplus_obj.simulate_perturbation()` does not exist.
+- **Route B — scTenifoldKnk citation is Osório 2022 *Patterns*, not "Iaconis 2024"**.
+- **Route B — No ATAC = lower GRN quality**: CellOracle/SCENIC+ without scATAC prior still run but TF→target resolution drops significantly.
+- **Both routes — GPU required for DL**: scGPT/GEARS/CPA finetune infeasible on CPU; without GPU pick linear baseline (Route A) or scTenifoldKnk/CellOracle-base-GRN (Route B).
+- **Both routes — n_replicates ≥3 per perturbation** (Route A) / ≥500 cells (Route B): otherwise training unstable / GRN noisy.
+
+## Reference resources
+
+- [scPerturBench (27-method benchmark)](https://github.com/bm2-lab/scPerturBench) + [Nature Methods 2025](https://www.nature.com/articles/s41592-025-02980-0)
+- [pertpy (scverse unified API, Route A only)](https://pertpy.readthedocs.io/)
+- [sc-best-practices perturbation modeling](https://www.sc-best-practices.org/conditions/perturbation_modeling.html)
+- [OP3 NeurIPS 2024 benchmark](https://openproblems.bio/results/perturbation_prediction)
+- [CellOracle docs](https://morris-lab.github.io/CellOracle.documentation/)
+- [SCENIC+ KO tutorial](https://scenicplus.readthedocs.io/en/latest/Perturbation_simulation.html)
+- [scTenifoldKnk](https://github.com/cailab-tamu/scTenifoldKnk)
+- [Gavriilidis 2024 CSBJ review (Route A vs B as complementary)](https://doi.org/10.1016/j.csbj.2024.05.017)

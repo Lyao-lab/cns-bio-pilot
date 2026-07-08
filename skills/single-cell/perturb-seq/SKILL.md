@@ -6,10 +6,10 @@ primary_tool: Pertpy
 ---
 
 ## When NOT to use this skill
-- 用户要预测**未做**实验的扰动响应（未见基因/药物的 in silico KO）→ 改用 `single-cell/perturbation-prediction`（GEARS/CPA/scGPT）
-- 只做常规 scRNA-seq 预处理/聚类/注释（无 CRISPR guide）→ 改用 `single-cell/omicverse-pipeline`
-- 只做基因必需性/功能模块模拟（无实测 Perturb-seq 数据）→ 改用 `single-cell/scop`（`RunscTenifoldKnk`）
-- bulk CRISPR screen（无单细胞读出）→ 不属本 skill 范围（走 bulk screen 分析如 MAGeCK）
+- Predict perturbation response for **unmeasured** experiments (in-silico KO of unseen genes/drugs) → `single-cell/perturbation-prediction` (GEARS/CPA/scGPT)
+- Only routine scRNA-seq preprocessing / clustering / annotation (no CRISPR guide) → `single-cell/omicverse-pipeline`
+- Only gene essentiality / functional-module simulation (no measured Perturb-seq data) → `single-cell/scop` (`RunscTenifoldKnk`)
+- bulk CRISPR screen (no single-cell readout) → out of scope (use bulk-screen tools such as MAGeCK)
 
 ## Version Compatibility
 
@@ -258,7 +258,28 @@ dc.plot_barplot(de_results, 'TP53', top_n=20)
 
 ## Related Skills
 
-- single-cell/preprocessing - scRNA-seq preprocessing
-- single-cell/markers-annotation - DE and marker gene concepts
-- single-cell/batch-integration - Multi-sample integration
-- crispr-screens/mageck-analysis - Bulk screen analysis
+- **Upstream**: routine scRNA-seq preprocessing (QC / clustering / annotation) → `single-cell/omicverse-pipeline`
+- **Downstream 1**: predict perturbation response for **unmeasured** experiments → `single-cell/perturbation-prediction` (GEARS/CPA/scGPT, **linear baseline mandatory**)
+- **Downstream 2**: perturbation-response DE / enrichment → `general-bio/omicverse-bulk` (pyDEG/pyGSEA)
+- bulk CRISPR screen (no single-cell readout) → out of scope; use MAGeCK etc.
+
+## Prerequisites (where data comes from)
+
+- **Perturb-seq / CROP-seq raw data** (guides already mapped) → h5ad with an `obs['guide']` or `obs['perturbation']` column
+- **Guide QC passed**: guide detection rate >80%, non-targeting fraction 5–25%, ≥100 cells per guide
+- **`layers['counts']`** must be retained (perturbation DE uses pseudobulk + DESeq2)
+- Tools: `pertpy` (primary) + `decoupler` (pathways) + optional Seurat Mixscape (via R)
+
+## When to leave this skill (where to go)
+
+- Predict **unmeasured** perturbations (unseen genes / drugs) → `single-cell/perturbation-prediction`
+- Write Methods describing the Perturb-seq workflow → `presentation/methods-writer`
+- Build a publication-grade figure from perturbation heatmap / dotplot → `visualization/multi-panel-figures`
+
+## Key pitfalls
+
+- **Wrong guide assignment corrupts everything downstream** — first use Mixscape to check that the KO signature is clear and that non-targeting vs targeting distributions are separated.
+- **<100 cells per guide** makes pseudobulk DE unstable; report n per guide.
+- **Perturbation DE must be pseudobulk** (aggregate by guide × sample), not per-cell Wilcoxon (pseudoreplication, meta-methodology principle ③).
+- **MAGeCK RRA is for bulk screens** — do not treat Perturb-seq as a bulk screen.
+- After finishing, run `scripts/postcheck.py` to verify: DE used pseudobulk, Padj reported, guide QC passed.

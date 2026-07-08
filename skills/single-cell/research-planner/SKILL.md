@@ -1,17 +1,17 @@
 ---
 name: single-cell-research-planner
-description: Designs complete single-cell research plans from a user-provided biomedical direction. Always use this skill whenever a user wants to design, scope, or structure a single-cell study — including disease-focused, mechanism-focused, biomarker-focused, translational, perturbation-inspired, or validation-aware projects. It should define the research question, choose the best-fit study pattern, recommend sample grouping logic, suggest reference datasets as examples only, specify the core analysis modules, propose a validation ladder, and output four workload configurations (Lite / Standard / Advanced / Publication+). Never fabricate datasets, sample metadata, accession numbers, cohort availability, cell-type labels, external validation resources, or literature references. Always include the mandatory Dataset Disclaimer immediately before any workflow section that mentions datasets or public resources.
+description: 单细胞课题设计方法论（零代码）——从研究方向生成完整可执行的研究计划：研究问题→study pattern→样本分组→分析模块→验证阶梯→figure 规划，输出 Lite/Standard/Advanced/Publication+ 四档配置。当用户要做课题设计、研究规划、research plan、study design、sample size、分组设计、单细胞立项时触发。强制 Dataset Disclaimer，绝不编造数据集/accession/文献。
 license: MIT
 author: AIPOCH
 ---
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
 ## When NOT to use this skill
-- 拿到 plan 后要**实际跑**单细胞分析 → 改用 `single-cell/omicverse-pipeline`（Python）或 `single-cell/scop`（R/Seurat）
-- 课题是空间转录组 → 改用 `spatial/omicverse-spatial`（设计+分析合一）；纯设计也可参考本 skill 但路由到 spatial
-- 课题是 bulk RNA-seq → 改用 `general-bio/omicverse-bulk`
-- 扰动相关课题要预测未做实验 → 改用 `single-cell/perturbation-prediction`（本 skill 不做预测建模）
-- 要写 Methods/Results 论文文字 → 改用 `presentation/methods-writer` / `presentation/results-writer`（本 skill 出 plan，不出 manuscript）
+- After getting the plan, want to **actually run** single-cell analysis → `single-cell/omicverse-pipeline` (Python) or `single-cell/scop` (R/Seurat)
+- The project is spatial transcriptomics → `spatial/omicverse-spatial` (design + analysis combined); pure design may reference this skill but route to spatial
+- The project is bulk RNA-seq → `general-bio/omicverse-bulk`
+- A perturbation project that must predict unmeasured experiments → `single-cell/perturbation-prediction` (this skill does not do predictive modeling)
+- Writing Methods/Results manuscript text → `presentation/methods-writer` / `presentation/results-writer` (this skill produces a plan, not a manuscript)
 
 # Single-Cell Research Planner
 
@@ -338,18 +338,27 @@ A good output from this skill should:
 - preserve factual caution around datasets and references
 - remain executable under the stated assumptions
 
-## 前置依赖（从哪来）
+## Prerequisites (where data comes from)
 
-- **研究方向输入** → 用户提供：疾病/表型 + 单细胞兴趣点（机制/细胞状态/标志物/通讯/治疗响应），可附可选信息（组织、平台、纯公共数据约束、湿实验可用性、目标工作量）
-- **无需任何代码或数据文件**——这是零代码课题设计方法论（含 9 个 `references/` 模块）
-- **文献支持（可选）** → 若用户提供已核实引用，按 `references/literature-retrieval-and-citation.md` 纳入；否则只给检索策略，绝不编造 PMID/DOI
+- **Research-direction input** → user provides: disease/phenotype + single-cell interest (mechanism / cell state / biomarker / communication / treatment response), optionally with tissue, platform, public-data-only constraint, wet-lab availability, target workload
+- **No code or data files required** — this is a zero-code study-design methodology (with 9 `references/` modules)
+- **Literature support (optional)** → if the user provides verified citations, include them per `references/literature-retrieval-and-citation.md`; otherwise provide only a search strategy — never fabricate PMIDs/DOIs
 
-## 何时离开本 skill（去哪）
+## When to leave this skill (where to go)
 
-- 拿到 plan 后开始实际数据处理 → `single-cell/omicverse-pipeline`（Python）或 `single-cell/scop`（R/Seurat）
-- 空转课题 → `spatial/omicverse-spatial`
-- bulk 课题 → `general-bio/omicverse-bulk`
-- 扰动相关课题 → `single-cell/perturbation-prediction`（预测）或 `single-cell/perturb-seq`（实测分析）
-- 出图 → `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
-- 写论文 → `presentation/methods-writer` / `presentation/results-writer` / `presentation/figure-legend-writer`
-- 做汇报 → `presentation/scientific-slides`（正式）/ `presentation/lab-meeting-slides`（组会进度）
+- Start actual data processing after getting the plan → `single-cell/omicverse-pipeline` (Python) or `single-cell/scop` (R/Seurat)
+- Spatial-transcriptomics project → `spatial/omicverse-spatial`
+- bulk project → `general-bio/omicverse-bulk`
+- Perturbation-related project → `single-cell/perturbation-prediction` (prediction) or `single-cell/perturb-seq` (measured-data analysis)
+- Plotting → `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
+- Manuscript writing → `presentation/methods-writer` / `presentation/results-writer` / `presentation/figure-legend-writer`
+- Presentations → `presentation/scientific-slides` (formal talk / lab-meeting dual mode)
+
+## Key pitfalls
+
+- **The Dataset Disclaimer is mandatory**: any section naming datasets / public resources / references must be preceded by it — never fabricate GEO accessions / PMIDs / cohort availability / cell-type labels (the core application of meta-methodology principle ①).
+- **Datasets are examples only**: when recommending GSE/PMIDs, label them "verify availability" — do not guarantee access; LLMs are particularly prone to inventing accession numbers.
+- **Sample-size advice needs a statistical basis**: power analysis or a domain consensus (e.g. scRNA ≥3 bio replicates/group); no thumb-in-the-air numbers.
+- **The study pattern must match the research objective**: disease-focused / mechanism-focused / biomarker-focused / translational each have their own pattern; a mismatch corrupts every downstream analysis module.
+- **This skill does not assess analysis feasibility**: it is a design phase and **does not execute analysis** — feasibility is verified later via omicverse-pipeline/scop after the plan is produced.
+- **The four configurations (Lite/Standard/Advanced/Publication+) must be explicit**: prevents the user from running Lite config at Publication+ workload, or vice versa.

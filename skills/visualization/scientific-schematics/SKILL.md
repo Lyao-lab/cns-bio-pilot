@@ -1,16 +1,15 @@
 ---
 name: scientific-schematics
-description: Automates publication-quality scientific diagrams (e.g., flowcharts, architectures, pathways) when you need journal/poster-ready visuals from a natural-language description.
+description: 自动生成发表级科学示意图（机制图/流程图/架构图/路径图/图形摘要 Graphical Abstract）。从自然语言描述或论文 abstract 出发，经 AI 生成→视觉审查→精炼循环产出 journal/poster 级图片。当用户要画机制图、流程图、神经网络架构、信号通路、论文图形摘要/TOC 图时触发。
 license: MIT
 author: AIPOCH
 ---
-> **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
+> **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills) (merged the abstract→layout capability of the former `visualization/graphical-abstract` skill in 2026-07)
 
 ## When NOT to use this skill
-- 数据驱动的图表（UMAP/火山图/热图/dotplot）→ 改用 `visualization/omicverse-plotting`（ov.pl.*）
-- 论文图形摘要（从 abstract 推布局 + AI 提示词）→ 改用 `visualization/graphical-abstract`
-- 6 面板组合发表级 figure（已有分图要拼）→ 改用 `visualization/multi-panel-figures`
-- 需要 Nano Banana Pro 生成带研究背景的 slide 视觉 → 改用 `presentation/scientific-slides`
+- Data-driven plots (UMAP/volcano/heatmap/dotplot) → use `visualization/omicverse-plotting` (ov.pl.*)
+- 6-panel composite publication figure (already have sub-figures to assemble) → use `visualization/multi-panel-figures`
+- Need Nano Banana Pro to generate slide visuals with research context → use `presentation/scientific-slides`
 
 # Scientific Schematics Skill
 
@@ -19,6 +18,7 @@ author: AIPOCH
 - Producing **poster-friendly** diagrams that prioritize readability at distance (larger labels, stronger contrast).
 - Drafting **neural network architecture** schematics (e.g., Transformer blocks, attention modules) for papers or slides.
 - Generating **biological pathway** visuals (e.g., Krebs cycle) with iterative quality review.
+- **Graphical Abstract / TOC figure**: recommend layout + elements + AI prompts from a paper abstract (see "Mode: Graphical Abstract" below).
 - Rapidly iterating on a diagram concept when you need **AI-assisted refinement loops** instead of manual redraws.
 
 ## Key Features
@@ -82,7 +82,7 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
    - The reviewer returns actionable critique and a numeric quality score.
 
 3. **Refinement Loop**
-   - If the score is below the acceptance threshold (e.g., **8.5/10**), the system re-enters generation using the reviewer’s feedback as constraints.
+   - If the score is below the acceptance threshold (e.g., **8.5/10**), the system re-enters generation using the reviewer's feedback as constraints.
    - This repeats until the threshold is met or the run terminates by internal stopping conditions.
 
 4. **Finalization**
@@ -95,26 +95,53 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
 - `--reviewer <model_id>`: Model used to critique the diagram.
 - **Quality threshold**: A numeric cutoff (example: `8.5/10`) that determines whether refinement continues.
 
-## 前置依赖（从哪来）
+## Prerequisites (where inputs come from)
 
-- **自然语言描述** → 机制/流程/架构的文字说明（来自 `presentation/results-writer` 产出的方法叙述，或用户直接描述）
-- **可选参考图** → 已有的草图/示意图（辅助生成）
-- **环境**：`OPENROUTER_API_KEY`（必需）；Python 3.10+，依赖 `pillow`/`matplotlib`/`requests`
-- 参考文档：`references/best_practices.md`、`references/diagram_types.md`
-- 脚本入口 `scripts/generate_schematic.py`
+- **Natural-language description** → text describing the mechanism/flow/architecture (from `presentation/results-writer` method narrative, or directly from the user)
+- **Optional reference figure** → existing sketch/schematic (to assist generation)
+- **Environment**: `OPENROUTER_API_KEY` (required); Python 3.10+, deps `pillow`/`matplotlib`/`requests`
+- Reference docs: `references/best_practices.md`, `references/diagram_types.md`
+- Script entry `scripts/generate_schematic.py`
 
-## Pre-Output Checklist（出图前必过）
-- [ ] 数值完整性：若示意图含定量元素（如比例条/箭头粗细），保留 N / 统计依据
-- [ ] 轴标签/图例/色盲友好：标注清晰，配色对色盲安全（避免纯红绿）
-- [ ] 引用支撑：机制图所依据的文献/数据来源明确
-- [ ] 避免臆测：未经验证的步骤标为 "hypothesized"，不画成既定事实
-- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
-- [ ] 跑 postcheck.py ✅
+## Pre-Output Checklist (must pass before exporting a figure)
+- [ ] Numerical integrity: if the schematic contains quantitative elements (e.g., scale bars / arrow thickness), retain N / statistical basis
+- [ ] Axis labels / legend / colorblind-friendly: clear labels, colorblind-safe palette (avoid pure red-green)
+- [ ] Citation support: literature/data sources underlying the mechanism diagram are explicit
+- [ ] Avoid speculation: unverified steps labeled "hypothesized", not drawn as established fact
+- [ ] Correlation ≠ causation: use "associated with"; regulates/causes requires experimental evidence
+- [ ] Run postcheck.py ✅
 
-## 何时离开本 skill（去哪）
+## When to leave this skill (where to go)
 
-- 把生成的 schematic 拼进发表级 figure → `visualization/multi-panel-figures`
-- 写 schematic 的图注 → `presentation/figure-legend-writer`
-- 嵌入 slide → `presentation/scientific-slides`（`--attach figures/output.png`）
-- 需要论文图形摘要（从 abstract 推布局 + AI 提示词）→ `visualization/graphical-abstract`
-- 注意：本 skill 出的是机制图/示意图；数据驱动的图表（UMAP/火山图/热图）走 `visualization/omicverse-plotting`
+- Assemble the generated schematic into a publication figure → `visualization/multi-panel-figures`
+- Write the schematic legend → `presentation/figure-legend-writer`
+- Embed into a slide → `presentation/scientific-slides` (`--attach figures/output.png`)
+- Note: this skill outputs mechanism/schematic/graphical-abstract figures; data-driven plots (UMAP/volcano/heatmap) go to `visualization/omicverse-plotting`
+
+## Mode: Graphical Abstract (merged from former graphical-abstract skill)
+
+When the task is **generating a Graphical Abstract / TOC figure for a paper**, follow the 4-step workflow in `references/graphical_abstract_layout.md`:
+
+1. **Parse the abstract** → extract topic / methods / findings / implications
+2. **Map visual elements** → for each concept choose a symbol + palette + position (palette follows `references/figure_aesthetics.md` dual-track)
+3. **Recommend a layout grid** → choose by the abstract's narrative structure (three-column horizontal / vertical flow / left-right comparison / central radial)
+4. **Generate AI prompts** → produce both Midjourney-style and DALL-E-style versions
+
+After producing the blueprint, **use this skill's `generate_schematic.py` main loop to actually generate the image** (generate→review→refine, threshold 8.5/10) — this is the key improvement from merging graphical-abstract: the former skill only produced half-finished prompts, now it closes the loop to image generation.
+
+```bash
+# Example: generate a graphical abstract from an abstract
+python scripts/generate_schematic.py "Graphical abstract: [central element + flow inferred from abstract]" \
+  --doc-type journal
+```
+
+For detailed layout rules, grid templates, and AI prompt templates, see `references/graphical_abstract_layout.md`.
+
+## Key pitfalls
+
+- **Depends on OPENROUTER_API_KEY**: without the env var, generate_schematic.py fails — run `export OPENROUTER_API_KEY=...` first
+- **Quality threshold 8.5/10**: the refine loop regenerates repeatedly if the threshold isn't met — set max_iter to avoid infinite loops
+- **AI-generated figures ≠ accurate figures**: the model may draw biological facts incorrectly (e.g., labeling a T-cell marker as a B-cell) — **manually verify the mechanism/labels**; don't blindly trust AI output
+- **graphical-abstract mode only produces prompts**: the former graphical-abstract skill's abstract→layout capability has been merged in, but Midjourney/DALL-E still need external image-generation tools
+- **scientific-schematics is for non-data figures**: pure mechanism/flow; data-driven plots (UMAP/volcano) go to `visualization/omicverse-plotting`
+- **AI "fake data" risk**: the model sometimes draws placeholder elements that look like bar charts — during review confirm there is no quantitative data, purely schematic

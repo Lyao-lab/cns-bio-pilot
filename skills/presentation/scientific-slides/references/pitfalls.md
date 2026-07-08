@@ -1,6 +1,6 @@
 # Common Pitfalls to Avoid
 
-> 下沉自原 SKILL.md 的「Common Pitfalls to Avoid」（Content/Design/Timing 三类）+「Summary: Key Principles」。
+> Sunk from the original SKILL.md "Common Pitfalls to Avoid" (Content/Design/Timing categories) + "Summary: Key Principles".
 
 ## Content Mistakes
 

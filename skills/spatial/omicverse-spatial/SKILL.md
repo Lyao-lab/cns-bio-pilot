@@ -4,131 +4,143 @@ description: 空间转录组全流程（IO→空间邻域→QC→空间域→SVG
 ---
 
 ## When NOT to use this skill
-- 用户要 spot/细胞去卷积（cell2location/RCTD/Tangram 估细胞构成）→ 改用 `spatial/deconvolution`（omicverse 未注册 cell2location）
-- 高分辨率平台（Stereo-seq / Slide-seq / Visium HD 亚细胞）+ cellpose 分割 → 改用 `spatial/multiomics`
-- 空间蛋白组（CODEX/IMC/MIBI）→ 改用 `spatial/proteomics`（scimap，非空转）
-- 常规单细胞（无空间坐标）→ 改用 `single-cell/omicverse-pipeline`
+- Spot/cell deconvolution (cell2location/RCTD/Tangram to estimate cell composition) → use `spatial/deconvolution` (`ov.space.Deconvolution` wraps 5 methods)
+- High-resolution platforms (Stereo-seq / Slide-seq / Visium HD subcellular) + cellpose segmentation → use `spatial/multiomics`
+- Spatial proteomics (CODEX/IMC/MIBI) → use `spatial/proteomics` (scimap, not spatial transcriptomics)
+- Conventional single-cell (no spatial coordinates) → use `single-cell/omicverse-pipeline`
 
-# OmicVerse 空间转录组全流程
+# OmicVerse Spatial Transcriptomics Pipeline
 
-**合并自原 skill**：`spatial/preprocessing`、`data-io`、`domains`、`neighbors`、`statistics`、`visualization`、`communication`、`image-analysis`。这些在 OmicVerse V2 中已有统一封装。**去卷积不在本 skill**——cell2location/RCTD 等仍需 `spatial/deconvolution`。高分辨率平台见 `spatial/multiomics`，空间蛋白组见 `spatial/proteomics`。
+**Merged from former skills**: original preprocessing / data-io / domains / neighbors / statistics / visualization / communication / image-analysis (these standalone skills no longer exist; functionality unified in OmicVerse V2). **Deconvolution is NOT in this skill** — cell2location/RCTD etc. go to `spatial/deconvolution`. High-resolution platforms: see `spatial/multiomics`; spatial proteomics: see `spatial/proteomics`.
 
-`pip install omicverse`（V2）。基于 scanpy/squidpy/anndata。
+`pip install omicverse` (V2). Built on scanpy/squidpy/anndata.
 
-## 0. 初始化
+## 0. Initialization
 
 ```python
 import omicverse as ov
 ov.plot_set()
 ```
 
-## 1. 数据 IO（按平台）
+## 1. Data IO (by platform)
 
-> **网络可达性实测分级**（2026-07 实测，受限网络环境）：
-> | 数据源 | 可达性 | 用法 |
+> **Network reachability, tested tiers** (2026-07, restricted-network environment):
+> | Source | Reachability | Usage |
 > |---|---|---|
-> | `sc.datasets.visium_sge(sample_id)` | ✅ 稳定 | 10x 官方 CDN，Visium 公开样本首选 |
-> | `sq.datasets.visium_hne_adata()` | ❌ 403 | squidpy 自建 CDN，受限网络不可达 |
-> | `ov.datasets.hg_forebrain_glutamatergic()` | ❌ 失败 | loom 文件下载异常 |
-> | 本地 spaceranger 输出 | ✅ 最稳 | `squidpy.read_visium('目录/')` |
-> | GEO 直链（h5ad） | ⚠️ 取决于网络 | `sc.read_h5ad()` |
+> | `sc.datasets.visium_sge(sample_id)` | ✅ stable | 10x official CDN; first choice for public Visium samples |
+> | `sq.datasets.visium_hne_adata()` | ❌ 403 | squidpy self-hosted CDN; unreachable on restricted networks |
+> | `ov.datasets.hg_forebrain_glutamatergic()` | ❌ fails | loom download error |
+> | Local spaceranger output | ✅ most reliable | `squidpy.read_visium('dir/')` |
+> | GEO direct link (h5ad) | ⚠️ network-dependent | `sc.read_h5ad()` |
 >
-> **策略**：首选 `sc.datasets.visium_sge`；失败则从 GEO/10x 官网手动下载 spaceranger 输出到本地，用 `sq.read_visium()` 读。单细胞参考集同理——优先本地，CDN 不可靠时用 GEOparse 下原始 fastq/counts 自行处理。
+> **Strategy**: prefer `sc.datasets.visium_sge`; on failure, manually download spaceranger output from GEO/10x and read with `sq.read_visium()`. Same for single-cell references — prefer local; when CDN is unreliable, fetch raw fastq/counts via GEOparse and process yourself.
 
 ```python
-# Visium 标准
+# Standard Visium
 adata = ov.space.read_visium_10x('visium_sample/')
 
-# 新一代平台
+# Next-gen platforms
 adata = ov.io.read_visium_hd('hd_sample/')     # 8μm/2μm bin
-adata = ov.io.read_xenium('xenium_out/')       # 亚细胞分辨率
+adata = ov.io.read_xenium('xenium_out/')       # subcellular resolution
 adata = ov.io.read_nanostring('cosmx/')        # GeoMx/CosMx
 ```
 
-| 平台 | 函数 | 分辨率 |
+| Platform | Function | Resolution |
 |---|---|---|
 | Visium | `ov.space.read_visium_10x` | 55μm spot |
 | Visium HD | `ov.io.read_visium_hd` | 2-8μm bin |
-| Xenium | `ov.io.read_xenium` | 亚细胞 |
-| Nanostring | `ov.io.read_nanostring` | 单细胞级 |
+| Xenium | `ov.io.read_xenium` | subcellular |
+| Nanostring | `ov.io.read_nanostring` | single-cell grade |
 
-## 2. QC + 预处理
+## 2. QC + preprocessing
 
 ```python
-ov.pp.qc(adata, doublets_method='scrublet')   # 与单细胞同入口
+ov.pp.qc(adata, doublets_method='scrublet')   # same entry as single-cell
 ov.pp.preprocess(adata, mode='shiftlog', n_HVGs=3000)
 ov.pp.scale(adata); ov.pp.pca(adata, n_pcs=50)
-adata.layers['counts']  # 确保保留，去卷积需要
+adata.layers['counts']  # keep; required by deconvolution
 ```
 
-## 3. 空间邻域图（核心）
+## 3. Spatial neighbor graph (core)
 
 ```python
 ov.pp.spatial_neighbors(adata, n_neighbors=6, method='knn')
-# 或坐标带 Delaunay：method='delaunay'（Visium 六边形网格默认 knn 即可）
-# 结果 adata.obsp['spatial_connectivities'] / ['distances']
+# or coordinates with Delaunay: method='delaunay' (Visium hex grid: knn is fine)
+# outputs adata.obsp['spatial_connectivities'] / ['distances']
 ```
 
-后续 SVG / 空间域 / 通讯都依赖此邻接图。
+All downstream SVG / spatial domain / communication methods depend on this graph.
 
-## 4. 空间域 / 组织区域
+## 4. Spatial domains / tissue regions
 
 ```python
-# STAGATE（图自编码器，最常用，对噪声鲁棒）
+# STAGATE (graph autoencoder, most common, robust to noise)
 ov.space.pySTAGATE(adata)
 ov.pp.neighbors(adata, use_rep='X_STAGATE'); ov.pp.umap(adata)
 ov.pp.leiden(adata, resolution='auto')
 
-# 替代算法
-ov.space.GraphST(adata)    # 图对比学习，更适大数据
-ov.space.BANKSY(adata)     # 邻域感知，边界清晰
-ov.space.BINARY(adata)     # 自监督，零样本
+# Alternative algorithms
+ov.space.GraphST(adata)    # graph contrastive learning, better for large data
+ov.space.BANKSY(adata)     # neighborhood-aware, sharp boundaries
+ov.space.BINARY(adata)     # self-supervised, zero-shot
 ```
 
-决策点：默认 STAGATE；样本量大（>1M spot）选 GraphST；需要锐利组织边界选 BANKSY。
+Decision: default STAGATE; large samples (>1M spot) → GraphST; sharp tissue boundaries → BANKSY; **cell-type-aware domains with speed → MENDER** (2024, Nat Commun; fast, cell-type-aware); **multi-omics (e.g. spatial RNA+ATAC) → SpatialGlue** (2024, Nat Methods; dual-attention multimodal domain).
 
-## 5. 空间变异基因（SVG）
+> **2025 benchmark consensus** (Genome Biol / iMeta, 26 methods / 63 sections): no single SOTA; results vary by tissue/platform. **Run at least 2 methods for key domain conclusions**; commit only when directions agree.
+
+## 5. Spatially variable genes (SVG)
 
 ```python
-ov.space.spatial_autocorr(adata, mode='moran')   # Moran's I；mode='geary' 为 Geary's C
-# adata.var 新增: moranI, moranI_pval, spatial_high_variable
+ov.space.spatial_autocorr(adata, mode='moran')   # Moran's I; mode='geary' for Geary's C
+# adds to adata.var: moranI, moranI_pval, spatial_high_variable
 svg = adata.var.query('moranI > 0.3').index
 ```
 
-> **Windows + squidpy 实测坑**：用 `squidpy.gr.spatial_autocorr` 时，`n_perms>=1` 会触发 multiprocessing，在 stdin/heredoc 模式下挂死。**必须把脚本写成 `.py` 文件**跑（`python script.py`），并用 `if __name__=='__main__':` 包裹。另外 `sq.pl.spatial_scatter(save='x.png')` 的输出在 `figures/` 子目录，不是当前目录。10x Visium 数据常有重复 var_names，需先 `adata = adata[:, ~adata.var_names.duplicated()].copy()`。
+> **Windows + squidpy gotcha**: when using `squidpy.gr.spatial_autocorr`, `n_perms>=1` triggers multiprocessing that hangs under stdin/heredoc mode. **Write the script to a `.py` file** and run `python script.py`, wrapped in `if __name__=='__main__':`. Also `sq.pl.spatial_scatter(save='x.png')` writes to a `figures/` subdir, not the current dir. 10x Visium data often has duplicate var_names — first run `adata = adata[:, ~adata.var_names.duplicated()].copy()`.
 
-## 6. 空间细胞通讯
+## 6. Spatial cell-cell communication
 
 ```python
-# 构建空间网络（ligand-receptor + 空间近邻）
+# Build spatial network (ligand-receptor + spatial neighbors)
 ov.space.Cal_Spatial_Net(adata)
-# 推断
-ov.space.COMMOT(adata)   # 各向异性通讯，主流选择
-# 或 CellChat 空间版（需 R），较少用
+# Inference
+ov.space.COMMOT(adata)   # anisotropic OT communication, mainstream spatial choice
+# Alternatives: LIANA+ (spatial mode, unified framework), DeepTalk (single-cell-res spatial CCC)
 ```
 
-## 7. 可视化（详见 visualization/omicverse-plotting）
+> **Spatial CCC ranking (2024-2026)**: **COMMOT** (OT-based) and **LIANA+ spatial mode** (Mol Syst Biol 2024, 251+ citations, unified framework that internally runs multiple methods) are the SOTA for spatially-aware communication. **CellChat spatial / CellPhoneDB v5 are NOT spatial-native** — they were built for dissociated scRNA-seq; using them on spatial data is fallback only. **DeepTalk** (Nat Commun 2024, 93+ citations) is a newer option for single-cell-resolution spatial CCC. The first systematic spatial-CCC benchmark (bioRxiv 2026.05.19.724475) confirmed no single winner — run ≥2 methods and report consensus.
+
+## 7. Visualization (see visualization/omicverse-plotting)
 
 ```python
-ov.pl.plot_spatial(adata, color='leiden')           # 组织切片聚类
-ov.pl.plot_spatial(adata, color='moranI_top_genes') # SVG 表达
+ov.pl.plot_spatial(adata, color='leiden')           # tissue section clusters
+ov.pl.plot_spatial(adata, color='moranI_top_genes') # SVG expression
 ov.pl.embedding(adata, basis='X_umap', color='leiden')
 ```
 
-H&E / IF 配准图像分析：ov V2 已集成基础配准；复杂配准（StarFusion/SpacesID）仍可借助 `squidpy.pl.spatial_scatter` + `ov.io.read_*` 返回的 `adata.uns['spatial']` 图像栈。
+H&E / IF image analysis: ov V2 integrates basic registration; complex registration (StarFusion/SpacesID) still possible via `squidpy.pl.spatial_scatter` + the `adata.uns['spatial']` image stack returned by `ov.io.read_*`.
 
-## 决策速查：何时离开本 skill
+## Prerequisites (where it comes from)
 
-| 需求 | 去 |
+- **Raw spatial data** (spaceranger / star-solo / SAW output) → contains `adata.obsm['spatial']` coordinates + `uns['spatial']` H&E images
+- **`layers['counts']` must be preserved** — SVG/deconvolution predecessors use raw counts
+- **Spatial neighbor graph**: `ov.pp.spatial_neighbors` must run before spatial domains/SVG/communication (all spatial methods consume this graph)
+- **High-resolution platforms** (Stereo-seq/Visium HD) → `spatial/multiomics` (cellpose segmentation)
+- **Spot cell composition estimation** → `spatial/deconvolution`
+
+## Decision quick-reference: when to leave this skill
+
+| Need | Go to |
 |---|---|
-| Spot/细胞去卷积（cell2location 等） | `spatial/deconvolution` |
-| Stereo-seq / 高分辨率平台专门流程 | `spatial/multiomics` |
-| 空间蛋白组（CODEX/IMC/MIBI） | `spatial/proteomics` |
+| Spot/cell deconvolution (cell2location etc.) | `spatial/deconvolution` |
+| Stereo-seq / high-resolution platform workflow | `spatial/multiomics` |
+| Spatial proteomics (CODEX/IMC/MIBI) | `spatial/proteomics` |
 
-## 关键坑
+## Key pitfalls
 
-- `ov.pp.spatial_neighbors` 必须在空间域/SVG/通讯之前跑——所有空间方法都吃这张图。
-- 平台不同默认 n_neighbors 不同：Visium 六边形取 6，Xenium/HD 用 4-8 试。
-- SVG 用 Moran's I，阈值 0.3 起步；过严会漏掉弱空间模式基因。
-- 去卷积前确认 `adata.layers['counts']` 未被归一化覆盖。
-- Visium HD 用 `read_visium_hd`，不要降级用 `read_visium_10x`——会丢 bin 元信息。
+- `ov.pp.spatial_neighbors` must run before spatial domains/SVG/communication — all spatial methods consume this graph.
+- Default n_neighbors differs by platform: Visium hex grid uses 6; Xenium/HD try 4-8.
+- SVG uses Moran's I, threshold starts at 0.3; too strict misses weak-spatial-pattern genes.
+- Before deconvolution, confirm `adata.layers['counts']` was not overwritten by normalization.
+- Visium HD uses `read_visium_hd`; do not downgrade to `read_visium_10x` — bin metadata is lost.

@@ -1,16 +1,16 @@
 ---
 name: figure-legend-writer
-description: Writes complete, publication-grade figure legends that can stand on their own. Use when writing or revising figure legends for any scientific figure — bar charts, line graphs, scatter plots, box plots, heatmaps, survival curves, flow cytometry plots, western blots, microscopy images, or schematic diagrams. Also triggers on "write a figure legend for", "help me describe this figure", "my figure needs a legend", "write Figure 1 legend", or "what should a figure legend include".
+description: 写独立可读的发表级图注（figure legend）——支持 bar/line/scatter/box/heatmap/survival/flow/western/microscopy/schematic/forest 等所有图类型。当用户要写图注、figure legend、图例描述、"帮我描述这张图"、"图注怎么写"时触发。
 license: MIT
 author: AIPOCH
 ---
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
 ## When NOT to use this skill
-- 写论文 Results 章节（结果叙述/解读）→ 改用 `presentation/results-writer`
-- 写 Methods 描述统计方法 → 改用 `presentation/methods-writer`
-- 图还没画 → 先走 `visualization/omicverse-plotting` / `visualization/multi-panel-figures` 出图
-- 解读图的生物学含义（interpretation）→ 本 skill 只写图注文字，解读走 results-writer / discussion
+- Writing the paper's Results section (narrative/interpretation of findings) → use `presentation/results-writer`
+- Writing Methods to describe statistical methods → use `presentation/methods-writer`
+- The figure is not yet drawn → first produce it via `visualization/omicverse-plotting` / `visualization/multi-panel-figures`
+- Interpreting the biological meaning of the figure (interpretation) → this skill writes only the legend text; interpretation goes to results-writer / discussion
 
 # Figure Legend Generator
 
@@ -123,28 +123,37 @@ When information is missing, use explicit placeholders:
 → Templates by chart type: [references/legend_templates.md](references/legend_templates.md)
 → Academic style guide: [references/academic_style_guide.md](references/academic_style_guide.md)
 
-## 前置依赖（从哪来）
+## Prerequisites (where inputs come from)
 
-- **图描述** → 用户描述图表内容/上传图片/口述（来自各出图 skill 产出的 figure）
-- **可选补充**：图号、图类型、样本量、统计检验、显著性阈值、缩写
-- **图本身**（已完成）来自：
-  - 组合 figure → `visualization/multi-panel-figures`
-  - 单细胞/空转/bulk 图 → `visualization/omicverse-plotting`
-  - 机制图 → `visualization/scientific-schematics`
-  - 图形摘要 → `visualization/graphical-abstract`
-- 缺失信息（n/统计/误差棒）用占位符 `[AUTHOR TO SPECIFY: ...]`，绝不编造
+- **Figure description** → the user describes the chart content / uploads an image / dictates it (from figures produced by the plotting skills)
+- **Optional additions**: figure number, figure type, sample size, statistical test, significance threshold, abbreviations
+- **The figure itself** (already complete) comes from:
+  - Composite figures → `visualization/multi-panel-figures`
+  - Single-cell / spatial / bulk plots → `visualization/omicverse-plotting`
+  - Mechanism diagrams → `visualization/scientific-schematics`
+  - Graphical abstracts → `visualization/scientific-schematics` (graphical-abstract mode)
+- Missing information (n / statistics / error bars) uses the placeholder `[AUTHOR TO SPECIFY: ...]`; never fabricate
 
-## Pre-Output Checklist（出报告前必过）
-- [ ] 数值完整性：每张定量图保留 N / 统计检验 / 误差线
-- [ ] 交叉条件一致性：效果是 universal 还是 cell-type-specific？是否需要分面
-- [ ] 引用支撑：明确哪张图/哪个统计支持主结论
-- [ ] 避免臆测：无显著差异时写 "No significant effect"，不硬编故事
-- [ ] 关联≠因果：用 "associated with"，regulates/causes 需实验证据
-- [ ] 跑 postcheck.py ✅
+## Pre-Output Checklist (must pass before delivery)
+- [ ] Numeric integrity: every quantitative figure keeps N / statistical test / error bars
+- [ ] Cross-condition consistency: is the effect universal or cell-type-specific? Faceting needed?
+- [ ] Citation support: state exactly which figure / statistic backs the main conclusion
+- [ ] No speculation: when there is no significant difference, write "No significant effect" — do not fabricate a story
+- [ ] Association ≠ causation: use "associated with"; regulates/causes requires experimental evidence
+- [ ] Run postcheck.py ✅
 
-## 何时离开本 skill（去哪）
+## When to leave this skill (where to go)
 
-- 写论文 Results 描述这些图 → `presentation/results-writer`
-- 写 Methods 描述图的统计方法 → `presentation/methods-writer`
-- 把图+图注做成汇报 slide → `presentation/scientific-slides`（`--attach` 嵌入图片）
-- 图注只写文字，不做数据解读（interpretation 走 results-writer/discussion）
+- Writing the paper's Results to describe these figures → `presentation/results-writer`
+- Writing Methods to describe the figure statistics → `presentation/methods-writer`
+- Turning figure + legend into a presentation slide → `presentation/scientific-slides` (`--attach` to embed the image)
+- The legend is text only; do not interpret the data (interpretation goes to results-writer/discussion)
+
+## Key pitfalls
+
+- **The legend must be self-contained**: understandable without the main text — include figure type, N, statistical test, significance threshold, error bar type (SD/SEM), and axis meaning
+- **Do not fabricate values**: every n / P / error bar must come from the figure itself or upstream data; LLMs readily invent fill-ins like "(n=3, p<0.05)"
+- **Use accurate figure-type terms**: box plot ≠ bar chart; volcano ≠ MA; do not call a heatmap "clustering" — LLMs conflate these easily
+- **Missing information uses the placeholder** `[AUTHOR TO SPECIFY: N / test method / error bar type]`
+- **Multiple-testing correction must be stated**: the BH/FDR threshold (e.g., "Padj<0.05, BH-FDR")
+- **No mechanistic interpretation**: the legend only describes "what is shown"; mechanistic inference goes in Results/Discussion (meta-methodology: association ≠ causation)

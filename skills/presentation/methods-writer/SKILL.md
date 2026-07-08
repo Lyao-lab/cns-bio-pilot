@@ -7,11 +7,11 @@ author: AIPOCH
 > **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
 ## When NOT to use this skill
-- 写 Results 章节（结果叙述）→ 改用 `presentation/results-writer`
-- 写图注 → 改用 `presentation/figure-legend-writer`
-- 写整篇 manuscript（不只 Methods）→ 本 skill 只产 Methods 段落，其余走对应 writer
-- 做 slide 汇报 → 改用 `presentation/scientific-slides` / `presentation/lab-meeting-slides`
-- 编造统计结果/p值/伦理批件号 → 本 skill 拒绝，缺失细节用占位符 `[AUTHOR TO SPECIFY: ...]`
+- Writing the Results section (narrative of findings) → use `presentation/results-writer`
+- Writing figure legends → use `presentation/figure-legend-writer`
+- Writing a full manuscript (not just Methods) → this skill produces only Methods paragraphs; the rest goes to the corresponding writer
+- Making presentation slides → use `presentation/scientific-slides` (formal talk / lab meeting dual mode)
+- Fabricating statistical results / p-values / ethics approval IDs → this skill refuses; missing details use the placeholder `[AUTHOR TO SPECIFY: ...]`
 
 # Method Writing
 
@@ -127,21 +127,29 @@ Provide:
 → Reporting guidelines detail: [references/reporting_guidelines.md](references/reporting_guidelines.md)
 → Writing principles: [references/writing_principles.md](references/writing_principles.md)
 
-## 前置依赖（从哪来）
+## Prerequisites (where inputs come from)
 
-- **研究协议 / 分析流程** → 用户提供的 study description / protocol / 现有 Methods 草稿
-- **分析流程细节**（用于如实转写）来自各分析 skill：
-  - 单细胞 → `single-cell/omicverse-pipeline`（QC/聚类/批次/注释/通讯/轨迹参数与版本）
-  - 空转 → `spatial/omicverse-spatial`（`ov.io.read_*`、spatial_neighbors、SVG、去卷积）
-  - 去卷积 → `spatial/deconvolution`（cell2location/Tangram/RCTD 参数与参考集）
-  - bulk → `general-bio/omicverse-bulk`（pyDESeq2/pyGSEA/pyWGCNA/pyPPI/ComBat）
-  - 扰动 → `single-cell/perturbation-prediction`（GEARS/CPA/scGPT 评估设置）
-- **可选**：target journal、study type、reporting guideline（CONSORT/STROBE/PRISMA/TRIPOD/ARRIVE/STARD）、统计细节
-- 缺失细节用占位符 `[AUTHOR TO SPECIFY: ...]`，绝不编造
+- **Study protocol / analysis pipeline** → the user-supplied study description / protocol / existing Methods draft
+- **Analysis pipeline details** (transcribed faithfully) come from the analysis skills:
+  - Single-cell → `single-cell/omicverse-pipeline` (QC / clustering / batch / annotation / communication / trajectory parameters and versions)
+  - Spatial → `spatial/omicverse-spatial` (`ov.io.read_*`, spatial_neighbors, SVG, deconvolution)
+  - Deconvolution → `spatial/deconvolution` (cell2location/Tangram/RCTD parameters and reference set)
+  - Bulk → `general-bio/omicverse-bulk` (pyDESeq2/pyGSEA/pyWGCNA/pyPPI/ComBat)
+  - Perturbation → `single-cell/perturbation-prediction` (GEARS/CPA/scGPT evaluation settings)
+- **Optional**: target journal, study type, reporting guideline (CONSORT/STROBE/PRISMA/TRIPOD/ARRIVE/STARD), statistical details
+- Missing details use the placeholder `[AUTHOR TO SPECIFY: ...]`; never fabricate
 
-## 何时离开本 skill（去哪）
+## When to leave this skill (where to go)
 
-- 写配套的 Results 章节 → `presentation/results-writer`
-- 写图注 → `presentation/figure-legend-writer`
-- Methods 写好后做汇报 → `presentation/scientific-slides`
-- ⚠️ 本 skill 只写 Methods 段落式散文；不写整篇 manuscript，不编造结果/统计/p值
+- Writing the companion Results section → `presentation/results-writer`
+- Writing figure legends → `presentation/figure-legend-writer`
+- Building a presentation after Methods is done → `presentation/scientific-slides`
+- ⚠️ This skill writes only Methods paragraph prose; it does not write a full manuscript and does not fabricate results / statistics / p-values
+
+## Key pitfalls
+
+- **Do not fabricate parameters/versions**: every software version (`scanpy==1.10.2`, etc.), parameter (`resolution=0.6`), and threshold must come from the code actually run — writing from memory violates meta-methodology principle ①. LLMs are especially prone to inventing DESeq2/scVI default parameters.
+- **Match the reporting guideline to the study type**: RCT→CONSORT, observational→STROBE, systematic review→PRISMA, prediction model→TRIPOD, animal→ARRIVE, diagnostic→STARD. **Choosing the wrong guideline = immediate editor rejection.**
+- **STAR Methods format** (Cell-family journals): key resources table + concise step-by-step; do not write it as long paragraph prose.
+- **The statistical methods paragraph must include**: test type + multiple-testing correction (BH/FDR) + significance threshold + n / replicate unit + whether blinded — LLMs tend to drop "the replicate unit is donor, not cell."
+- **Missing information uses the placeholder** `[AUTHOR TO SPECIFY: ...]`; never fabricate (ethics approval IDs, accession numbers, antibody LOT numbers, etc.).

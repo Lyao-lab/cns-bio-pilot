@@ -1,15 +1,15 @@
 ---
 name: bio-spatial-transcriptomics-spatial-proteomics
-description: Analyzes spatial proteomics data from CODEX, IMC, and MIBI platforms including cell segmentation and protein colocalization. Use when working with multiplexed imaging data, analyzing protein spatial patterns, or integrating spatial proteomics with transcriptomics.
+description: 空间蛋白组（CODEX / IMC / MIBI）分析——细胞分割、phenotyping（scimap）、蛋白共定位、与空转整合。当用户要做空间蛋白、multiplexed imaging、CODEX/IMC/MIBI、蛋白 gating、protein colocalization 时触发。
 tool_type: python
 primary_tool: scimap
 ---
 
 ## When NOT to use this skill
-- 数据是空间转录组（Visium/Xenium/Stereo-seq）而非蛋白 → 改用 `spatial/omicverse-spatial` 或 `spatial/multiomics`
-- 要估空转 spot 的细胞类型构成（去卷积）→ 改用 `spatial/deconvolution`
-- 常规单细胞 scRNA-seq（蛋白强度矩阵无空间坐标）→ 改用 `single-cell/omicverse-pipeline`
-- 只做蛋白表达普通流式/CyTOF 分析（非空间）→ 不属本 skill 范围
+- Data is spatial transcriptomics (Visium/Xenium/Stereo-seq), not protein → use `spatial/omicverse-spatial` or `spatial/multiomics`
+- Estimating spatial spot cell-type composition (deconvolution) → use `spatial/deconvolution`
+- Conventional single-cell scRNA-seq (protein intensity matrix without spatial coordinates) → use `single-cell/omicverse-pipeline`
+- Plain flow/CyTOF protein-expression analysis (non-spatial) → out of scope for this skill
 
 ## Version Compatibility
 
@@ -125,6 +125,25 @@ sq.gr.spatial_neighbors(adata_rna)
 
 ## Related Skills
 
-- spatial-transcriptomics/spatial-neighbors - Spatial graph construction
-- spatial-transcriptomics/spatial-domains - Domain identification
-- imaging-mass-cytometry/phenotyping - IMC-specific analysis
+- **Paired spatial transcriptomics integration** → `spatial/multiomics` (SpatialData multimodal)
+- **Spatial neighborhood/domains/communication** → `spatial/omicverse-spatial` (squidpy general API)
+
+## Prerequisites (where it comes from)
+
+- **Raw spatial proteomics data**: CODEX / IMC / MIBI multichannel images + segmented single-cell masks
+- **Antibody panel metadata** (marker → cell type mapping, for gating/phenotyping)
+- Tools: `scimap` (phenotyping workhorse) + `squidpy` (spatial analysis) + `SpatialData` (multimodal integration)
+
+## When to leave this skill (where to go)
+
+- Write Methods describing protein gating/phenotyping → `presentation/methods-writer`
+- Multi-panel protein-expression spatial figures → `visualization/multi-panel-figures`
+- Paired spatial transcriptomics integration → `spatial/multiomics`
+
+## Key pitfalls
+
+- **Gating thresholds are experimental design** — copying generic thresholds fails (marker intensity depends on platform/batch); set per-sample
+- **After phenotyping, run a marker-proportion sanity check** (meta-methodology principle ①)
+- **CODEX/IMC channel crosstalk**: check compensation between adjacent fluorophores
+- **Protein ≠ mRNA**: don't directly apply transcriptomics annotations; use protein markers (CD3/CD20/CD68...)
+- After finishing, run `scripts/postcheck.py` to verify spatial coordinates + proportion sanity

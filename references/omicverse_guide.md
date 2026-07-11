@@ -72,6 +72,24 @@ adata = ov.read('data.h5ad')
 | TCGA | `ov.bulk.pyTCGA()` | TCGA biolinks(R) |
 | Bulk deconvolution | `ov.bulk.Deconvolution` / Scaden / BayesPrime | CIBERSORT |
 
+## Multi-omics Task Mapping (see skills/single-cell/omicverse-pipeline §9b)
+
+| Task | omicverse API | Alternative standalone |
+|---|---|---|
+| MOFA+ (joint factor model, RNA+ATAC+protein) | `ov.single.pyMOFA(omics, omics_name)` / `ov.single.pyMOFAART(model_path)` (load pretrained) | muon / MOFA2(R) |
+| RNA+ATAC regulatory GRN | `ov.single.GLUE_pair(adata_rna, adata_atac)` | GLUE standalone; SCENIC+ for enhancer-level |
+| Multi-omics embedding (gene/region/cell joint space) | `ov.single.pySIMBA(adata, workdir)` | SIMBA standalone |
+| Causal GRN inference | `ov.single.pyCEFCON(adata)` | CEFCON standalone |
+| Metabolic flux scoring | `ov.single.Metabolism(adata)` | scMetabolism / compass |
+| Metabolite-based cell-cell communication | `ov.single.MetabolityCCC(adata)` | — |
+| Differential metabolism | `ov.single.differential_metabolism(adata, ...)` | — |
+| CITE-seq multimodal annotation | `ov.single.Annotation` (multimodal) + totalVI via `lazy_step_scvi` | totalVI / WNN |
+| TCGA bulk multi-omics | `ov.bulk.pyTCGA()` | TCGAbiolinks(R) |
+| Cross-omics pathway concat | `ov.bulk.enrichment_multi_concat()` / `ov.bulk.geneset_plot_multi()` | — |
+
+> **MuData**: omicverse does not expose `muon`/`MuData` at top level. `pyMOFA` builds MuData internally; for direct MuData manipulation `pip install muon`.
+> **Spatial multi-omics** (Stereo-seq/Visium HD multi-modality) → `spatial/multiomics` (cellpose + SpatialData), not this table.
+
 ## Plotting Task Mapping (see skills/visualization/omicverse-plotting)
 
 ```python

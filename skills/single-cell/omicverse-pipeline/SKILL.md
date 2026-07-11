@@ -1,6 +1,6 @@
 ---
 name: omicverse-single-cell-pipeline
-description: 单细胞全流程（QC→doublet→降维聚类→注释→批次校正→通讯→轨迹）基于 OmicVerse V2 统一 API，无需在 scanpy/Seurat/scVI/CellTypist 间切换。一个 import omicverse as ov 覆盖 90% 常规分析。
+description: 单细胞全流程（QC→doublet→降维聚类→注释→批次校正→通讯→轨迹）+ 多组学整合（MOFA+/GLUE/CITE-seq/代谢/SIMBA/CEFCON）基于 OmicVerse V2 统一 API，无需在 scanpy/Seurat/scVI/CellTypist 间切换。一个 import omicverse as ov 覆盖 90% 常规分析。当用户要做单细胞、scRNA、多组学、CITE-seq、scRNA+ATAC、代谢、MOFA、GLUE 时触发。
 ---
 
 ## When NOT to use this skill
@@ -144,6 +144,59 @@ ov.single.Monocle(adata)
 > - **LEMUR** (Ahlmann-Eltze & Huber, Nat Genet 2025, [s41588-024-01996-0](https://www.nature.com/articles/s41588-024-01996-0)) — cluster-free multi-condition DE on a Grassmann manifold; same lab as the linear-baseline paper; new paradigm for "does condition X shift cells along trajectory Y" without pre-clustering.
 > - Standalone Monocle3/Slingshot/Palantir: legacy/teaching fallback, not first choice.
 > - Diffusion map / DPT: obsolete, only as pseudotime input to CellRank.
+
+## 9b. Multi-omics integration (ov.single.* — all wrapped, no separate package needed)
+
+Verified available in omicverse 2.2.3 (`sc` env). Pick by which modalities you have:
+
+```python
+import omicverse as ov
+
+# === MOFA+ : multi-omics factor analysis (RNA + ATAC + protein, joint factor model) ===
+mofa = ov.single.pyMOFA(omics=[adata_rna, adata_atac],
+                        omics_name=['RNA','ATAC'])   # builds MuData internally
+mofa.train(); mofa.save('mofa_model')
+# Load a pretrained model: mofa = ov.single.pyMOFAART('mofa_model')
+
+# === GLUE : RNA + ATAC regulatory inference (cross-modality GRN) ===
+ov.single.GLUE_pair(adata_rna, adata_atac)   # or ov.single.glue_pair(...)
+
+# === SIMBA : multi-omics embedding integration (gene/region/cell joint space) ===
+simba = ov.single.pySIMBA(mdata, workdir='simba_result')
+
+# === CITE-seq / multimodal annotation (ADT + RNA) ===
+# ov.single.Annotation accepts multi-modal AnnData; CITE-seq protein markers sharpen labels
+# For totalVI/MultiVI (scvi-tools), call via ov.single.lazy_step_scvi (lazy-loaded)
+
+# === Metabolism + metabolite-based cell-cell communication ===
+ov.single.MetabolityCCC(adata)               # metabolite ligand-receptor CCC
+ov.single.Metabolism(adata)                  # per-cell metabolic flux scoring
+ov.single.differential_metabolism(adata, ...) # condition-comparison metabolism
+
+# === Causal GRN (multi-omics causal network inference) ===
+ov.single.pyCEFCON(adata)                    # causal regulatory network
+
+# === Bulk multi-omics (TCGA pan-cancer, cross-omics correlation) ===
+ov.bulk.pyTCGA(...)                          # TCGA multi-omics download + integrate
+ov.bulk.enrichment_multi_concat(...)         # cross-pathway / cross-omics enrichment concat
+ov.bulk.geneset_plot_multi(...)              # multi-omics pathway heatmap
+```
+
+### Method selection by modality combination
+
+| You have... | First choice | Notes |
+|---|---|---|
+| **scRNA + scATAC** (paired Multiome) | `ov.single.GLUE_pair` (regulatory) + SCENIC+ (`single-cell/perturbation-prediction` Route B) | GLUE for cross-modality GRN; SCENIC+ for enhancer-level eRegulons |
+| **scRNA + protein (CITE-seq)** | `ov.single.Annotation` (multimodal) + totalVI via `lazy_step_scvi` | WNN alternative in scop: `WNN_integrate` |
+| **scRNA + ATAC + protein (≥3 modalities)** | `ov.single.pyMOFA` (joint factor model) | MOFA+ gives shared + modality-specific factors |
+| **scRNA + metabolomics** | `ov.single.Metabolism` + `ov.single.MetaboliteCCC` | Metabolic flux + metabolite-based CCC |
+| **Bulk RNA + miRNA + methylation (TCGA-style)** | `ov.bulk.pyTCGA` + `ov.bulk.enrichment_multi_concat` | Pan-cancer multi-omics |
+| **Multi-omics embedding (any modalities, exploratory)** | `ov.single.pySIMBA` | Joint gene/region/cell embedding; new, use for integration visualization |
+| **Causal GRN (any)** | `ov.single.pyCEFCON` | Causal network inference (complements SCENIC+ correlation GRN) |
+
+> **Muon / MuData**: omicverse does NOT expose `muon` / `MuData` at the top level (`ov.muon` / `ov.MuData` both return False). For direct MuData manipulation, `pip install muon` and use its native API; `ov.single.pyMOFA` builds MuData internally so you usually don't need to.
+
+> **Spatial multi-omics** (Stereo-seq/Visium HD with multiple modalities) → `spatial/multiomics` (cellpose + SpatialData), not this section.
 
 ## 10. Visualization (see visualization/omicverse-plotting)
 

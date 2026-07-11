@@ -3,151 +3,357 @@
     "skill": "cns-bio-pilot",
     "version": "11.0.0",
     "purpose": "Compact index — read this to locate a sub-skill, then load the matched one. Never load multiple at once.",
-    "engines": ["omicverse (Python default)", "scop (R/Seurat)", "scGPT/perturbation (DL)"]
+    "engines": [
+      "omicverse (Python default)",
+      "scop (R/Seurat)",
+      "scGPT/perturbation (DL)"
+    ]
   },
   "skills": [
     {
       "name": "omicverse-single-cell-pipeline",
       "path": "skills/single-cell/omicverse-pipeline/SKILL.md",
       "engine": "omicverse",
-      "data_type": ["single-cell"],
-      "triggers": ["单细胞", "scRNA-seq", "QC", "聚类", "leiden", "细胞注释", "批次校正", "harmony", "scVI", "pseudobulk DE", "拟时序", "轨迹", "细胞通讯"],
+      "data_type": [
+        "single-cell"
+      ],
+      "triggers": [
+        "单细胞",
+        "scRNA-seq",
+        "QC",
+        "聚类",
+        "leiden",
+        "细胞注释",
+        "批次校正",
+        "harmony",
+        "scVI",
+        "pseudobulk DE",
+        "拟时序",
+        "轨迹",
+        "细胞通讯",
+        "multi-omics",
+        "多组学",
+        "MOFA",
+        "GLUE",
+        "CITE-seq",
+        "metabolism",
+        "代谢",
+        "SIMBA",
+        "CEFCON"
+      ],
       "summary": "Single-cell full pipeline: ov.pp.qc→preprocess→leiden→batch_correction→annotation→communication→trajectory"
     },
     {
       "name": "scop-single-cell",
       "path": "skills/single-cell/scop/SKILL.md",
       "engine": "scop (R)",
-      "data_type": ["single-cell", "spatial"],
-      "triggers": ["R", "Seurat", "scop", "RunPCA", "RunUMAP", "RunHarmony", "RunCellChat", "CytoTRACE", "Milo", "scCODA", "SecAct", "standard_scop"],
+      "data_type": [
+        "single-cell",
+        "spatial"
+      ],
+      "triggers": [
+        "R",
+        "Seurat",
+        "scop",
+        "RunPCA",
+        "RunUMAP",
+        "RunHarmony",
+        "RunCellChat",
+        "CytoTRACE",
+        "Milo",
+        "scCODA",
+        "SecAct",
+        "standard_scop"
+      ],
       "summary": "R/Seurat 200+ Run* verbs; tools without omicverse equivalents (CytoTRACE/Milo/SecAct/Giotto/EcoTyper) go here"
     },
     {
       "name": "perturbation-prediction",
       "path": "skills/single-cell/perturbation-prediction/SKILL.md",
       "engine": "DL (scGPT/GEARS/CPA)",
-      "data_type": ["single-cell"],
-      "triggers": ["扰动预测", "perturbation prediction", "Perturb-seq", "knockout", "GEARS", "CPA", "scGPT perturbation", "未见扰动", "drug response"],
+      "data_type": [
+        "single-cell"
+      ],
+      "triggers": [
+        "扰动预测",
+        "perturbation prediction",
+        "Perturb-seq",
+        "knockout",
+        "GEARS",
+        "CPA",
+        "scGPT perturbation",
+        "未见扰动",
+        "drug response"
+      ],
       "summary": "Two routes for predicting unseen perturbations: (A) ML-based GEARS/CPA/scGPT/scGen (needs Perturb-seq training, linear baseline mandatory); (B) GRN-based virtual KO via CellOracle/SCENIC+/scTenifoldKnk (only needs WT scRNA-seq, infers GRN then simulates KO). Pick by data availability."
     },
     {
       "name": "perturb-seq-analysis",
       "path": "skills/single-cell/perturb-seq/SKILL.md",
       "engine": "pertpy",
-      "data_type": ["single-cell"],
-      "triggers": ["Perturb-seq", "CROP-seq", "CRISPR screen", "perturbation response analysis", "差异扰动响应"],
+      "data_type": [
+        "single-cell"
+      ],
+      "triggers": [
+        "Perturb-seq",
+        "CROP-seq",
+        "CRISPR screen",
+        "perturbation response analysis",
+        "差异扰动响应"
+      ],
       "summary": "Analyze existing Perturb-seq experiments (vs perturbation-prediction: that predicts untested ones)"
     },
     {
       "name": "rna-velocity",
       "path": "skills/single-cell/rna-velocity/SKILL.md",
       "engine": "omicverse/scvelo",
-      "data_type": ["single-cell"],
-      "triggers": ["RNA velocity", "scvelo", "spliced", "unspliced", "剪接动力学", "dynamical model"],
+      "data_type": [
+        "single-cell"
+      ],
+      "triggers": [
+        "RNA velocity",
+        "scvelo",
+        "spliced",
+        "unspliced",
+        "剪接动力学",
+        "dynamical model"
+      ],
       "summary": "ov.single.Velo wraps scvelo; native scvelo for deep tuning; requires layers['spliced'/'unspliced']"
     },
     {
       "name": "single-cell-research-planner",
       "path": "skills/single-cell/research-planner/SKILL.md",
       "engine": "methodology (no code)",
-      "data_type": ["single-cell", "spatial"],
-      "triggers": ["课题设计", "研究规划", "research plan", "study design", "sample size", "分组设计"],
+      "data_type": [
+        "single-cell",
+        "spatial"
+      ],
+      "triggers": [
+        "课题设计",
+        "研究规划",
+        "research plan",
+        "study design",
+        "sample size",
+        "分组设计"
+      ],
       "summary": "Single-cell study design methodology (zero code), with 9 reference modules"
     },
     {
       "name": "omicverse-spatial-pipeline",
       "path": "skills/spatial/omicverse-spatial/SKILL.md",
       "engine": "omicverse",
-      "data_type": ["spatial"],
-      "triggers": ["空转", "spatial", "Visium", "Xenium", "空间域", "spatial domain", "SVG", "空间邻域", "空间通讯"],
+      "data_type": [
+        "spatial"
+      ],
+      "triggers": [
+        "空转",
+        "spatial",
+        "Visium",
+        "Xenium",
+        "空间域",
+        "spatial domain",
+        "SVG",
+        "空间邻域",
+        "空间通讯"
+      ],
       "summary": "Spatial full pipeline (except deconvolution): ov.io.read_*→spatial_neighbors→domains→SVG→communication→plot_spatial"
     },
     {
       "name": "spatial-deconvolution",
       "path": "skills/spatial/deconvolution/SKILL.md",
       "engine": "cell2location (standalone)",
-      "data_type": ["spatial"],
-      "triggers": ["去卷积", "deconvolution", "cell2location", "Tangram", "RCTD", "spot 细胞构成"],
+      "data_type": [
+        "spatial"
+      ],
+      "triggers": [
+        "去卷积",
+        "deconvolution",
+        "cell2location",
+        "Tangram",
+        "RCTD",
+        "spot 细胞构成"
+      ],
       "summary": "ov.space.Deconvolution unifies cell2location/Tangram/RCTD/Starfysh/flashdeconv (5 methods); no separate env needed since 2026-07"
     },
     {
       "name": "spatial-multiomics-highres",
       "path": "skills/spatial/multiomics/SKILL.md",
       "engine": "squidpy/cellpose",
-      "data_type": ["spatial"],
-      "triggers": ["Stereo-seq", "Visium HD", "高分辨率空转", "cellpose", "分割"],
+      "data_type": [
+        "spatial"
+      ],
+      "triggers": [
+        "Stereo-seq",
+        "Visium HD",
+        "高分辨率空转",
+        "cellpose",
+        "分割"
+      ],
       "summary": "High-resolution spatial platforms; includes cellpose segmentation"
     },
     {
       "name": "spatial-proteomics",
       "path": "skills/spatial/proteomics/SKILL.md",
       "engine": "scimap",
-      "data_type": ["spatial"],
-      "triggers": ["CODEX", "IMC", "MIBI", "空间蛋白组", "spatial proteomics", "scimap"],
+      "data_type": [
+        "spatial"
+      ],
+      "triggers": [
+        "CODEX",
+        "IMC",
+        "MIBI",
+        "空间蛋白组",
+        "spatial proteomics",
+        "scimap"
+      ],
       "summary": "Spatial proteomics (CODEX/IMC/MIBI)"
     },
     {
       "name": "omicverse-bulk-pipeline",
       "path": "skills/general-bio/omicverse-bulk/SKILL.md",
       "engine": "omicverse",
-      "data_type": ["bulk"],
-      "triggers": ["bulk", "差异表达", "DESeq2", "pydeseq2", "GO", "KEGG", "GSEA", "WGCNA", "PPI", "STRING", "ComBat"],
+      "data_type": [
+        "bulk"
+      ],
+      "triggers": [
+        "bulk",
+        "差异表达",
+        "DESeq2",
+        "pydeseq2",
+        "GO",
+        "KEGG",
+        "GSEA",
+        "WGCNA",
+        "PPI",
+        "STRING",
+        "ComBat"
+      ],
       "summary": "Bulk pipeline pure Python: ov.bulk.pyDEG→pyGSEA→pyWGCNA→pyPPI; no R needed"
     },
     {
       "name": "omicverse-plotting",
       "path": "skills/visualization/omicverse-plotting/SKILL.md",
       "engine": "omicverse (ov.pl)",
-      "data_type": ["single-cell", "spatial", "bulk"],
-      "triggers": ["画图", "绘图", "UMAP", "火山图", "热图", "dotplot", "violin", "可视化", "ov.pl"],
+      "data_type": [
+        "single-cell",
+        "spatial",
+        "bulk"
+      ],
+      "triggers": [
+        "画图",
+        "绘图",
+        "UMAP",
+        "火山图",
+        "热图",
+        "dotplot",
+        "violin",
+        "可视化",
+        "ov.pl"
+      ],
       "summary": "Unified plotting API with ov.pl.* (80+ functions); ov.plot_set() initialization"
     },
     {
       "name": "multi-panel-figures",
       "path": "skills/visualization/multi-panel-figures/SKILL.md",
       "engine": "PIL/patchwork",
-      "data_type": ["all"],
-      "triggers": ["多面板", "组合图", "multi-panel", "figure assembly", "A-F 面板", "发表级 figure"],
+      "data_type": [
+        "all"
+      ],
+      "triggers": [
+        "多面板",
+        "组合图",
+        "multi-panel",
+        "figure assembly",
+        "A-F 面板",
+        "发表级 figure"
+      ],
       "summary": "6-panel (A-F) publication-grade figure assembly"
     },
     {
       "name": "scientific-schematics",
       "path": "skills/visualization/scientific-schematics/SKILL.md",
       "engine": "LLM-assisted",
-      "data_type": ["all"],
-      "triggers": ["机制图", "流程图", "示意图", "schematic", "flowchart", "graphical abstract", "图形摘要", "TOC 图", "论文摘要图"],
+      "data_type": [
+        "all"
+      ],
+      "triggers": [
+        "机制图",
+        "流程图",
+        "示意图",
+        "schematic",
+        "flowchart",
+        "graphical abstract",
+        "图形摘要",
+        "TOC 图",
+        "论文摘要图"
+      ],
       "summary": "LLM-assisted schematic/mechanism/architecture/graphical-abstract generation (merged with original graphical-abstract skill's abstract→layout capability, 2026-07)"
     },
     {
       "name": "scientific-slides",
       "path": "skills/presentation/scientific-slides/SKILL.md",
       "engine": "python-pptx/Beamer",
-      "data_type": ["all"],
-      "triggers": ["PPT", "幻灯片", "slides", "汇报", "beamer", "presentation", "组会", "lab meeting", "进度汇报", "PI update", "周报", "月报", "project review"],
+      "data_type": [
+        "all"
+      ],
+      "triggers": [
+        "PPT",
+        "幻灯片",
+        "slides",
+        "汇报",
+        "beamer",
+        "presentation",
+        "组会",
+        "lab meeting",
+        "进度汇报",
+        "PI update",
+        "周报",
+        "月报",
+        "project review"
+      ],
       "summary": "Scientific talk slides, dual mode: formal talk (conference/defense) + lab meeting (discussion-driven + data-honesty boundary, merged from lab-meeting-slides 2026-07)"
     },
     {
       "name": "methods-section-writer",
       "path": "skills/presentation/methods-writer/SKILL.md",
       "engine": "methodology",
-      "data_type": ["all"],
-      "triggers": ["写 Methods", "方法学", "methods section", "STAR Methods"],
+      "data_type": [
+        "all"
+      ],
+      "triggers": [
+        "写 Methods",
+        "方法学",
+        "methods section",
+        "STAR Methods"
+      ],
       "summary": "Protocol → publication-grade Methods text"
     },
     {
       "name": "results-section-writer",
       "path": "skills/presentation/results-writer/SKILL.md",
       "engine": "methodology",
-      "data_type": ["all"],
-      "triggers": ["写 Results", "结果叙述", "results section"],
+      "data_type": [
+        "all"
+      ],
+      "triggers": [
+        "写 Results",
+        "结果叙述",
+        "results section"
+      ],
       "summary": "Results → Results-section narrative"
     },
     {
       "name": "figure-legend-writer",
       "path": "skills/presentation/figure-legend-writer/SKILL.md",
       "engine": "methodology",
-      "data_type": ["all"],
-      "triggers": ["图注", "figure legend", "图例"],
+      "data_type": [
+        "all"
+      ],
+      "triggers": [
+        "图注",
+        "figure legend",
+        "图例"
+      ],
       "summary": "Self-contained publication-grade figure legends"
     }
   ]

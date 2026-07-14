@@ -211,20 +211,144 @@ sc.pl.umap(adata, color='cell_type', palette=CELL_TYPE_COLORS)
 # Reuse this map in every subsequent figure
 ```
 
-## 6. Aligning ov.pl with This Spec
+## 6. Aligning ov.pl with This Spec (source-verified)
 
-omicverse `ov.plot_set()` already sets:
-- ✅ Fonts (sans-serif)
-- ✅ Palette (built-in ov.pl.palette)
-- ✅ Vector-friendly PDF rendering
+> Verified by reading omicverse 2.2.3 source (`omicverse/pl/_plot_backend.py`, `set_rcParams_scanpy` line 1641). `ov.plot_set()` is NOT a black box — here is exactly what it does and the gaps you must fill.
 
-**Must be added manually** (not covered by ov.plot_set):
-- DPI 300+ (default 100, below publication grade)
-- Okabe-Ito override (default palette is not colorblind-safe)
-- font.type=42 (TrueType embedding)
-- bbox_inches='tight' (trim whitespace)
+### What `ov.plot_set()` actually sets
 
-## 7. Extra Requirements for PPT-Embedded Figures
+| Setting | Value | Notes |
+|---|---|---|
+| `figure.dpi` / `savefig.dpi` | 80 / **300** | Display 80, save 300 — publication grade ✓ |
+| `font.family` | `sans-serif` | Stack: `['Arial','Helvetica','DejaVu Sans','Bitstream Vera Sans','sans-serif']` |
+| `font.size` | **14** | Baseline (bigger than scanpy's 8) |
+| `legend.fontsize` | 12.88 | = 0.92 × 14 |
+| `axes.prop_cycle` | `sc_color` 28-color cycle | First color `#1F577B` — omicverse's visual signature |
+| `axes.grid` | **False** | `set_rcParams_scanpy` sets True, but `plot_set()` overrides to False at the end |
+| `figure.facecolor` / `axes.facecolor` | `white` | |
+| `figure.figsize` | (4,4) | scanpy standard square |
+| Arial auto-download | `font_path='arial'` default | Fetches `arial.ttf` from `github.com/kavin808/arial.ttf` — **needs internet; offline fails** → pass `font_path=<local ttf>` or `None` |
+
+### Critical gaps NOT set by `ov.plot_set()` (must add manually)
+
+```python
+import matplotlib.pyplot as plt
+plt.rcParams.update({
+    'pdf.fonttype': 42,          # TrueType embedding — journals reject Type-3 (source: NOT in plot_set)
+    'ps.fonttype': 42,
+    'svg.fonttype': 'none',      # keep text in SVG, don't convert to path
+    'savefig.bbox': 'tight',     # trim whitespace (PPT-embed mandatory)
+})
+# Override the default sc_color 28-cycle with the user-selected Morlandi palette (see §3)
+plt.rcParams['axes.prop_cycle'] = plt.cycler(color=MORLANDI)
+```
+
+**Offline warning**: `ov.plot_set()` defaults to downloading Arial. In air-gapped environments, use `ov.style(font_path=None)` or pass a local TTF path, else it raises.
+
+## 7. omicverse Native Palette Resources (alternatives to Morlandi)
+
+The user-selected Morlandi dual-track palette (§3) is the default. When the scene calls for something different, omicverse ships three native palette resources you can switch to — all verified in source.
+
+### 7.1 `sc_color` — 28-color discrete cycle (the omicverse default)
+
+If you want omicverse's native look (instead of Morlandi), this is what `ov.plot_set()` installs by default:
+
+```python
+import omicverse as ov
+# Already in axes.prop_cycle after ov.plot_set(); access directly:
+sc_color = ov.pl.sc_color  # list of 28 hex; first = '#1F577B'
+```
+
+Use when: you want omicverse's signature deep-teal-first look, or when 8 Morlandi colors aren't enough but you don't want tab20.
+
+### 7.2 Single-hue sequential families (red/green/orange/blue/purple)
+
+For single-color gradients (one cell type's expression across samples, monotonic bar charts):
+
+```python
+red_color    = ov.pl.red_color     # 10 shades, light→dark
+green_color  = ov.pl.green_color   # 12 shades
+orange_color = ov.pl.orange_color  # 12 shades
+blue_color   = ov.pl.blue_color    # 12 shades
+purple_color = ov.pl.purple_color  # 8 shades
+```
+
+### 7.3 Auto-palette scaling (`optim_palette`) — >28 categories
+
+When a categorical plot has **>28 groups** (e.g. fine sub-clustering with 50 states), do NOT loop `sc_color` — omicverse auto-switches to a 112-color perceptually-optimized palette via the `spaco` backend:
+
+```python
+# Automatic — ov.pl.embedding handles it internally via optim_palette()
+# For manual control:
+palette = ov.pl.optim_palette(adata, groupkey='celltype')  # returns 28 or 112 hex list
+```
+
+Rule: ≤28 → `sc_color`; >28 → `palette_112` (spaco). Never force `palette=sc_color` on a 50-cluster plot — it will cycle and confuse.
+
+### 7.4 Forbidden City 384-color oriental system (`get_forbidden`)
+
+omicverse-exclusive — 384 traditional Chinese colors, each named (人籁/青粲/翠缥/水龙吟/官绿...). Use for a distinctive "Guofeng" embedding / proportion palette:
+
+```python
+fb = ov.pl.get_forbidden()        # dict of 384 entries
+# fb['1'] = {'name':'人籁', 'color_html':'#9cbc1c', ...}
+oriental = ['#9cbc1c','#c4dc4c','#b4d434','#84a42c','#74944c','#6c8c54']
+ov.pl.embedding(adata, basis='X_umap', color='celltype', palette=oriental)
+```
+
+Use when: you want a non-Western palette for a Chinese-journal figure or lab-internal aesthetic. Not for CNS submission (editors expect Western palettes).
+
+## 8. omicverse Signature Visual Defaults (better than scanpy defaults)
+
+These are defaults in `ov.pl.*` that differ from scanpy and are deliberate aesthetic improvements — preserve them, don't override back to scanpy.
+
+| Dimension | scanpy default | omicverse default | Why omicverse is better |
+|---|---|---|---|
+| Embedding frame | `frameon=True` (full box) | **`frameon='small'`** (only left+bottom axis) | Cleaner; L-shaped axes emphasize data, not the box |
+| Embedding legend | `'right margin'` | `'right margin'` + **`legend_fontweight='bold'`** | Readable at slide distance |
+| Embedding multi-panel | — | `ncols=4`, `hspace=0.25` | 4-per-row standard grid |
+| Violin background | none | **alternating `("white","#e8e8e8")` + warm-grey spine `#b4aea9`** | Easier to track groups across a long x-axis |
+| Volcano colors | — | **up `#e25d5d` / down `#7388c1` / NS `#d7d7d7`** | Warm-red/cold-blue consensus, soft saturation |
+| Volcano gene labels | manual | **auto top-N via adjustText** | No label overlap; no manual curation |
+| Categorical >28 colors | loop 20 | **auto-expand to 112 (spaco)** | No color collision in fine clustering |
+| Atlas-scale (>100k cells) | scatters overlap into a blob | **`embedding_atlas` (Datashader)** | Density-aware rendering; million-cell plots stay sharp |
+| Cell-type label on UMAP | manual `ax.text` | **`ov.pl.embedding_adjust` (adjustText)** | Auto-places labels at cluster centroids, auto-avoids overlap |
+
+### Template code preserving omicverse signatures
+
+```python
+import omicverse as ov
+ov.plot_set()
+plt.rcParams['pdf.fonttype'] = 42   # the one gap ov.plot_set leaves
+
+# UMAP with auto cluster labels (no manual text placement)
+fig, ax = plt.subplots(figsize=(4,4))
+ov.pl.embedding(adata, basis='X_umap', color='celltype',
+                frameon='small', legend_loc='right margin',
+                legend_fontweight='bold', ax=ax, show=False)
+ov.pl.embedding_adjust(adata, groupby='celltype', basis='X_umap', ax=ax,
+                       adjust_kwargs={'text_from_points': False})
+plt.savefig('umap.pdf', dpi=300, bbox_inches='tight')
+
+# Violin with omicverse alternating background (do NOT override)
+ov.pl.violin(adata, keys=['CD3D'], groupby='celltype',
+             stripplot=True, jitter=0.4, size=1,
+             alternating_background_colors=('white','#e8e8e8'),
+             spine_color='#b4aea9')
+
+# Volcano with auto top-N labeling
+ov.pl.volcano(de_df, pval_name='padj', fc_name='log2FC',
+              pval_threshold=0.05, fc_max=1.5, fc_min=-1.5,
+              up_color='#e25d5d', down_color='#7388c1', normal_color='#d7d7d7',
+              plot_genes_num=10)   # auto-labels top-10 via adjustText
+
+# Atlas-scale (>100k cells) — use Datashader, NOT regular embedding
+ov.pl.embedding_atlas(adata, basis='X_umap', color='celltype',
+                      cmap='RdBu_r', how='eq_hist',
+                      plot_width=800, plot_height=800)
+```
+
+## 9. Extra Requirements for PPT-Embedded Figures
 
 Figures embedded in PPT (scientific-figure variant of the scientific-slides skill):
 - Export with `bbox_inches='tight'` + `trim_image_whitespace` (no white frame)

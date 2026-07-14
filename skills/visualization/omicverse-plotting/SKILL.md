@@ -57,6 +57,8 @@ DIVERGING_CMAP = LinearSegmentedColormap.from_list('log2fc',
 | Plot type | API | Typical use |
 |---|---|---|
 | Embedding (UMAP/tSNE) | `ov.pl.embedding(adata, basis='X_umap', color=...)` | Cluster/annotation display |
+| Embedding auto-labels | `ov.pl.embedding_adjust(adata, groupby=, basis=, ax=)` | Auto-place cluster labels at centroids (adjustText); no manual `ax.text` |
+| Atlas-scale embedding (>100k cells) | `ov.pl.embedding_atlas(adata, basis=, color=, cmap='RdBu_r', how='eq_hist')` | Datashader density-aware render; million-cell plots stay sharp |
 | Dot plot | `ov.pl.dotplot(adata, var_names=..., groupby=...)` | marker × cluster |
 | Violin | `ov.pl.violin(adata, keys=..., groupby=...)` | Marker expression distribution |
 | Volcano | `ov.pl.volcano(deg_df)` | DE results |
@@ -94,12 +96,21 @@ ov.pl.plot_spatial(adata, color='leiden')
 
 ## 3. Palette system
 
+**Default = user-selected Morlandi dual-track** (set in init block §0; full spec in `references/figure_aesthetics.md` §3):
+- Discrete categorical → `MORLANDI` (8 colors, soft Nord)
+- Sequential expression → `EXPR_CMAP` (blue-yellow-red, low-saturation)
+- Diverging log2FC → `DIVERGING_CMAP` (blue-white-red)
+
+**omicverse native palettes** (alternatives; full hex + usage in `references/figure_aesthetics.md` §7):
+
 ```python
-ov.pl.palette   # Built-in: red_blue, scgpt, agora, etc.
-ov.pl.embedding(adata, basis='X_umap', color='celltype',
-                palette=ov.pl.palette['red_blue'])
-# Custom continuous: cmap='viridis'/'RdBu_r'
+ov.pl.sc_color           # 28-color default cycle (first '#1F577B'); omicverse signature
+ov.pl.red_color          # 10-shade single-hue (also green/orange/blue/purple)
+ov.pl.optim_palette(adata, groupkey='celltype')  # 28 or 112 (spaco) auto-pick by #categories
+ov.pl.get_forbidden()    # 384 traditional Chinese colors (oriental aesthetic)
 ```
+
+> **Rule**: ≤28 categories → `sc_color` or Morlandi; **>28 → let `optim_palette` auto-expand to 112** (never force `sc_color` on 50 clusters — it cycles and collides).
 
 ## 4. Light multi-panel composition
 
@@ -147,3 +158,9 @@ plt.tight_layout(); plt.savefig('fig.pdf')
 - `complexheatmap` equals PyComplexHeatmap; multi-group annotation via `row_split`/`col_split`, not seaborn's row_cluster.
 - Export vector figures as `.pdf` (paper) / `.svg` (PPT re-editing); `dpi=300` only needed for raster output.
 - matplotlib Chinese/special characters need extra font config; `ov.plot_set()` defaults to Western fonts — manually set `plt.rcParams['font.family']` when Chinese is present.
+- **`ov.plot_set()` does NOT set `pdf.fonttype=42`** (verified in source `_plot_backend.py`) — manually add it, else PDF embeds Type-3 fonts (journals reject). See `references/figure_aesthetics.md` §6.
+- **`ov.plot_set()` auto-downloads Arial from GitHub** (`font_path='arial'` default) — in offline/air-gapped envs it fails; use `ov.style(font_path=None)` or pass a local TTF path.
+- **>28 categories**: do NOT force `palette=sc_color` on 50-cluster plots — it cycles and collides. Let `optim_palette` auto-expand to 112 colors, or split into multiple panels.
+- **>100k cells on embedding**: regular `ov.pl.embedding` scatters into a blob — use `ov.pl.embedding_atlas` (Datashader density-aware render) instead.
+- **Avoid manual `ax.text` for cluster labels**: use `ov.pl.embedding_adjust` (adjustText auto-placement at centroids) — manual labels overlap and drift when data changes.
+- **`frameon='small'` is omicverse's signature** (L-shaped axes) — don't override back to `frameon=True` (full box) unless reproducing scanpy exactly. See `references/figure_aesthetics.md` §8.

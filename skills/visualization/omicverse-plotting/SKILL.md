@@ -114,13 +114,36 @@ ov.pl.get_forbidden()    # 384 traditional Chinese colors (oriental aesthetic)
 
 ## 4. Light multi-panel composition
 
+> **Full layout guide**: `references/figure_layout.md` — covers omicverse's 5 signature decisions, multi-gene matrix defaults, font-size scaling, panel labels (A/B/C), shared legend, 5 composite templates. Read it before assembling any composite.
+
+omicverse's composition philosophy: **clean single cells × N + external shared legend** (not fancy grids). Every `ov.pl.*` accepts `ax=`; make cells via `plt.subplots`, pass `ax=`, `show=False`.
+
 ```python
-# ov.pl returns matplotlib axes; compose manually
+# Two-panel side-by-side
 fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-ov.pl.embedding(adata, basis='X_umap', color='leiden', ax=axes[0], show=False)
-ov.pl.embedding(adata, basis='X_umap', color='celltype', ax=axes[1], show=False)
-plt.tight_layout(); plt.savefig('fig.pdf')
+ov.pl.embedding(adata, basis='X_umap', color='leiden',   ax=axes[0], show=False, frameon='small')
+ov.pl.embedding(adata, basis='X_umap', color='celltype', ax=axes[1], show=False, frameon='small')
+plt.savefig('fig.pdf', bbox_inches='tight')   # omicverse style: tight, no tight_layout()
 ```
+
+### Multi-gene matrix (use built-in — don't hand-write GridSpec)
+```python
+ov.pl.embedding(adata, basis='X_umap',
+                color=['CD3D','CD4','CD8A','MS4A1','CD14','NCAM1'],  # 6 genes
+                ncols=3, frameon='small',
+                cmap=ov.pl.get_cmap_seg(),   # segmented cmap (omicverse-recommended)
+                vmin=0, vmax=3,              # UNIFIED range — critical for comparability
+                show=False)
+```
+
+### omicverse's only built composite — `embedding_celltype` (UMAP + side lollipop)
+```python
+fig, (ax1, ax2) = ov.pl.embedding_celltype(
+    adata, figsize=(7,4), basis='X_umap', celltype_key='clusters')
+```
+
+### Composite font rule
+Keep ONE global `fontsize=` via `ov.ov_plot_set(fontsize=12)`; scale via figsize, not per-axis fonts. Relative hierarchy: title≈axis≈tick=F, legend=0.92F, panel letter=1.3F bold.
 
 > For complex fixed layouts (6 panels ABCDEF, shared legend, insets) use `visualization/multi-panel-figures` (PIL/GridSpec).
 

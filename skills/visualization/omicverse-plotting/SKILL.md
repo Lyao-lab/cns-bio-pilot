@@ -31,7 +31,7 @@ plt.rcParams.update({
     'savefig.bbox': 'tight',                       # trim margins (required for PPT embedding)
     'pdf.fonttype': 42, 'ps.fonttype': 42,         # TrueType embedding (editor-editable)
     'font.family': 'sans-serif',                   # don't write 'Arial' directly: garbled with Chinese
-    'font.sans-serif': ['Microsoft YaHei', 'Arial', 'DejaVu Sans'],  # YaHei as Chinese fallback
+    'font.sans-serif': ['SimHei', 'Microsoft YaHei', 'Arial', 'DejaVu Sans'],  # SimHei first (matplotlib sees it more reliably than YaHei)
     'axes.unicode_minus': False,                   # YaHei lacks the minus glyph
 })
 # Final version for an English journal: set font.sans-serif back to ['Arial']; translate Chinese legends to English

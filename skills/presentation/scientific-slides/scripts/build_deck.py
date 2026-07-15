@@ -17,6 +17,9 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 
 # ---- Preset（生信专用 cns-bio-light）----
+# font_name 必须设——python-pptx 不设则用默认主题字体（Calibri），不含中文字形 → 豆腐块。
+# 'Microsoft YaHei' 在 Windows PowerPoint 里中文正常；macOS 会回退到 PingFang。
+# 英文期刊投稿最终版：改成 'Arial' 并把中文翻译为英文。
 PRESETS = {
     "cns-bio-light": {
         "bg": RGBColor(0xFF,0xFF,0xFF),
@@ -27,6 +30,7 @@ PRESETS = {
         "pass": RGBColor(0x2E,0x8B,0x57),       # Green
         "fail": RGBColor(0xE2,0x5D,0x5D),       # Red
         "warn": RGBColor(0xE8,0xA8,0x38),       # Orange
+        "font_name": "Microsoft YaHei",         # CJK-safe; macOS auto-fallback to PingFang
     }
 }
 
@@ -62,36 +66,38 @@ def build(outline_path, output_path, preset_name="cns-bio-light"):
     prs.save(str(output_path))
     print(f"SAVED {output_path} ({len(prs.slides)} slides)")
 
-def _add_text(s, left, top, width, height, text, size, color, bold=False, italic=False, align=PP_ALIGN.LEFT):
+def _add_text(s, left, top, width, height, text, size, color, bold=False, italic=False, align=PP_ALIGN.LEFT, font_name=None):
     tb = s.shapes.add_textbox(left, top, width, height)
     tf = tb.text_frame; tf.word_wrap = True
     p = tf.paragraphs[0]; p.text = text
     p.font.size = Pt(size); p.font.color.rgb = color
     p.font.bold = bold; p.font.italic = italic; p.alignment = align
+    if font_name: p.font.name = font_name   # CJK-safe; without this, default Calibri garbles Chinese
     return tb
 
-def _add_bullets(s, left, top, width, height, bullets, size, color):
+def _add_bullets(s, left, top, width, height, bullets, size, color, font_name=None):
     tb = s.shapes.add_textbox(left, top, width, height)
     tf = tb.text_frame; tf.word_wrap = True
     for i, b in enumerate(bullets):
         p = tf.paragraphs[0] if i==0 else tf.add_paragraph()
         p.text = "• " + str(b); p.font.size = Pt(size); p.font.color.rgb = color
+        if font_name: p.font.name = font_name
         p.space_after = Pt(8)
 
 def _title_slide(s, d, preset):
     _add_text(s, Inches(1), Inches(2.5), Inches(11), Inches(1.5),
-              d.get("title",""), 40, preset["title"], bold=True, align=PP_ALIGN.CENTER)
+              d.get("title",""), 40, preset["title"], bold=True, align=PP_ALIGN.CENTER, font_name=preset["font_name"])
     if d.get("subtitle"):
         _add_text(s, Inches(1), Inches(4), Inches(11), Inches(1),
-                  d["subtitle"], 20, preset["caption"], align=PP_ALIGN.CENTER)
+                  d["subtitle"], 20, preset["caption"], align=PP_ALIGN.CENTER, font_name=preset["font_name"])
 
 def _section_slide(s, title, preset):
     _add_text(s, Inches(1), Inches(3), Inches(11), Inches(1.5),
-              title, 36, preset["title"], bold=True, align=PP_ALIGN.CENTER)
+              title, 36, preset["title"], bold=True, align=PP_ALIGN.CENTER, font_name=preset["font_name"])
 
 def _figure_slide(s, d, preset, max_panels=4):
     _add_text(s, Inches(0.5), Inches(0.3), Inches(12), Inches(0.7),
-              d.get("title",""), 28, preset["title"], bold=True)
+              d.get("title",""), 28, preset["title"], bold=True, font_name=preset["font_name"])
     img = d.get("image")
     if img and Path(img).exists():
         # 限制图片高度不超出可用区域（标题0.3-1.0in + 图 + 图注6.7-7.2in）
@@ -103,14 +109,14 @@ def _figure_slide(s, d, preset, max_panels=4):
             pic.width = int(pic.width * ratio)
         if d.get("caption"):
             _add_text(s, Inches(0.8), Inches(6.7), Inches(7.5), Inches(0.5),
-                      d["caption"], 10, preset["caption"], italic=True)
+                      d["caption"], 10, preset["caption"], italic=True, font_name=preset["font_name"])
     if d.get("bullets"):
         _add_bullets(s, Inches(8.5), Inches(1.2), Inches(4.5), Inches(5.5),
-                     d["bullets"], 14, preset["body"])
+                     d["bullets"], 14, preset["body"], font_name=preset["font_name"])
 
 def _image_sidebar(s, d, preset):
     _add_text(s, Inches(0.5), Inches(0.3), Inches(12), Inches(0.7),
-              d.get("title",""), 28, preset["title"], bold=True)
+              d.get("title",""), 28, preset["title"], bold=True, font_name=preset["font_name"])
     img = d.get("image")
     if img and Path(img).exists():
         pic = s.shapes.add_picture(img, Inches(0.5), Inches(1.2), width=Inches(7.8))
@@ -120,14 +126,14 @@ def _image_sidebar(s, d, preset):
             pic.height = max_h; pic.width = int(pic.width * ratio)
         if d.get("caption"):
             _add_text(s, Inches(0.5), Inches(6.7), Inches(7.8), Inches(0.5),
-                      d["caption"], 10, preset["caption"], italic=True)
+                      d["caption"], 10, preset["caption"], italic=True, font_name=preset["font_name"])
     if d.get("bullets"):
         _add_bullets(s, Inches(8.5), Inches(1.2), Inches(4.5), Inches(5.5),
-                     d["bullets"], 14, preset["body"])
+                     d["bullets"], 14, preset["body"], font_name=preset["font_name"])
 
 def _table_slide(s, d, preset):
     _add_text(s, Inches(0.5), Inches(0.3), Inches(12), Inches(0.7),
-              d.get("title",""), 28, preset["title"], bold=True)
+              d.get("title",""), 28, preset["title"], bold=True, font_name=preset["font_name"])
     tdef = d.get("table", {})
     headers = tdef.get("headers", []); rows = tdef.get("rows", [])
     if not headers: return
@@ -136,31 +142,31 @@ def _table_slide(s, d, preset):
     tbl = tbl_shape.table
     for j,h in enumerate(headers):
         cell = tbl.cell(0,j); cell.text = str(h)
-        cell.text_frame.paragraphs[0].font.size = Pt(12); cell.text_frame.paragraphs[0].font.bold = True
+        cell.text_frame.paragraphs[0].font.size = Pt(12); cell.text_frame.paragraphs[0].font.bold = True; cell.text_frame.paragraphs[0].font.name = preset["font_name"]
         cell.text_frame.paragraphs[0].font.color.rgb = preset["title"]
     for i,row in enumerate(rows):
         for j,val in enumerate(row):
             cell = tbl.cell(i+1,j); cell.text = str(val)
-            cell.text_frame.paragraphs[0].font.size = Pt(11)
+            cell.text_frame.paragraphs[0].font.size = Pt(11); cell.text_frame.paragraphs[0].font.name = preset["font_name"]
             cell.text_frame.paragraphs[0].font.color.rgb = preset["body"]
 
 def _flow_slide(s, d, preset):
     _add_text(s, Inches(0.5), Inches(0.3), Inches(12), Inches(0.7),
-              d.get("title",""), 28, preset["title"], bold=True)
+              d.get("title",""), 28, preset["title"], bold=True, font_name=preset["font_name"])
     steps = d.get("steps",[])
     if not steps: return
     n = len(steps); step_w = 11.0/n; arrow = " → "
     tb = s.shapes.add_textbox(Inches(1), Inches(3.2), Inches(11), Inches(1))
     tf = tb.text_frame; tf.word_wrap = True
     p = tf.paragraphs[0]
-    p.text = arrow.join(steps); p.font.size = Pt(18); p.font.color.rgb = preset["accent"]
+    p.text = arrow.join(steps); p.font.size = Pt(18); p.font.name = preset["font_name"]; p.font.color.rgb = preset["accent"]
     p.alignment = PP_ALIGN.CENTER; p.font.bold = True
 
 def _bullets_slide(s, d, preset):
     _add_text(s, Inches(0.5), Inches(0.3), Inches(12), Inches(0.7),
-              d.get("title",""), 28, preset["title"], bold=True)
+              d.get("title",""), 28, preset["title"], bold=True, font_name=preset["font_name"])
     _add_bullets(s, Inches(0.8), Inches(1.5), Inches(11.5), Inches(5.5),
-                 d.get("bullets",[]), 18, preset["body"])
+                 d.get("bullets",[]), 18, preset["body"], font_name=preset["font_name"])
 
 def main():
     ap = argparse.ArgumentParser(description="outline.json → .pptx (python-pptx, no AI API)")

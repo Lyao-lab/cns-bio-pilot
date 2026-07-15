@@ -65,6 +65,8 @@ python scripts/build_deck.py outline.json -o presentation.pptx
 soffice --headless --convert-to pdf presentation.pptx
 ```
 
+> **Chinese in PPT/PDF**: `build_deck.py` sets `font.name = 'Microsoft YaHei'` on every text element (verified) — PowerPoint renders Chinese correctly. For **PDF export via LibreOffice**, the system needs the font installed (`YaHei` is standard on Windows); on Linux servers install `fonts-noto-cjk` first. For **Beamer** (LaTeX PDF), use **XeLaTeX** (not pdflatex) + `\usepackage{ctex}` or `\setCJKmainfont{SimHei}` — pdflatex cannot handle CJK.
+
 ### Step 3: QA Gate (mandatory, three checks)
 
 ```bash
@@ -120,7 +122,9 @@ Font:      Title Calibri/Arial Bold; body Calibri/Arial
 Use Beamer when you need a compiled PDF and prefer LaTeX. Templates live in `assets/beamer_template_{conference,seminar,defense}.tex`; the full guide is `references/beamer_guide.md`.
 
 ```bash
-pdflatex beamer_template_conference.tex  # compile
+pdflatex beamer_template_conference.tex  # compile (English-only)
+# For Chinese content: use xelatex + \usepackage{ctex} (pdflatex cannot handle CJK)
+xelatex beamer_template_conference.tex   # Chinese-safe compile
 # Prefer Beamer for many flow diagrams/equations; python-pptx for many figures
 ```
 

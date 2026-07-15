@@ -47,28 +47,36 @@ plt.rcParams['font.size'] = 8          # baseline
 ### 中文场景字体兜底（必读，否则乱码）
 
 `'font.family': 'Arial'` **不含中文字形**——只要图里有中文（汇报 PPT、中文图注、内部沟通图），
-所有汉字会显示成方框（豆腐块）。本机（Windows）必须改用 sans-serif 列表，把中文优先字体放最前：
+所有汉字会显示成方框（豆腐块）。必须改用 sans-serif 列表，把中文优先字体放最前：
 
 ```python
 plt.rcParams.update({
     'font.family': 'sans-serif',
-    # Latin 走 Arial；中文走微软雅黑；DejaVu Sans 最后兜底
-    'font.sans-serif': ['Microsoft YaHei', 'Arial', 'DejaVu Sans'],
-    'axes.unicode_minus': False,   # 雅黑缺负号字形 → 用 ASCII '-'
+    # SimHei 优先（matplotlib 在 Windows 上普遍可见）；YaHei/PingFang 作系统级 fallback
+    'font.sans-serif': ['SimHei', 'Microsoft YaHei', 'PingFang SC', 'Arial', 'DejaVu Sans'],
+    'axes.unicode_minus': False,   # 中文字体缺负号字形 → 用 ASCII '-'
 })
 ```
 
-| OS | 中文字体名 |
+> **实测发现**：`Microsoft YaHei` 虽然装在 Windows 系统里，但 **matplotlib 的字体扫描不一定能看到它**（取决于安装方式）。`SimHei`（黑体）在 matplotlib 里可见性更可靠。所以列表把 `SimHei` 放最前，`YaHei` 作第二选择。macOS 用 `PingFang SC`。
+
+| OS | matplotlib 可见的中文字体（按优先级） |
 |---|---|
-| Windows | `Microsoft YaHei`（微软雅黑）/ `SimHei`（黑体） |
-| macOS | `PingFang SC` / `STHeiti` |
+| Windows | `SimHei` / `Microsoft YaHei` / `SimSun` / `Source Han Sans CN` |
+| macOS | `PingFang SC` / `STHeiti` / `Heiti TC` |
 | Linux | `Noto Sans CJK SC`（需 `sudo apt install fonts-noto-cjk`）/ `WenQuanYi Zen Hei` |
+
+**快速自检本机有哪些中文字体**：
+```python
+import matplotlib.font_manager as fm
+zh = [f.name for f in fm.fontManager.ttflist
+      if any(k in f.name for k in ['SimHei','YaHei','SimSun','Hei','Song','Noto Sans CJK','PingFang','WenQuanYi','Source Han'])]
+print(sorted(set(zh)))
+# 把列表第一个填进 font.sans-serif 最前面
+```
 
 **投稿 CNS 的最终版图**：英文期刊要求纯 Arial/Helvetica——届时把中文图注/标题改成英文，
 并切回 `'font.family': 'Arial'`。中文兜底仅用于内部汇报、PPT、中文文稿配图。
-
-> 这条规则排除了本 skill 测试中遇到的最常见乱码坑（Arial 不含 CJK 字形）。
-> 凡是出图前先确认目标读者是中/英文，再选字体配置。
 
 ## 3. Color (Colorblind-Safe, CNS Hard Requirement)
 

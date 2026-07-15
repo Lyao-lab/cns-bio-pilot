@@ -86,6 +86,18 @@ def check(pptx_path):
                     if PLACEHOLDER_RE.search(text):
                         r.add(i,"PLACEHOLDER","FAIL", f"占位符泄漏: \"{text[:40]}\"")
                         has_any_issue = True
+                    # [FONT] 中文字体检查（防 PPT 中文乱码）
+                    has_cjk = any('\u4e00' <= ch <= '\u9fff' for ch in text)
+                    if has_cjk:
+                        fname = para.font.name
+                        if not fname and para.runs:
+                            for run in para.runs:
+                                if run.font.name: fname = run.font.name; break
+                        # 不含中文字形的字体（默认 Calibri/Arial 等会导致豆腐块）
+                        CJK_UNSAFE = {None, '', 'Calibri', 'Arial', 'Helvetica', 'Times New Roman', 'Cambria'}
+                        if fname in CJK_UNSAFE:
+                            r.add(i,"FONT","FAIL", f"含中文但字体未设/不含中文字形 ('{fname}'): \"{text[:30]}\" → 设为 Microsoft YaHei/SimHei")
+                            has_any_issue = True
             # [ACCENT_LINE] 装饰线检测（简化：形状是 line 且在标题下方）
             # python-pptx 难直接检测 connector，这里靠占位符+几何兜底
     # 总结：若无 FAIL，给 PASS

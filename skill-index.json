@@ -20,26 +20,11 @@
       "triggers": [
         "单细胞",
         "scRNA-seq",
-        "QC",
-        "聚类",
-        "leiden",
-        "细胞注释",
-        "批次校正",
-        "harmony",
-        "scVI",
+        "cell annotation",
+        "batch correction",
         "pseudobulk DE",
-        "拟时序",
-        "轨迹",
-        "细胞通讯",
         "multi-omics",
-        "多组学",
-        "MOFA",
-        "GLUE",
-        "CITE-seq",
-        "metabolism",
-        "代谢",
-        "SIMBA",
-        "CEFCON"
+        "CITE-seq"
       ],
       "summary": "Single-cell full pipeline: ov.pp.qc→preprocess→leiden→batch_correction→annotation→communication→trajectory"
     },
@@ -52,18 +37,12 @@
         "spatial"
       ],
       "triggers": [
-        "R",
-        "Seurat",
         "scop",
+        "R Seurat",
         "RunPCA",
-        "RunUMAP",
-        "RunHarmony",
         "RunCellChat",
         "CytoTRACE",
-        "Milo",
-        "scCODA",
-        "SecAct",
-        "standard_scop"
+        "SCENIC+"
       ],
       "summary": "R/Seurat 200+ Run* verbs; tools without omicverse equivalents (CytoTRACE/Milo/SecAct/Giotto/EcoTyper) go here"
     },
@@ -75,15 +54,13 @@
         "single-cell"
       ],
       "triggers": [
-        "扰动预测",
         "perturbation prediction",
-        "Perturb-seq",
-        "knockout",
+        "in silico knockout",
+        "virtual knockout",
+        "unseen perturbation",
         "GEARS",
         "CPA",
-        "scGPT perturbation",
-        "未见扰动",
-        "drug response"
+        "CellOracle"
       ],
       "summary": "Two routes for predicting unseen perturbations: (A) ML-based GEARS/CPA/scGPT/scGen (needs Perturb-seq training, linear baseline mandatory); (B) GRN-based virtual KO via CellOracle/SCENIC+/scTenifoldKnk (only needs WT scRNA-seq, infers GRN then simulates KO). Pick by data availability."
     },
@@ -98,8 +75,7 @@
         "Perturb-seq",
         "CROP-seq",
         "CRISPR screen",
-        "perturbation response analysis",
-        "差异扰动响应"
+        "Mixscape"
       ],
       "summary": "Analyze existing Perturb-seq experiments (vs perturbation-prediction: that predicts untested ones)"
     },
@@ -113,10 +89,9 @@
       "triggers": [
         "RNA velocity",
         "scvelo",
-        "spliced",
-        "unspliced",
-        "剪接动力学",
-        "dynamical model"
+        "spliced unspliced",
+        "cell2fate",
+        "cellDancer"
       ],
       "summary": "ov.single.Velo wraps scvelo; native scvelo for deep tuning; requires layers['spliced'/'unspliced']"
     },
@@ -130,11 +105,10 @@
       ],
       "triggers": [
         "课题设计",
-        "研究规划",
-        "research plan",
         "study design",
+        "research plan",
         "sample size",
-        "分组设计"
+        "单细胞立项"
       ],
       "summary": "Single-cell study design methodology (zero code), with 9 reference modules"
     },
@@ -147,14 +121,11 @@
       ],
       "triggers": [
         "空转",
-        "spatial",
+        "spatial transcriptomics",
         "Visium",
-        "Xenium",
-        "空间域",
         "spatial domain",
         "SVG",
-        "空间邻域",
-        "空间通讯"
+        "spatial communication"
       ],
       "summary": "Spatial full pipeline (except deconvolution): ov.io.read_*→spatial_neighbors→domains→SVG→communication→plot_spatial"
     },
@@ -166,12 +137,11 @@
         "spatial"
       ],
       "triggers": [
-        "去卷积",
         "deconvolution",
         "cell2location",
         "Tangram",
         "RCTD",
-        "spot 细胞构成"
+        "spot cell type"
       ],
       "summary": "ov.space.Deconvolution unifies cell2location/Tangram/RCTD/Starfysh/flashdeconv (5 methods); no separate env needed since 2026-07"
     },
@@ -185,9 +155,9 @@
       "triggers": [
         "Stereo-seq",
         "Visium HD",
-        "高分辨率空转",
+        "Slide-seq",
         "cellpose",
-        "分割"
+        "subcellular"
       ],
       "summary": "High-resolution spatial platforms; includes cellpose segmentation"
     },
@@ -199,11 +169,10 @@
         "spatial"
       ],
       "triggers": [
+        "spatial proteomics",
         "CODEX",
         "IMC",
         "MIBI",
-        "空间蛋白组",
-        "spatial proteomics",
         "scimap"
       ],
       "summary": "Spatial proteomics (CODEX/IMC/MIBI)"
@@ -216,17 +185,12 @@
         "bulk"
       ],
       "triggers": [
-        "bulk",
-        "差异表达",
+        "bulk RNA-seq",
         "DESeq2",
         "pydeseq2",
-        "GO",
-        "KEGG",
         "GSEA",
         "WGCNA",
-        "PPI",
-        "STRING",
-        "ComBat"
+        "PPI"
       ],
       "summary": "Bulk pipeline pure Python: ov.bulk.pyDEG→pyGSEA→pyWGCNA→pyPPI; no R needed"
     },
@@ -241,13 +205,11 @@
       ],
       "triggers": [
         "画图",
-        "绘图",
-        "UMAP",
-        "火山图",
-        "热图",
+        "UMAP plot",
+        "volcano",
+        "heatmap",
         "dotplot",
         "violin",
-        "可视化",
         "ov.pl"
       ],
       "summary": "Unified plotting API with ov.pl.* (80+ functions); ov.plot_set() initialization"
@@ -260,11 +222,9 @@
         "all"
       ],
       "triggers": [
-        "多面板",
-        "组合图",
         "multi-panel",
         "figure assembly",
-        "A-F 面板",
+        "A-F panels",
         "发表级 figure"
       ],
       "summary": "6-panel (A-F) publication-grade figure assembly"
@@ -278,14 +238,10 @@
       ],
       "triggers": [
         "机制图",
-        "流程图",
-        "示意图",
         "schematic",
         "flowchart",
         "graphical abstract",
-        "图形摘要",
-        "TOC 图",
-        "论文摘要图"
+        "TOC figure"
       ],
       "summary": "LLM-assisted schematic/mechanism/architecture/graphical-abstract generation (merged with original graphical-abstract skill's abstract→layout capability, 2026-07)"
     },
@@ -300,16 +256,10 @@
         "PPT",
         "幻灯片",
         "slides",
-        "汇报",
         "beamer",
-        "presentation",
         "组会",
         "lab meeting",
-        "进度汇报",
-        "PI update",
-        "周报",
-        "月报",
-        "project review"
+        "进度汇报"
       ],
       "summary": "Scientific talk slides, dual mode: formal talk (conference/defense) + lab meeting (discussion-driven + data-honesty boundary, merged from lab-meeting-slides 2026-07)"
     },
@@ -322,9 +272,8 @@
       ],
       "triggers": [
         "写 Methods",
-        "方法学",
-        "methods section",
-        "STAR Methods"
+        "STAR Methods",
+        "报告规范 CONSORT STROBE"
       ],
       "summary": "Protocol → publication-grade Methods text"
     },

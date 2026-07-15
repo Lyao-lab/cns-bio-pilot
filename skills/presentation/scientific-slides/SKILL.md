@@ -128,13 +128,13 @@ pdflatex beamer_template_conference.tex  # compile
 
 | what you need | which file |
 |---|---|
-| Research narrative structure (story arc / 5 talk types / timing) | `references/talk_types_guide.md` + `references/presentation_structure.md` |
-| Layout / color / spacing / accessibility / visual hierarchy | `references/slide_design_principles.md` |
-| Adapting journal figures into slide-friendly form | `references/data_visualization_slides.md` |
 | Content/Design/Timing pitfalls + 10 principles | `references/pitfalls.md` |
 | Full LaTeX Beamer document | `references/beamer_guide.md` |
-| Visual review workflow (PDF→image, issue log, iteration) | `references/visual_review_workflow.md` |
 | **Lab meeting mode** (group meeting / progress / PI update — 9 steps + A-I output + Hard Rules + 7 rule modules) | `references/lab_meeting/lab_meeting_workflow.md` + `references/lab_meeting/rules/*.md` |
+| Figure aesthetics (color / font / non-overlap) | top-level `references/figure_aesthetics.md` |
+| Multi-panel composition (layout / shared legend / panel labels) | top-level `references/figure_layout.md` |
+
+> Removed in v12.1 (redundant with top-level figure refs): talk_types_guide, presentation_structure, slide_design_principles, data_visualization_slides, visual_review_workflow, core_capabilities, development_workflow. The 7-step Quick Route + Pre-Output Checklist + Key pitfalls in this SKILL.md already cover slide structure/design/review essentials.
 
 ## Assets (templates)
 - `assets/beamer_template_conference.tex` / `_seminar.tex` / `_defense.tex`

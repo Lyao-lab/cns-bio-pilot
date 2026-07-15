@@ -4,7 +4,6 @@ description: 写独立可读的发表级图注（figure legend）——支持 ba
 license: MIT
 author: AIPOCH
 ---
-> **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
 ## When NOT to use this skill
 - Writing the paper's Results section (narrative/interpretation of findings) → use `presentation/results-writer`

@@ -13,13 +13,7 @@ primary_tool: scimap
 
 ## Version Compatibility
 
-Reference examples tested with: anndata 0.10+, scanpy 1.10+, squidpy 1.3+
-
-Before using code patterns, verify installed versions match. If versions differ:
-- Python: `pip show <package>` then `help(module.function)` to check signatures
-
-If code throws ImportError, AttributeError, or TypeError, introspect the installed
-package and adapt the example to match the actual API rather than retrying.
+Verify installed versions match before running: `pip show <pkg>` / `help(func)` to check signatures; adapt examples to your actual API rather than retrying on errors.
 
 # Spatial Proteomics Analysis
 

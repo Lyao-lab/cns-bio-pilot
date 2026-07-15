@@ -13,14 +13,7 @@ primary_tool: Pertpy
 
 ## Version Compatibility
 
-Reference examples tested with: MAGeCK 0.5+, pandas 2.2+, pertpy 0.7+, scanpy 1.10+
-
-Before using code patterns, verify installed versions match. If versions differ:
-- Python: `pip show <package>` then `help(module.function)` to check signatures
-- R: `packageVersion('<pkg>')` then `?function_name` to verify parameters
-
-If code throws ImportError, AttributeError, or TypeError, introspect the installed
-package and adapt the example to match the actual API rather than retrying.
+Verify installed versions match before running: `pip show <pkg>` / `help(func)` to check signatures; adapt examples to your actual API rather than retrying on errors.
 
 # Perturb-seq Analysis
 

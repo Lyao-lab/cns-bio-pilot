@@ -4,7 +4,6 @@ description: 把 6 张子图（A-F 面板）拼成高分辨率、标签统一、
 license: MIT
 author: AIPOCH
 ---
-> **Source**: [https://github.com/aipoch/medical-research-skills](https://github.com/aipoch/medical-research-skills)
 
 ## When NOT to use this skill
 - Sub-figures not yet generated; need to plot from data (UMAP/volcano/heatmap) → use `visualization/omicverse-plotting` (ov.pl.*) to generate sub-figures first

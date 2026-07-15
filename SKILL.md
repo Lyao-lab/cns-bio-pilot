@@ -154,5 +154,6 @@ Data has spatial coords / tissue image?
 | `references/omicverse_guide.md` | OmicVerse API cheat-sheet (task → API mapping) | When using ov.* |
 | `references/figure_aesthetics.md` | CNS publication-grade plotting spec (size / font / dual-track palette / CJK fallback / title & legend non-overlap) | **Must read before any plotting** |
 | `references/figure_layout.md` | Multi-panel composition (omicverse 5 signature decisions / shared legend / panel labels / 5 composite templates) | **When assembling multi-panel figures** |
+| `references/figure_design.md` | Chart-type selection + information hierarchy + statistics visualization (what to plot, take-home message, error bars, n, self-contained legend) | **Must read before any plotting — the design layer above aesthetics** |
 | `references/meta_methodology.md` | **Meta-methodology 6 rules** (verify prerequisites / semantic boundaries / what is N / report the path / chain failure / design up front) | Self-check checklist after each analysis step |
 | `scripts/postcheck.py` | Scientific rigor auto-check (counts / Padj / pseudobulk / deconv quality) | **Must run after analysis** |

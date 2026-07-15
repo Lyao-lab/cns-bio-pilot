@@ -2,7 +2,7 @@
 
 > Multi-panel figure composition learned from omicverse 2.2.3 source + official plotting tutorials. The philosophy is *not* about layout APIs — it's about five visual decisions that make figures look clean even with plain matplotlib.
 >
-> Companion to `figure_aesthetics.md` (which covers color/font/non-overlap). This file covers **how to combine multiple subplots into one publication figure**.
+> **Companion files**: `figure_aesthetics.md` (technical spec: color/font/non-overlap), `figure_design.md` (what chart type + information hierarchy + statistics visualization). Three references together cover CNS-grade plotting end-to-end.
 
 ## The omicverse composition philosophy
 

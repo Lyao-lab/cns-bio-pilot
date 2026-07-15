@@ -17,7 +17,7 @@ description: 统一科学绘图 API 基于 OmicVerse V2 的 ov.pl.* 模块（80+
 
 ## 0. Initialization (required)
 
-> **Plotting aesthetics**: publication-grade figures must follow CNS standards (300 DPI, Arial, Okabe-Ito colorblind palette, vector PDF). See `references/figure_aesthetics.md` — **read before plotting**.
+> **Plotting aesthetics — read all three before plotting**: `references/figure_aesthetics.md` (technical spec: DPI/fonts/color/non-overlap) + `references/figure_design.md` (what chart type + information hierarchy + statistics visualization) + `references/figure_layout.md` (multi-panel composition). CNS-grade figures need all three layers.
 
 ```python
 import omicverse as ov

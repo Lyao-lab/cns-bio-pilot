@@ -34,26 +34,47 @@ adata.layers['counts'] = adata.X.copy()   # IMPORTANT: store raw counts BEFORE Q
 
 > Million-cell scale: `adata = ov.read('data.h5ad', backend='rust')` uses AnnDataOOM, ~170× memory savings.
 
-## 2. QC + doublet (one call)
+## 2. QC + doublet (two-step: diagnose first, then filter)
 
-`ov.pp.qc` inlines mt/ribo fraction, cell/gene filtering, and doublet detection.
+`ov.pp.qc` inlines mt/ribo fraction, cell/gene filtering, and doublet detection. **But mt% threshold is NOT a universal default** — it depends on tissue / platform / dissociation (liver hepatocytes legitimately hit 30%+; brain neurons die above 10%; sorted nuclei should be near 0%). **Never copy-paste a threshold — diagnose first, then choose.**
+
+### Step 2a — Diagnose BEFORE filtering (mandatory)
 
 ```python
+import scanpy as sc
+# Compute QC metrics WITHOUT filtering first
+adata.var['mt'] = adata.var_names.str.startswith('MT-')   # human; 'mt-' for mouse
+sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], inplace=True)
+# Plot per-sample distributions — find the knee/elbow, look for tissue-appropriate range
+sc.pl.violin(adata, ['n_genes_by_counts','total_counts','pct_counts_mt'],
+             groupby='sample', jitter=0.4, multi_panel=True)
+sc.pl.scatter(adata, x='total_counts', y='pct_counts_mt')      # high-mt tail = dying cells?
+sc.pl.scatter(adata, x='total_counts', y='n_genes_by_counts')   # knee = low-quality breakpoint?
+```
+
+> **Look at the plot, then decide.** The threshold comes from YOUR data's distribution + tissue biology, not a hardcoded number. See the tissue reference table below (§QC principles) for typical ranges — but verify against your actual violin/scatter.
+
+### Step 2b — Filter with the threshold you chose from the diagnostic
+
+```python
+import omicverse as ov
 ov.pp.qc(
     adata,
     doublets_method='scrublet',     # 'scrublet' | 'scdblfinder' | 'doubletfinder'
     batch_key='sample',             # REQUIRED for multi-sample: detect doublets per batch
     filter_doublets=True,
-    mt_thresh=20,                   # mt% threshold, tissue-dependent; brain/liver 5-10, cultured cells up to 20
+    mt_thresh=<VALUE_FROM_DIAGNOSTIC>,   # YOU choose after Step 2a; see tissue table below
 )
 # adds to adata.obs: n_genes_by_counts, total_counts, pct_counts_mt, predicted_doublet
 ```
+
+> **⚠️ Do NOT use `mt_thresh=20` blindly.** 20% is wrong for liver (too strict — kills real hepatocytes), wrong for brain (too loose — keeps dying neurons), wrong for nuclei (any mt% = contamination). The only honest workflow is: plot → find knee → check tissue table → document your choice.
 
 > **Ambient RNA removal (FFPE / nuclei / low-quality runs)**: `ov.pp.qc` does **not** remove ambient RNA (cell-free mRNA contaminating droplets). For FFPE, nuclei, or high-background data, run **CellBender** (remove-background, [Cargnelli et al. 2026 7-tool benchmark](https://www.biorxiv.org/content/10.64898/2026.01.13.699237v1) — gold standard) on the raw feature-barcode matrix **before** loading into omicverse. SoupX / DecontX are faster alternatives. Skipping ambient removal → marker scores inflated, doublet rates misleading, DE contaminated.
 
 Decision: scrublet default (fast, pure Python). doubletfinder (R engine, needs R) usually matches Seurat.
 
-### QC principles (not just API — how to choose thresholds)
+### QC principles (threshold selection — the part reviewers actually probe)
 
 QC thresholds are **experimental design choices, not universal defaults**. A threshold that works for brain tissue kills metabolically active hepatocytes; a threshold for FACS-sorted nuclei makes no sense for whole-tissue dissociation. CNS reviewers routinely ask "what is the justification for your mt% cutoff?" — have an answer.
 
@@ -71,27 +92,16 @@ QC thresholds are **experimental design choices, not universal defaults**. A thr
 | FFPE | variable, often higher background | ≥300 | CellBender first (ambient dominates) |
 | PBMC | 5–15 | ≥300 | 10x default-ish |
 
-> If unsure: **plot the distribution first** (see diagnostic below), look for the knee/elbow, and document the choice. Don't hardcode `mt_thresh=20` without checking.
+> If unsure: **plot the distribution first** (Step 2a above), look for the knee/elbow, and document the choice. There is no universal mt% default.
 
-**3. Diagnostic visualization (mandatory before finalizing thresholds)**:
-```python
-import scanpy as sc
-# Per-sample violin + scatter — look at distributions, find the knee
-sc.pl.violin(adata, ['n_genes_by_counts','total_counts','pct_counts_mt'],
-             groupby='sample', jitter=0.4, multi_panel=True)
-sc.pl.scatter(adata, x='total_counts', y='pct_counts_mt')   # high-mt tail = dying cells
-sc.pl.scatter(adata, x='total_counts', y='n_genes_by_counts')  # knee = low-quality knee
-# Compare before/after filtering cell counts per sample — a sample losing >60% cells is suspect
-```
-
-**4. Filter-stringency trade-off (meta-methodology)**: filtering shapes the conclusion.
+**3. Filter-stringency trade-off (meta-methodology)**: filtering shapes the conclusion.
 - **Too strict** (e.g. blanket mt% < 10 on liver) → systematically removes real metabolically-active cells, leaving a **biased** population. The remaining "clean" cells are not representative.
 - **Too loose** → dying/damaged cells + doublets + ambient inflate noise, creating spurious clusters and DE.
 - The honest move: report the threshold, show before/after cell counts per sample, and do a **sensitivity check** (±1档 threshold, does the main conclusion hold?).
 
-**5. Doublet rate sanity**: expected ~1% per 1000 cells loaded (10x). >15% doublet rate suggests either poor loading or a doublet-tool false positive (check cell-cycle — cycling cells can masquerade as doublets).
+**4. Doublet rate sanity**: expected ~1% per 1000 cells loaded (10x). >15% doublet rate suggests either poor loading or a doublet-tool false positive (check cell-cycle — cycling cells can masquerade as doublets).
 
-**6. Post-QC audit (must report)**: per-sample cell counts before/after QC; if any sample drops >60%, investigate (batch effect, dissociation failure, library prep). A sample quietly losing 70% of cells and being kept silently is a reviewer landmine.
+**5. Post-QC audit (must report)**: per-sample cell counts before/after QC; if any sample drops >60%, investigate (batch effect, dissociation failure, library prep). A sample quietly losing 70% of cells and being kept silently is a reviewer landmine.
 
 > References: Heumos et al. 2023 *Nat Rev Genet* 24:550 (sc-best-practices.org QC chapter); Luecken & Theis 2019 *Mol Syst Biol* (foundational best-practices); [10x Genomics QC considerations](https://www.10xgenomics.com/analysis-guides/common-considerations-for-quality-control-filters-for-single-cell-rna-seq-data).
 

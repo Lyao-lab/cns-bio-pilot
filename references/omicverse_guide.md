@@ -58,6 +58,8 @@ adata = ov.read('data.h5ad')
 | Spatial communication | `ov.space.Cal_Spatial_Net(adata)` + `create_communication_anndata` (COMMOT standalone: `pip install commot`) | COMMOT |
 | Spatial tensor | `STT` (Spatial Transition Tensor) | STT |
 | **Deconvolution** | `ov.space.Deconvolution` (unifies cell2location/Tangram/RCTD/Starfysh/flashdeconv) | cell2location / RCTD standalone |
+| **Cell segmentation (Visium HD bin→cell)** | `ov.space.bin2cell(adata, labels_key=)` + `visium_10x_hd_cellpose_expand()` + `sync_visium_hd_seg_geometries()` | bin2cell standalone / cellpose |
+| Cell segmentation (transcript platforms) | cellpose / Baysor / SAINSC (standalone; Xenium uses built-in mask) | cellpose / Baysor |
 
 ## Bulk Task Mapping (see skills/general-bio/omicverse-bulk)
 

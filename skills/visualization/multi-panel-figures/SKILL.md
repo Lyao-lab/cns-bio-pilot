@@ -150,13 +150,11 @@ pip install Pillow numpy
 - **Input formats**: PNG/JPG/BMP/TIFF/GIF; sub-figures should have similar aspect ratios
 - Script entry `scripts/main.py` (`--input` 6 paths + `--output`, required)
 
-## Pre-Output Checklist (must pass before exporting a figure)
-- [ ] Numerical integrity: each quantitative plot retains N / statistical test / error bars
-- [ ] Axis labels / legend / colorblind-friendly: axes have labels and units, legend is self-contained, palette is colorblind-safe (avoid pure red-green)
-- [ ] Citation support: clearly indicate which figure / statistic supports the main conclusion
-- [ ] Avoid speculation: when no significant difference, write "No significant effect"; don't fabricate a story
-- [ ] Correlation ≠ causation: use "associated with"; regulates/causes requires experimental evidence
-- [ ] Run postcheck.py ✅
+## Pre-Output Checklist (core 5 in `references/preoutput_checklist.md` + skill-specific)
+
+- [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see `references/preoutput_checklist.md`)
+- [ ] Panel labels A-F present + consistent fontsize
+- [ ] Shared legend (not duplicated per panel); DPI consistent across sub-panels
 
 ## When to leave this skill (where to go)
 

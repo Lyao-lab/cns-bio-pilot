@@ -151,13 +151,12 @@ Keep ONE global `fontsize=` via `ov.ov_plot_set(fontsize=12)`; scale via figsize
 
 `ov.pl.*` is static by default; for quick interactivity use `ov.pl.embedding(..., interactive=True)` (plotly backend). **Heavy interactive dashboards should still export anndata and use cellxgene/CELESTE** — out of scope.
 
-## Pre-Output Checklist (must pass before exporting a figure)
-- [ ] Numerical integrity: each quantitative plot retains N / statistical test / error bars
-- [ ] Axis labels / legend / colorblind-friendly: axes have labels and units, legend is self-contained, palette is colorblind-safe (avoid pure red-green)
-- [ ] Citation support: clearly indicate which figure / statistic supports the main conclusion
-- [ ] Avoid speculation: when no significant difference, write "No significant effect"; don't fabricate a story
-- [ ] Correlation ≠ causation: use "associated with"; regulates/causes requires experimental evidence
-- [ ] Run postcheck.py ✅
+## Pre-Output Checklist (core 5 in `references/preoutput_checklist.md` + skill-specific)
+
+- [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see `references/preoutput_checklist.md`)
+- [ ] Colorblind palette + `pdf.fonttype=42` set (see figure_aesthetics.md §6)
+- [ ] Title/legend non-overlap verified (see figure_layout.md)
+- [ ] Run api_check.py if ov.pl.* API used recently
 
 ## Prerequisites (where inputs come from)
 

@@ -285,13 +285,11 @@ A weak output:
 - **Figure legends** (companion references) → `presentation/figure-legend-writer`
 - Reference: rule modules under `references/` — clarification-first / full-results-writing / results-boundary / citation-support / upload-recommendation
 
-## Pre-Output Checklist (must pass before delivery)
-- [ ] Numeric integrity: every quantitative figure keeps N / statistical test / error bars
-- [ ] Cross-condition consistency: is the effect universal or cell-type-specific? Faceting needed?
-- [ ] Citation support: state exactly which figure / statistic backs the main conclusion
-- [ ] No speculation: when there is no significant difference, write "No significant effect" — do not fabricate a story
-- [ ] Association ≠ causation: use "associated with"; regulates/causes requires experimental evidence
-- [ ] Run postcheck.py ✅
+## Pre-Output Checklist (core 5 in `references/preoutput_checklist.md` + skill-specific)
+
+- [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see `references/preoutput_checklist.md`)
+- [ ] Results ≠ Discussion (no mechanism inference in Results)
+- [ ] Citation-needed placeholders `[CITATION NEEDED]` for unverified claims
 
 ## When to leave this skill (where to go)
 

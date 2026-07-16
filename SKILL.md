@@ -157,3 +157,4 @@ Data has spatial coords / tissue image?
 | `references/figure_design.md` | Chart-type selection + information hierarchy + statistics visualization (what to plot, take-home message, error bars, n, self-contained legend) | **Must read before any plotting — the design layer above aesthetics** |
 | `references/meta_methodology.md` | **Meta-methodology 6 rules** (verify prerequisites / semantic boundaries / what is N / report the path / chain failure / design up front) | Self-check checklist after each analysis step |
 | `scripts/postcheck.py` | Scientific rigor auto-check (counts / Padj / pseudobulk / deconv quality) | **Must run after analysis** |
+| `scripts/api_check.py` | API existence self-check (verify all `ov.*` in skill docs actually exist in current env) | **Run after installing/updating omicverse** |

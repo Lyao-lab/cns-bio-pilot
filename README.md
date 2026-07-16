@@ -233,9 +233,12 @@ git clone https://github.com/Lyao-lab/cns-bio-pilot.git ~/.agents/skills/cns-bio
 
 # 4. Verify
 cd ~/.agents/skills/cns-bio-pilot
-python scripts/postcheck.py --help    # should print usage (needs anndata)
+conda run -n sc python scripts/api_check.py   # API existence self-check (run after every omicverse update)
+python scripts/postcheck.py --help            # should print usage (needs anndata)
 conda run -n sc python -c "import omicverse; print(omicverse.__version__)"  # 2.2.3
 ```
+
+> **After every `pip install --upgrade omicverse`**, re-run `api_check.py` — it scans all skill docs for `ov.*` API calls and verifies each one still exists in the new version. If omicverse renames/removes an API, the script flags it with a fix suggestion.
 
 ### Offline / air-gapped servers
 

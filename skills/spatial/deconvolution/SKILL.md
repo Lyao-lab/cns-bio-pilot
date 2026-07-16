@@ -150,7 +150,7 @@ If you prefer R/spacexr (RCTD's native env), use `single-cell/scop` `RunRCTD` �
 
 ## Prerequisites (where it comes from)
 
-- **Spatial data loading/preprocessing** → `spatial/omicverse-spatial` (`ov.io.read_visium` + QC)
+- **Spatial data loading/preprocessing** → `spatial/omicverse-spatial` (`ov.space.read_visium_10x` for standard Visium; `ov.io.read_visium_hd` for HD; there is no plain `ov.io.read_visium`) + QC
 - **Single-cell reference annotation** → `single-cell/omicverse-pipeline` (reference must be annotated with `cell_type` first)
 - **layers['counts']** must exist in both reference and spatial data (cell2location trains on raw counts)
 

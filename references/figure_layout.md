@@ -9,7 +9,7 @@
 **omicverse almost never hand-crafts fancy GridSpec layouts.** Its real approach:
 1. Every `ov.pl.*` function accepts `ax=` → make single cells via `plt.subplots`, pass `ax=`, set `show=False`
 2. Each subplot auto-applies omicverse's five signature decisions (below) → looks clean by default
-3. Multi-panel happens in only three built-ins: `embedding(color=[...])`, `embedding_celltype` (UMAP + lollipop), `stacking_vol` (side-by-side volcanoes)
+3. Multi-panel happens in only three built-ins: `embedding(color=[...])`, `embedding_celltype` (UMAP + lollipop), and side-by-side volcanoes (via manual gridspec — `ov.pl.stacking_vol` does NOT exist in omicverse 2.2.3)
 4. Cross-heterogeneous composition (UMAP + dotplot + violin) → hand-write GridSpec, but keep the five signatures
 
 So "omicverse-style composite" = **clean single cells × N + external shared legend/colorbar**, not fancy grids.
@@ -41,7 +41,7 @@ When you pass a list of genes, omicverse builds the grid internally:
 ov.pl.embedding(adata, basis='X_umap',
                 color=['Sox4','Sox11','Neurod1','Tubb3','Dcx','Map2'],  # 6 genes
                 ncols=3, hspace=0.25, frameon='small',
-                cmap=ov.pl.get_cmap_seg(),    # segmented cmap, omicverse-recommended
+                cmap='Reds',   # omicverse has no get_cmap_seg(); use standard cmap
                 vmin=0, vmax=3,               # UNIFIED range — critical for comparability
                 show=False)
 ```
@@ -123,7 +123,7 @@ ov.pl.violin(adata, keys='CD3D', groupby='clusters', ax=axC, show=False)
 ```python
 ov.pl.embedding(adata, basis='X_umap',
                 color=['gene1','gene2','gene3','gene4','gene5','gene6'],
-                ncols=3, frameon='small', cmap=ov.pl.get_cmap_seg(),
+                ncols=3, frameon='small', cmap='Reds',
                 vmin=0, vmax=3, show=False)   # unified range
 ```
 
@@ -142,13 +142,16 @@ axC = fig.add_subplot(gs[0,2])
 ov.pl.marker_heatmap(adata)   # or complexheatmap
 ```
 
-### Template D — Side-by-side volcanoes (use built-in `stacking_vol`)
+### Template D — Side-by-side volcanoes (manual gridspec; no built-in)
+> `ov.pl.stacking_vol` does NOT exist in omicverse 2.2.3. Use manual gridspec with `ov.pl.volcano` per panel.
 ```python
-ov.pl.stacking_vol(data_dict, ...)   # auto GridSpec(N*2, N*2), each volcano full-row × 2 cols
+fig, axes = plt.subplots(1, n_datasets, figsize=(5*n_datasets, 4))
+for ax, (name, df) in zip(axes, data_dict.items()):
+    ov.pl.volcano(df, ax=ax, show=False, title=name)
 ```
 
 ### Template E — Spatial sections multi-panel (hand-write)
-omicverse has no built-in spatial multi-panel; hand-write GridSpec, each cell `ax=` to `ov.pl.space`/`sq.pl.spatial_scatter`, unified `vmin/vmax`, shared colorbar on the right.
+omicverse has no built-in spatial multi-panel; hand-write GridSpec, each cell `ax=` to `ov.pl.plot_spatial` (NOT `ov.pl.space` — that doesn't exist) / `sq.pl.spatial_scatter`, unified `vmin/vmax`, shared colorbar on the right.
 
 ## Self-check before exporting a composite
 

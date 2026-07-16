@@ -64,28 +64,41 @@ adata.layers['counts']  # keep; required by deconvolution
 ## 3. Spatial neighbor graph (core)
 
 ```python
-ov.pp.spatial_neighbors(adata, n_neighbors=6, method='knn')
+ov.space.spatial_neighbors(adata, n_neighbors=6, method='knn')
 # or coordinates with Delaunay: method='delaunay' (Visium hex grid: knn is fine)
 # outputs adata.obsp['spatial_connectivities'] / ['distances']
 ```
+
+> **API correction (v12.5)**: was previously written as `ov.pp.spatial_neighbors` — that does NOT exist. The correct location is **`ov.space.spatial_neighbors`** (verified omicverse 2.2.3). `ov.pp` only has `neighbors` (non-spatial).
 
 All downstream SVG / spatial domain / communication methods depend on this graph.
 
 ## 4. Spatial domains / tissue regions
 
+> **Verified in omicverse 2.2.3** — ov.space wraps these domain methods: `pySTAGATE` / `pySTAligner` / `pySpaceFlow`. **BANKSY / BINARY / GraphST / MENDER / SpatialGlue are NOT wrapped in ov.space** — install each as a standalone package or use squidpy/BayesSpace equivalents.
+
 ```python
-# STAGATE (graph autoencoder, most common, robust to noise)
+# STAGATE (graph autoencoder, most common, robust to noise) — wrapped in ov.space
 ov.space.pySTAGATE(adata)
 ov.pp.neighbors(adata, use_rep='X_STAGATE'); ov.pp.umap(adata)
 ov.pp.leiden(adata, resolution='auto')
 
-# Alternative algorithms
-ov.space.GraphST(adata)    # graph contrastive learning, better for large data
-ov.space.BANKSY(adata)     # neighborhood-aware, sharp boundaries
-ov.space.BINARY(adata)     # self-supervised, zero-shot
+# STAligner (multi-section alignment, built on STAGATE) — wrapped
+ov.space.pySTAligner(adata_list)   # for merging multiple Visium sections
+
+# SpaceFlow (spatial flow / continuity-aware embedding) — wrapped
+ov.space.pySpaceFlow(adata)
 ```
 
-Decision: default STAGATE; large samples (>1M spot) → GraphST; sharp tissue boundaries → BANKSY; **cell-type-aware domains with speed → MENDER** (2024, Nat Commun; fast, cell-type-aware); **multi-omics (e.g. spatial RNA+ATAC) → SpatialGlue** (2024, Nat Methods; dual-attention multimodal domain).
+**NOT wrapped in ov.space (install standalone)**:
+- **BANKSY** (Nat Genet 2024, sharp boundaries): `pip install banksy` + [prabhakarlab/Banksy_py](https://github.com/prabhakarlab/Banksy_py)
+- **BINARY** (self-supervised): standalone
+- **GraphST** (large data): `pip install GraphST`
+- **MENDER** (2024 Nat Commun, cell-type-aware, fast): standalone
+- **SpatialGlue** (2024 Nat Methods, multi-omics): standalone
+- **BayesSpace** (R): via `single-cell/scop` `RunBayesSpace`
+
+Decision: default STAGATE (wrapped); sharp boundaries → BANKSY (standalone); large samples → GraphST (standalone); cell-type-aware speed → MENDER (standalone); multi-omics → SpatialGlue (standalone).
 
 > **2025 benchmark consensus** (Genome Biol / iMeta, 26 methods / 63 sections): no single SOTA; results vary by tissue/platform. **Run at least 2 methods for key domain conclusions**; commit only when directions agree.
 
@@ -93,6 +106,7 @@ Decision: default STAGATE; large samples (>1M spot) → GraphST; sharp tissue bo
 
 ```python
 ov.space.spatial_autocorr(adata, mode='moran')   # Moran's I; mode='geary' for Geary's C
+# or ov.space.moranI(adata) for the raw statistic
 # adds to adata.var: moranI, moranI_pval, spatial_high_variable
 svg = adata.var.query('moranI > 0.3').index
 ```
@@ -101,12 +115,15 @@ svg = adata.var.query('moranI > 0.3').index
 
 ## 6. Spatial cell-cell communication
 
+> **API correction (v12.5)**: `ov.space.COMMOT` does **not** exist as a public method (only `_commot` private + `create_communication_anndata` helper). For spatial CCC, use the **COMMOT standalone package** or **squidpy.gr.nhood_enrichment / liana spatial mode**.
+
 ```python
-# Build spatial network (ligand-receptor + spatial neighbors)
+# Build spatial LR network (this helper IS available)
 ov.space.Cal_Spatial_Net(adata)
-# Inference
-ov.space.COMMOT(adata)   # anisotropic OT communication, mainstream spatial choice
-# Alternatives: LIANA+ (spatial mode, unified framework), DeepTalk (single-cell-res spatial CCC)
+ov.space.create_communication_anndata(adata)   # helper to format communication data
+# Then run COMMOT standalone: pip install commot  →  ct.tl.commot(...)
+# Or LIANA+ spatial mode: ov.single.run_liana(adata, ...) with spatial coords
+# Or DeepTalk (Nat Commun 2024) standalone for single-cell-res spatial CCC
 ```
 
 > **Spatial CCC ranking (2024-2026)**: **COMMOT** (OT-based) and **LIANA+ spatial mode** (Mol Syst Biol 2024, 251+ citations, unified framework that internally runs multiple methods) are the SOTA for spatially-aware communication. **CellChat spatial / CellPhoneDB v5 are NOT spatial-native** — they were built for dissociated scRNA-seq; using them on spatial data is fallback only. **DeepTalk** (Nat Commun 2024, 93+ citations) is a newer option for single-cell-resolution spatial CCC. The first systematic spatial-CCC benchmark (bioRxiv 2026.05.19.724475) confirmed no single winner — run ≥2 methods and report consensus.
@@ -125,7 +142,7 @@ H&E / IF image analysis: ov V2 integrates basic registration; complex registrati
 
 - **Raw spatial data** (spaceranger / star-solo / SAW output) → contains `adata.obsm['spatial']` coordinates + `uns['spatial']` H&E images
 - **`layers['counts']` must be preserved** — SVG/deconvolution predecessors use raw counts
-- **Spatial neighbor graph**: `ov.pp.spatial_neighbors` must run before spatial domains/SVG/communication (all spatial methods consume this graph)
+- **Spatial neighbor graph**: `ov.space.spatial_neighbors` (NOT `ov.pp.spatial_neighbors`) must run before spatial domains/SVG/communication — all spatial methods consume this graph.
 - **High-resolution platforms** (Stereo-seq/Visium HD) → `spatial/multiomics` (cellpose segmentation)
 - **Spot cell composition estimation** → `spatial/deconvolution`
 
@@ -139,7 +156,7 @@ H&E / IF image analysis: ov V2 integrates basic registration; complex registrati
 
 ## Key pitfalls
 
-- `ov.pp.spatial_neighbors` must run before spatial domains/SVG/communication — all spatial methods consume this graph.
+- `ov.space.spatial_neighbors` must run before spatial domains/SVG/communication — all spatial methods consume this graph (note: it's in `ov.space`, not `ov.pp`).
 - Default n_neighbors differs by platform: Visium hex grid uses 6; Xenium/HD try 4-8.
 - SVG uses Moran's I, threshold starts at 0.3; too strict misses weak-spatial-pattern genes.
 - Before deconvolution, confirm `adata.layers['counts']` was not overwritten by normalization.

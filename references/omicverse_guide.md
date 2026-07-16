@@ -50,13 +50,14 @@ adata = ov.read('data.h5ad')
 | Read Xenium | `ov.io.read_xenium(path)` | squidpy.read_xenium |
 | Read NanoString | `ov.io.read_nanostring(path)` | squidpy.read_nanostring |
 | Read Visium 10x | `ov.space.read_visium_10x(path)` | squidpy |
-| Spatial neighbor graph | `ov.pp.spatial_neighbors(adata)` | squidpy.gr.spatial_neighbors |
-| SVG (spatially variable genes) | `ov.space.spatial_autocorr(adata, mode='moran')` | squidpy.gr.spatial_autocorr |
-| Spatial domains | pySTAGATE / GraphST / BINARY / BANKSY / CAST / GASTON | STAGATE/GraphST |
-| Spatial alignment | `pySTAligner` / SLAT | STAligner |
-| Spatial communication | `ov.space.Cal_Spatial_Net(adata)` + COMMOT / flowsig | COMMOT |
+| Spatial neighbor graph | `ov.space.spatial_neighbors(adata)` (NOT `ov.pp` — verified) | squidpy.gr.spatial_neighbors |
+| SVG (spatially variable genes) | `ov.space.spatial_autocorr(adata, mode='moran')` / `ov.space.moranI` | squidpy.gr.spatial_autocorr |
+| Spatial domains (wrapped) | `ov.space.pySTAGATE` / `pySTAligner` / `pySpaceFlow` | STAGATE/STAligner/SpaceFlow |
+| Spatial domains (standalone) | BANKSY / GraphST / BINARY / MENDER / SpatialGlue (NOT wrapped — install separately) | — |
+| Spatial alignment | `ov.space.pySTAligner` / SLAT | STAligner |
+| Spatial communication | `ov.space.Cal_Spatial_Net(adata)` + `create_communication_anndata` (COMMOT standalone: `pip install commot`) | COMMOT |
 | Spatial tensor | `STT` (Spatial Transition Tensor) | STT |
-| **Deconvolution** | `ov.space.Deconvolution` / Tangram / RCTD / FlashDeconv (**no cell2location**) | **cell2location (kept as separate skill)** |
+| **Deconvolution** | `ov.space.Deconvolution` (unifies cell2location/Tangram/RCTD/Starfysh/flashdeconv) | cell2location / RCTD standalone |
 
 ## Bulk Task Mapping (see skills/general-bio/omicverse-bulk)
 
@@ -81,7 +82,7 @@ adata = ov.read('data.h5ad')
 | Multi-omics embedding (gene/region/cell joint space) | `ov.single.pySIMBA(adata, workdir)` | SIMBA standalone |
 | Causal GRN inference | `ov.single.pyCEFCON(adata)` | CEFCON standalone |
 | Metabolic flux scoring | `ov.single.Metabolism(adata)` | scMetabolism / compass |
-| Metabolite-based cell-cell communication | `ov.single.MetabolityCCC(adata)` | — |
+| Metabolite-based cell-cell communication | `ov.single.MetaboliteCCC(adata)` (note spelling: Metabol**i**teCCC, verified) | — |
 | Differential metabolism | `ov.single.differential_metabolism(adata, ...)` | — |
 | CITE-seq multimodal annotation | `ov.single.Annotation` (multimodal) + totalVI via `lazy_step_scvi` | totalVI / WNN |
 | TCGA bulk multi-omics | `ov.bulk.pyTCGA()` | TCGAbiolinks(R) |

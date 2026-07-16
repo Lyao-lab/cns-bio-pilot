@@ -211,7 +211,7 @@ simba = ov.single.pySIMBA(mdata, workdir='simba_result')
 # For totalVI/MultiVI (scvi-tools), call via ov.single.lazy_step_scvi (lazy-loaded)
 
 # === Metabolism + metabolite-based cell-cell communication ===
-ov.single.MetabolityCCC(adata)               # metabolite ligand-receptor CCC
+ov.single.MetaboliteCCC(adata)               # metabolite ligand-receptor CCC (note: Metabol**i**teCCC)
 ov.single.Metabolism(adata)                  # per-cell metabolic flux scoring
 ov.single.differential_metabolism(adata, ...) # condition-comparison metabolism
 

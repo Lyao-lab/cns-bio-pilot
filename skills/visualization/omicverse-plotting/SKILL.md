@@ -131,7 +131,7 @@ plt.savefig('fig.pdf', bbox_inches='tight')   # omicverse style: tight, no tight
 ov.pl.embedding(adata, basis='X_umap',
                 color=['CD3D','CD4','CD8A','MS4A1','CD14','NCAM1'],  # 6 genes
                 ncols=3, frameon='small',
-                cmap=ov.pl.get_cmap_seg(),   # segmented cmap (omicverse-recommended)
+                cmap='Reds',   # omicverse has no get_cmap_seg(); use standard cmap
                 vmin=0, vmax=3,              # UNIFIED range — critical for comparability
                 show=False)
 ```

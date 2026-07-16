@@ -53,6 +53,48 @@ ov.pp.qc(
 
 Decision: scrublet default (fast, pure Python). doubletfinder (R engine, needs R) usually matches Seurat.
 
+### QC principles (not just API — how to choose thresholds)
+
+QC thresholds are **experimental design choices, not universal defaults**. A threshold that works for brain tissue kills metabolically active hepatocytes; a threshold for FACS-sorted nuclei makes no sense for whole-tissue dissociation. CNS reviewers routinely ask "what is the justification for your mt% cutoff?" — have an answer.
+
+**1. Per-sample QC, not per-batch**. Run QC and doublet detection **per sample** (pass `batch_key='sample'`), then merge. Running on merged data produces cross-sample false doublets and hides sample-specific quality drift. (Heumos et al. 2023 Nat Rev Genet; [Seurat discussion #6171](https://github.com/satijalab/seurat/discussions/6171))
+
+**2. Thresholds depend on tissue / platform / dissociation** — never copy-paste:
+
+| Tissue / sample type | mt% typical | n_genes min | Notes |
+|---|---|---|---|
+| Brain / neuron | 5–10 | ≥500 | low mt; dead neurons lose fast |
+| Liver / hepatocyte | 15–30 (even 50 acceptable) | ≥1000 | hepatocytes are mitochondria-rich — strict mt% **kills real cells** |
+| Heart / cardiomyocyte | 15–25 | ≥800 | similar — high metabolic tissue |
+| Cultured cell line | ≤10–15 | ≥500 | should be clean; high mt = dying |
+| Sorted nuclei (snRNA) | mito gene count near 0 (nuclei have almost no mt) | ≥400 | high mt% in nuclei = cell contamination — flag, don't just raise cutoff |
+| FFPE | variable, often higher background | ≥300 | CellBender first (ambient dominates) |
+| PBMC | 5–15 | ≥300 | 10x default-ish |
+
+> If unsure: **plot the distribution first** (see diagnostic below), look for the knee/elbow, and document the choice. Don't hardcode `mt_thresh=20` without checking.
+
+**3. Diagnostic visualization (mandatory before finalizing thresholds)**:
+```python
+import scanpy as sc
+# Per-sample violin + scatter — look at distributions, find the knee
+sc.pl.violin(adata, ['n_genes_by_counts','total_counts','pct_counts_mt'],
+             groupby='sample', jitter=0.4, multi_panel=True)
+sc.pl.scatter(adata, x='total_counts', y='pct_counts_mt')   # high-mt tail = dying cells
+sc.pl.scatter(adata, x='total_counts', y='n_genes_by_counts')  # knee = low-quality knee
+# Compare before/after filtering cell counts per sample — a sample losing >60% cells is suspect
+```
+
+**4. Filter-stringency trade-off (meta-methodology)**: filtering shapes the conclusion.
+- **Too strict** (e.g. blanket mt% < 10 on liver) → systematically removes real metabolically-active cells, leaving a **biased** population. The remaining "clean" cells are not representative.
+- **Too loose** → dying/damaged cells + doublets + ambient inflate noise, creating spurious clusters and DE.
+- The honest move: report the threshold, show before/after cell counts per sample, and do a **sensitivity check** (±1档 threshold, does the main conclusion hold?).
+
+**5. Doublet rate sanity**: expected ~1% per 1000 cells loaded (10x). >15% doublet rate suggests either poor loading or a doublet-tool false positive (check cell-cycle — cycling cells can masquerade as doublets).
+
+**6. Post-QC audit (must report)**: per-sample cell counts before/after QC; if any sample drops >60%, investigate (batch effect, dissociation failure, library prep). A sample quietly losing 70% of cells and being kept silently is a reviewer landmine.
+
+> References: Heumos et al. 2023 *Nat Rev Genet* 24:550 (sc-best-practices.org QC chapter); Luecken & Theis 2019 *Mol Syst Biol* (foundational best-practices); [10x Genomics QC considerations](https://www.10xgenomics.com/analysis-guides/common-considerations-for-quality-control-filters-for-single-cell-rna-seq-data).
+
 ## 3. Preprocess (normalize + HVG + scale)
 
 ```python

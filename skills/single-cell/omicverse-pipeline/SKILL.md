@@ -173,6 +173,55 @@ ov.single.gptcelltype(adata)        # LLM-assisted, needs API key
 
 > ⚠️ **Foundation-model reality check (2025)**: scGPT / Geneformer / scFoundation / UCE do **not** dominate annotation or perturbation prediction. Ahlmann-Eltze et al. *Nat Methods* 2025 ([s41592-025-02772-6](https://www.nature.com/articles/s41592-025-02772-6)) showed 5 FMs all lose to a linear baseline for perturbation; Kedzierska et al. *Genome Biol* 2025 ([s13059-025-03574-x](https://link.springer.com/article/10.1186/s13059-025-03574-x), 107+ citations) and Wu et al. *Genome Biol* 2025 ([s13059-025-03781-6](https://link.springer.com/article/10.1186/s13059-025-03781-6), 22-tissue benchmark) show Geneformer/scGPT zero-shot annotation is brittle and simple methods (CellTypist/SingleR/scVI) often win. **Rule: always benchmark any FM against a simple baseline (CellTypist / SingleR / scVI + logistic) and only adopt the FM if it clearly wins for your specific task.** `ov.fm` does **not** exist in omicverse 2.2.3 — use FMs as standalone packages. Frontier options: **scNET** (Nat Methods 2025, PPI-enhanced gene embedding), **TranscriptFormer** (CZI 2025, first generative multi-species FM), **UCE** (cross-species embedding) — all experimental, baseline first.
 
+### Annotation principles (not just API — how to assign labels responsibly)
+
+Annotation labels are **hypotheses, not ground truth**. Every label is a prediction from an imperfect reference or marker set — CNS reviewers routinely ask "what is the evidence for calling this cluster X?". Have a defensible answer.
+
+**1. Reference must match tissue / species / disease state / resolution**. A blood CellTypist reference applied to brain tissue will confidently produce wrong labels. Always state: reference organism, tissue, healthy vs disease, and lineage-level vs subtype-level. Mismatch → only annotate to broad lineage, not subtype. (Huang et al. 2021 benchmark, 10 methods; Fu et al. 2024, 18 methods — subtype accuracy drops cliff vs lineage-level)
+
+**2. Hierarchical annotation (broad lineage → subtype, never one-step to subtype)**:
+- First assign broad lineages (T / B / Myeloid / Fibro / Epi / Endo / SMC) via canonical markers
+- Then sub-cluster within each lineage for subtype resolution
+- One-step clustering at high resolution + auto-annotation to 30 subtypes → unstable, irreproducible labels
+
+**3. Multi-method cross-validation (mandatory for key cell types)**:
+```python
+# Run ≥2 methods, build a cross-tab, inspect disagreement
+ov.single.AnnotationRef(adata, ref='celltypist_immune')   # method 1
+adata.obs['anno_singleR'] = <SingleR labels>               # method 2
+# Cross-tabulate: where do they disagree?
+import pandas as pd
+pd.crosstab(adata.obs['celltypist'], adata.obs['anno_singleR'])
+# Clusters with low agreement → label 'Unknown' or resolve with manual markers
+```
+The disagreement rate IS your uncertainty. Don't hide it — report it.
+
+**4. Canonical-marker manual validation (the ground-truth backstop)**:
+```python
+# After auto-annotation, confirm key labels with known markers
+ov.pl.dotplot(adata, var_names={'T cell':['CD3D','CD3E','CD2'],
+                                  'B cell':['CD79A','MS4A1'],
+                                  'Macro':['LYZ','CD68','AIF1'],
+                                  'Fibro':['DCN','COL1A1'],
+                                  'Endo':['VWF','PECAM1'],
+                                  'SMC':['ACTA2','MYH11','TAGLN']},
+              groupby='celltypist')
+# A cluster called "T cell" with zero CD3D expression = annotation failure
+```
+Auto-annotation without marker validation = trusting an unverified black box.
+
+**5. Label low-confidence clusters 'Unknown' — never force-fit**:
+- If a cluster has no clear marker signature, or 2+ methods disagree, label it `Unknown` / `Unresolved`
+- Do NOT assign the "closest" label just to have a name — this creates downstream errors (DE, communication, proportion analysis all inherit wrong labels)
+- Unknown clusters are honest science; mislabeled clusters are silent landmines
+
+**6. Annotation-method sensitivity (meta-methodology — POP project lesson)**:
+- Switching annotation method (e.g. marker-score → lineage-threshold) can **reverse** the dominant cell type (POP project: Fibroblast 60.6% → SmoothMuscle 66.0% when method changed)
+- For any cell-type-proportion conclusion, **report which annotation method was used + do a sensitivity check** (does the conclusion hold with a second method?)
+- This is meta-methodology principle ④ (report the path, not just the endpoint)
+
+> References: Huang et al. 2021 *Genomics Proteomics Bioinformatics* (10-method benchmark); Fu et al. 2024 *Brief Bioinform* (18-method benchmark); [sc-best-practices annotation](https://www.sc-best-practices.org/cellular_structure/annotation.html); [ScPCA nonsense-reference test](https://www.ccdatalab.org/blog/a-behind-the-scenes-look-at-how-we-selected-cell-type-annotation-platforms-for-the-scpca-portal) (annotation tools give confident labels even with wrong references).
+
 ## 9. Downstream: communication / trajectory
 
 ```python

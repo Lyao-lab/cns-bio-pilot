@@ -83,6 +83,7 @@ Data has spatial coords / tissue image?
 | Pathway / enrichment | — | — | `general-bio/omicverse-bulk` (GSEApy/decoupler) |
 | Plotting (UMAP / volcano / heatmap / dot / violin) | `visualization/omicverse-plotting` (ov.pl.*) | same | same |
 | Multi-panel A–F assembly | `visualization/multi-panel-figures` | same | same |
+| **Main figure deep design** (summarize results → narrative spine → panel design → pre-build review → outline.json) | `presentation/figure-architect` | same | same |
 | Schematic / mechanism / graphical abstract | `visualization/scientific-schematics` | same | same |
 | Lab meeting / progress deck | `presentation/scientific-slides` (lab-meeting mode) | same | same |
 | Formal talk (conference / defense) | `presentation/scientific-slides` | same | same |
@@ -128,7 +129,7 @@ Data has spatial coords / tissue image?
 
 - **Version**: 11.0.0 (English rewrite; graphical-abstract merged into scientific-schematics; lab-meeting-slides merged into scientific-slides; meta-methodology 6 rules + figure_aesthetics full self-check)
 - **Engines**: [OmicVerse V2](https://github.com/Starlitnightly/omicverse) (Python primary) + [scop](https://github.com/mengxu98/scop) (R/Seurat) + perturbation models (GEARS/CPA/scGPT, mandatory linear baseline)
-- **Sub-skills**: 18 (see `skill-index.json` compact index)
+- **Sub-skills**: 19 (see `skill-index.json` compact index)
 - **Architecture evolution**: v8 (42 standalone) → v9 (omicverse unification + scop + perturbation track) → v10 (structural engineering: routing / closed-loop / protocol) → **v11 (consolidation + meta-methodology + English rewrite)**
 
 ### Refactor / dedup record (v8 → v11 merge history)

@@ -96,11 +96,12 @@ What to plot?
 
 ```
 What to produce after analysis?
+├─ Main figure deep design (results → narrative spine → panel design → review → outline.json) → presentation/figure-architect ⭐ run FIRST before assembling figures
 ├─ Formal presentation PPT → presentation/scientific-slides (beamer/pptx)
 ├─ Lab-meeting slides → presentation/scientific-slides (lab-meeting mode)
 ├─ Methods text → presentation/methods-writer
-├─ Results narrative → presentation/results-writer
-├─ Figure legends → presentation/figure-legend-writer
+├─ Results narrative → presentation/results-writer (uses figure-architect's narrative_spine)
+├─ Figure legends → presentation/figure-legend-writer (uses figure-architect's panel spec)
 └─ Study design (before analysis) → single-cell/research-planner
 ```
 

@@ -304,6 +304,27 @@
         "图例"
       ],
       "summary": "Self-contained publication-grade figure legends"
+    },
+    {
+      "name": "figure-architect",
+      "path": "skills/presentation/figure-architect/SKILL.md",
+      "engine": "methodology (no code)",
+      "data_type": [
+        "single-cell",
+        "spatial",
+        "bulk"
+      ],
+      "triggers": [
+        "主图",
+        "main figure",
+        "figure 1",
+        "文章逻辑",
+        "narrative spine",
+        "panel design",
+        "结果汇总",
+        "figure architect"
+      ],
+      "summary": "Main-figure deep design: summarize results → extract narrative spine → design panel order/content → pre-build review (logic/aesthetics/rigor/redundancy/readability) → produce outline.json for multi-panel-figures + results-writer"
     }
   ]
 }

@@ -4,9 +4,9 @@
 >
 > **Three engines**: OmicVerse V2 (Python, default) · scop (R/Seurat) · perturbation models (GEARS/CPA/scGPT + GRN-based virtual KO).
 >
-> **18 sub-skills** · router architecture · meta-methodology discipline · publication-grade aesthetics.
+> **19 sub-skills** · router architecture · meta-methodology discipline · publication-grade aesthetics.
 
-[![version](https://img.shields.io/badge/version-12.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-18-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
+[![version](https://img.shields.io/badge/version-12.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
 
 ---
 
@@ -14,7 +14,7 @@
 
 Most bioinformatics "skills" are either a flat list of commands or a knowledge dump. `cns-bio-pilot` is different:
 
-- **Router, not encyclopedia** — the top `SKILL.md` routes your request to exactly one of 18 sub-skills; you never load irrelevant context.
+- **Router, not encyclopedia** — the top `SKILL.md` routes your request to exactly one of 19 sub-skills; you never load irrelevant context.
 - **Fact-based, never fabricate** — core principle #1. No invented accessions, PMIDs, API signatures, or results. Verify before calling.
 - **Don't reinvent the wheel** — core principle #2. Before writing any method, search omicverse/scop → PyPI → R/Bioconductor → adapt similar → from-scratch (last resort).
 - **Meta-methodology discipline** — 6 self-check rules (verify prerequisites / semantic boundaries / what is N / report the path / chain-failure & circuit-breaker / design up front). See `references/meta_methodology.md`.

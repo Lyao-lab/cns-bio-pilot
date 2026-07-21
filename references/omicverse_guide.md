@@ -75,7 +75,7 @@ adata = ov.read('data.h5ad')
 | TCGA | `ov.bulk.pyTCGA()` | TCGA biolinks(R) |
 | Bulk deconvolution | `ov.bulk.Deconvolution` / Scaden / BayesPrime | CIBERSORT |
 
-## Multi-omics Task Mapping (see skills/single-cell/omicverse-pipeline §9b)
+## Multi-omics Task Mapping (see skills/single-cell/omicverse-pipeline §9b + references/multiomics_integration.md)
 
 | Task | omicverse API | Alternative standalone |
 |---|---|---|

@@ -1,5 +1,5 @@
 ---
-name: multi-panel-figure-assembler
+name: multi-panel-figures
 description: 把 6 张子图（A-F 面板）拼成高分辨率、标签统一、留白一致的发表级组合 figure。当用户要做多面板组合图、figure assembly、A-F 拼图、发表级 composite figure、组图拼接时触发。
 license: MIT
 author: AIPOCH
@@ -21,7 +21,7 @@ This skill accepts: exactly 6 image files (panels A–F) in supported formats, p
 
 If the request does not involve assembling exactly 6 image panels into a composite figure — for example, asking to generate plots from data, edit image content, or assemble a different number of panels — do not proceed. Instead respond:
 
-> "multi-panel-figure-assembler is designed to assemble exactly 6 sub-figures (A–F) into a composite image. Your request appears to be outside this scope. Please provide 6 image files and an output path, or use a more appropriate tool for your task. For plot generation from data, consider matplotlib, seaborn, or R ggplot2."
+> "multi-panel-figures is designed to assemble exactly 6 sub-figures (A–F) into a composite image. Your request appears to be outside this scope. Please provide 6 image files and an output path, or use a more appropriate tool for your task. For plot generation from data, consider matplotlib, seaborn, or R ggplot2."
 
 Do not attempt any data processing or partial analysis before emitting this refusal. Validate scope first — this is the absolute first action before any other processing.
 

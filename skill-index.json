@@ -1,7 +1,7 @@
 {
   "_meta": {
     "skill": "cns-bio-pilot",
-    "version": "11.0.0",
+    "version": "14.0.0",
     "purpose": "Compact index — read this to locate a sub-skill, then load the matched one. Never load multiple at once.",
     "engines": [
       "omicverse (Python default)",
@@ -23,8 +23,9 @@
         "cell annotation",
         "batch correction",
         "pseudobulk DE",
-        "multi-omics",
-        "CITE-seq"
+        "scRNA+ATAC",
+        "MOFA",
+        "GLUE"
       ],
       "summary": "Single-cell full pipeline: ov.pp.qc→preprocess→leiden→batch_correction→annotation→communication→trajectory"
     },
@@ -157,7 +158,8 @@
         "Visium HD",
         "Slide-seq",
         "cellpose",
-        "subcellular"
+        "subcellular",
+        "spatial multi-omics"
       ],
       "summary": "High-resolution spatial platforms; includes cellpose segmentation"
     },

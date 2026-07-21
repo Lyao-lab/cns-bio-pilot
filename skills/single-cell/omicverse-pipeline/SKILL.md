@@ -1,6 +1,6 @@
 ---
 name: omicverse-single-cell-pipeline
-description: 单细胞全流程（QC→doublet→降维聚类→注释→批次校正→通讯→轨迹）+ 多组学整合（MOFA+/GLUE/CITE-seq/代谢/SIMBA/CEFCON）基于 OmicVerse V2 统一 API，无需在 scanpy/Seurat/scVI/CellTypist 间切换。一个 import omicverse as ov 覆盖 90% 常规分析。当用户要做单细胞、scRNA、多组学、CITE-seq、scRNA+ATAC、代谢、MOFA、GLUE 时触发。
+description: 单细胞全流程（ambient 去除→QC→doublet→降维聚类→注释→批次校正→通讯→轨迹）+ 多组学整合（MOFA+/GLUE/CITE-seq/代谢/SIMBA/CEFCON）基于 OmicVerse V2 统一 API，无需在 scanpy/Seurat/scVI/CellTypist 间切换。一个 import omicverse as ov 覆盖 90% 常规分析。当用户要做单细胞、scRNA、多组学、CITE-seq、scRNA+ATAC、代谢、MOFA、GLUE 时触发。
 ---
 
 ## When NOT to use this skill
@@ -34,6 +34,8 @@ adata.layers['counts'] = adata.X.copy()   # IMPORTANT: store raw counts BEFORE Q
 
 > Million-cell scale: `adata = ov.read('data.h5ad', backend='rust')` uses AnnDataOOM, ~170× memory savings.
 
+> **Workflow order**: §1 load → **§1.5 ambient removal** (if FFPE/nuclei/high-background) → §2 QC → §3 preprocess. Ambient removal must come BEFORE QC — contaminated counts make mt%, doublet rate, and markers all misleading.
+
 ## 2. QC + doublet (two-step: diagnose first, then filter)
 
 `ov.pp.qc` inlines mt/ribo fraction, cell/gene filtering, and doublet detection. **But mt% threshold is NOT a universal default** — it depends on tissue / platform / dissociation (liver hepatocytes legitimately hit 30%+; brain neurons die above 10%; sorted nuclei should be near 0%). **Never copy-paste a threshold — diagnose first, then choose.**
@@ -60,19 +62,41 @@ sc.pl.scatter(adata, x='total_counts', y='n_genes_by_counts')   # knee = low-qua
 import omicverse as ov
 ov.pp.qc(
     adata,
-    doublets_method='scrublet',     # 'scrublet' | 'scdblfinder' | 'doubletfinder'
-    batch_key='sample',             # REQUIRED for multi-sample: detect doublets per batch
+    mode='seurat',                       # 'seurat' (tresh dict) | 'mads' (5×MAD auto)
+    doublets_method='scdblfinder',       # DEFAULT in ov 2.2.3 — Python port of R scDblFinder
+                                         # (xgboost on kNN+cxds). Alt: 'scrublet' / 'doubletfinder' / 'sccomposite'
+    batch_key='sample',                  # REQUIRED for multi-sample: detect doublets per sample
     filter_doublets=True,
-    mt_thresh=<VALUE_FROM_DIAGNOSTIC>,   # YOU choose after Step 2a; see tissue table below
+    tresh={                              # NOTE: param name is 'tresh' (typo, omicverse's actual API)
+        'mito_perc': <VALUE_FROM_DIAGNOSTIC>,   # e.g. 0.15 for 15%; YOU choose after Step 2a
+        'nUMIs': 500,                            # min total counts
+        'detected_genes': 250,                   # min genes detected
+    },
 )
 # adds to adata.obs: n_genes_by_counts, total_counts, pct_counts_mt, predicted_doublet
 ```
 
-> **⚠️ Do NOT use `mt_thresh=20` blindly.** 20% is wrong for liver (too strict — kills real hepatocytes), wrong for brain (too loose — keeps dying neurons), wrong for nuclei (any mt% = contamination). The only honest workflow is: plot → find knee → check tissue table → document your choice.
+> **⚠️ Do NOT pass `mt_thresh=20` — that parameter does NOT exist on `ov.pp.qc`** (it is silently swallowed by `**kwargs` and ignored). The correct API is `tresh={'mito_perc': <frac>, ...}` (seurat mode) or `mode='mads', nmads=5` (auto-threshold from the distribution, 5 median-absolute-deviations — good when you don't want to hand-pick).
+>
+> **⚠️ Never copy-paste a mito threshold.** 20% is wrong for liver (too strict — kills real hepatocytes), wrong for brain (too loose — keeps dying neurons), wrong for nuclei (any mt% = contamination). The only honest workflow is: plot → find knee → check tissue table → document your choice (or use `mode='mads'`).
 
-> **Ambient RNA removal (FFPE / nuclei / low-quality runs)**: `ov.pp.qc` does **not** remove ambient RNA (cell-free mRNA contaminating droplets). For FFPE, nuclei, or high-background data, run **CellBender** (remove-background, [Cargnelli et al. 2026 7-tool benchmark](https://www.biorxiv.org/content/10.64898/2026.01.13.699237v1) — gold standard) on the raw feature-barcode matrix **before** loading into omicverse. SoupX / DecontX are faster alternatives. Skipping ambient removal → marker scores inflated, doublet rates misleading, DE contaminated.
+> **Ambient RNA removal happens BEFORE `ov.pp.qc`** (see §1.5 below). Do not run QC on contaminated counts — ambient RNA inflates mt%, inflates marker scores, and makes doublet rates misleading.
 
-Decision: scrublet default (fast, pure Python). doubletfinder (R engine, needs R) usually matches Seurat.
+Decision: `scdblfinder` default (Python port of R scDblFinder via `pyscdblfinder`, xgboost on kNN+cxds features — [Germain et al. 2021 F1000](https://f1000research.com/articles/10-979), matches Seurat's DoubletFinder accuracy without the R roundtrip). `scrublet` is the legacy pure-Python fallback (faster but slightly lower recall); `doubletfinder` requires R. `sccomposite` (scvi-tools, Bayesian) is the heavy alternative.
+
+## 1.5 Ambient RNA removal (run BEFORE §2 QC)
+
+Ambient ("soup") RNA = cell-free mRNA from lysed cells that contaminates every droplet. Left uncorrected it inflates marker genes in cell types that never expressed them and biases DE, annotation, and trajectory inference. **For FFPE, nuclei, and any run with visible background, ambient removal is NOT optional** — skipping it is a silent landmine.
+
+**Canonical entry** (6-backend dispatcher, omicverse 2.2.3):
+```python
+import omicverse as ov
+ov.pp.ambient.remove_ambient(adata, method='soupx', raw=raw_adata)   # or 'fastcar' / 'decontx' / 'sccdc' / 'cellbender' / 'scar'
+```
+
+> **Full backend decision table + run options + diagnostics** (`contamination_report` / `plot_contamination` / `ambient_negative_marker_check` / `count_integrity_check`) + when NOT to run: see `references/ambient_removal.md`.
+>
+> **Ordering discipline (non-negotiable)**: ambient removal runs BEFORE §2 QC. Contaminated counts make mt%, doublet rate, and markers all misleading. After removal, **re-store `layers['counts']` from corrected `.X`** so downstream DE/velocity use cleaned counts.
 
 ### QC principles (threshold selection — the part reviewers actually probe)
 
@@ -248,40 +272,7 @@ ov.single.Monocle(adata)
 
 ## 9b. Multi-omics integration (ov.single.* — all wrapped, no separate package needed)
 
-Verified available in omicverse 2.2.3 (`sc` env). Pick by which modalities you have:
-
-```python
-import omicverse as ov
-
-# === MOFA+ : multi-omics factor analysis (RNA + ATAC + protein, joint factor model) ===
-mofa = ov.single.pyMOFA(omics=[adata_rna, adata_atac],
-                        omics_name=['RNA','ATAC'])   # builds MuData internally
-mofa.train(); mofa.save('mofa_model')
-# Load a pretrained model: mofa = ov.single.pyMOFAART('mofa_model')
-
-# === GLUE : RNA + ATAC regulatory inference (cross-modality GRN) ===
-ov.single.GLUE_pair(adata_rna, adata_atac)   # or ov.single.glue_pair(...)
-
-# === SIMBA : multi-omics embedding integration (gene/region/cell joint space) ===
-simba = ov.single.pySIMBA(mdata, workdir='simba_result')
-
-# === CITE-seq / multimodal annotation (ADT + RNA) ===
-# ov.single.Annotation accepts multi-modal AnnData; CITE-seq protein markers sharpen labels
-# For totalVI/MultiVI (scvi-tools), call via ov.single.lazy_step_scvi (lazy-loaded)
-
-# === Metabolism + metabolite-based cell-cell communication ===
-ov.single.MetaboliteCCC(adata)               # metabolite ligand-receptor CCC (note: Metabol**i**teCCC)
-ov.single.Metabolism(adata)                  # per-cell metabolic flux scoring
-ov.single.differential_metabolism(adata, ...) # condition-comparison metabolism
-
-# === Causal GRN (multi-omics causal network inference) ===
-ov.single.pyCEFCON(adata)                    # causal regulatory network
-
-# === Bulk multi-omics (TCGA pan-cancer, cross-omics correlation) ===
-ov.bulk.pyTCGA(...)                          # TCGA multi-omics download + integrate
-ov.bulk.enrichment_multi_concat(...)         # cross-pathway / cross-omics enrichment concat
-ov.bulk.geneset_plot_multi(...)              # multi-omics pathway heatmap
-```
+Verified available in omicverse 2.2.3 (`sc` env). Pick by which modalities you have.
 
 ### Method selection by modality combination
 
@@ -295,7 +286,7 @@ ov.bulk.geneset_plot_multi(...)              # multi-omics pathway heatmap
 | **Multi-omics embedding (any modalities, exploratory)** | `ov.single.pySIMBA` | Joint gene/region/cell embedding; new, use for integration visualization |
 | **Causal GRN (any)** | `ov.single.pyCEFCON` | Causal network inference (complements SCENIC+ correlation GRN) |
 
-> **Muon / MuData**: omicverse does NOT expose `muon` / `MuData` at the top level (`ov.muon` / `ov.MuData` both return False). For direct MuData manipulation, `pip install muon` and use its native API; `ov.single.pyMOFA` builds MuData internally so you usually don't need to.
+> **Full per-modality API code** (MOFA+ / GLUE / SIMBA / CITE-seq / Metabolism / CEFCON / TCGA bulk multi-omics) + MuData notes: see `references/multiomics_integration.md`.
 
 > **Spatial multi-omics** (Stereo-seq/Visium HD with multiple modalities) → `spatial/multiomics` (cellpose + SpatialData), not this section.
 
@@ -327,7 +318,15 @@ ov.pl.violin(adata, keys=['CD3D'], groupby='celltype')
 
 ## Key pitfalls
 
-- `layers['counts']` MUST be saved **before** `ov.pp.qc`, otherwise DE/velocity have no raw counts.
+- `layers['counts']` MUST be saved **before** `ov.pp.qc`, otherwise DE/velocity have no raw counts. After ambient removal (§1.5), re-store it from the corrected `.X` (`adata.layers['counts'] = adata.X.copy()`) so downstream steps use cleaned counts.
+- **Ambient removal order**: §1.5 must run BEFORE §2 QC. Contaminated counts make mt%, doublet rate, and markers misleading. SoupX/FastCAR run on raw counts directly; DecontX/scCDC need a throwaway clustering first (§2-§5 once → decontaminate → re-run §3-§5 on cleaned counts).
+- **`tresh` not `mt_thresh`**: `ov.pp.qc` has NO `mt_thresh` parameter — passing it is silently swallowed by `**kwargs`. Use `tresh={'mito_perc': <frac>, ...}` (seurat mode) or `mode='mads', nmads=5` (auto).
+- **Default doublet method is `scdblfinder`** (not scrublet) in omicverse 2.2.3 — requires `pyscdblfinder` (auto-falls back to `scrublet` if missing). No need to specify unless you want a different method.
 - After scVI integration, recompute every neighbors/umap/leiden on `use_rep='X_scVI'`.
 - `ov.pp.leiden(resolution='auto')` depends on an existing neighbors graph — make sure step 4 is done.
 - For multi-sample doublet detection always pass `batch_key`, otherwise cross-sample false doublets explode.
+
+## Resources
+- `references/ambient_removal.md` — 6-backend ambient RNA removal (soupx/fastcar/decontx/sccdc/cellbender/scar) + diagnostics + when NOT to run
+- `references/multiomics_integration.md` — per-modality multi-omics API (MOFA+/GLUE/SIMBA/CITE-seq/Metabolism/CEFCON/TCGA bulk)
+- Repo-level: `scripts/api_check.py` (repo root, post-install API self-check), `scripts/postcheck.py` (repo root, scientific-rigor auto-check), `references/preoutput_checklist.md` (repo root)

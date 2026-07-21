@@ -127,10 +127,10 @@ Data has spatial coords / tissue image?
 
 ## Version & architecture
 
-- **Version**: 11.0.0 (English rewrite; graphical-abstract merged into scientific-schematics; lab-meeting-slides merged into scientific-slides; meta-methodology 6 rules + figure_aesthetics full self-check)
+- **Version**: 14.0.0 (structural refactor: code migrated out of SKILL.md into examples/references; index↔frontmatter names aligned; orphan usage-guide.md removed; ambient removal + §9b multi-omics externalized)
 - **Engines**: [OmicVerse V2](https://github.com/Starlitnightly/omicverse) (Python primary) + [scop](https://github.com/mengxu98/scop) (R/Seurat) + perturbation models (GEARS/CPA/scGPT, mandatory linear baseline)
 - **Sub-skills**: 19 (see `skill-index.json` compact index)
-- **Architecture evolution**: v8 (42 standalone) → v9 (omicverse unification + scop + perturbation track) → v10 (structural engineering: routing / closed-loop / protocol) → **v11 (consolidation + meta-methodology + English rewrite)**
+- **Architecture evolution**: v8 (42 standalone) → v9 (omicverse unification + scop + perturbation track) → v10 (structural engineering: routing / closed-loop / protocol) → v11 (consolidation + meta-methodology + English rewrite) → v12–v13 (annotation principles / QC two-step / figure-architect) → **v14 (code externalization — SKILL.md back to routing + decisions, code to examples/, API references to references/)**
 
 ### Refactor / dedup record (v8 → v11 merge history)
 
@@ -143,6 +143,7 @@ Data has spatial coords / tissue image?
 | heatmap/volcano/specialized/interactive | **Merged into** `visualization/omicverse-plotting` (`ov.pl.*`) |
 | **v11 new merge**: graphical-abstract | into `visualization/scientific-schematics` (graphical-abstract mode + reference) |
 | **v11 new merge**: lab-meeting-slides | into `presentation/scientific-slides` (lab-meeting mode + 9 steps + 7 rules) |
+| **v14 code externalization**: SKILL.md → examples/ + references/ | `perturb-seq`/`multiomics` code → `examples/`; `scop` Run\* enumeration → `skills/single-cell/scop/references/run_verbs_reference.md`; `omicverse-pipeline` §1.5 ambient + §9b multi-omics → `skills/single-cell/omicverse-pipeline/references/ambient_removal.md` + `references/multiomics_integration.md`. SKILL.md keeps only canonical entry snippets + decision tables + pitfalls. |
 | Irreplaceable (kept standalone) | deconvolution / multiomics / proteomics / perturb-seq / perturbation-prediction / research-planner / multi-panel-figures / scientific-schematics / scientific-slides / methods-writer / results-writer / figure-legend-writer |
 
 ## Index file roles

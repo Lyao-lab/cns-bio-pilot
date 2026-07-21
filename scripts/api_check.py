@@ -47,18 +47,37 @@ NEGATIVE_RESULT_WHITELIST = {
     "ov.space.GraphST": "documented as standalone (not wrapped in ov.space)",
     "ov.space.COMMOT": "documented as no public method (use COMMOT standalone)",
     "ov.single.MetabolityCCC": "documented as misspelling (real: MetaboliteCCC)",
+    # pertpy 0.7 → 1.0 breaking changes (documented as removed in perturb-seq/SKILL.md)
+    "pt.tl.PseudobulkDE": "documented as removed in pertpy 1.0 (use PseudobulkSpace + PyDESeq2)",
+    "pt.tl.PerturbationSignature": "documented as removed in pertpy 1.0 (use Mixscape.perturbation_signature)",
+    "pt.tl.perturbation_embedding": "documented as removed in pertpy 1.0 (use CentroidSpace.compute + sc.tl.leiden)",
+    "pt.tl.cluster_perturbations": "documented as removed in pertpy 1.0 (use CentroidSpace + scanpy clustering)",
 }
 
 # 包名 → import 名 + API 前缀 映射
 PACKAGE_MAP = {
     "omicverse": {"import": "omicverse", "prefix": "ov", "attr": "ov"},
+    "pertpy":    {"import": "pertpy",    "prefix": "pt", "attr": "pt"},
 }
 
 
 def extract_apis_from_skill(skill_dir, prefix="ov"):
-    """扫描 skill 目录全部 .md/.json/.py，提取所有 {prefix}.* API 调用"""
+    """扫描 skill 目录全部 .md/.json/.py，提取所有 {prefix}.* API 调用
+
+    支持二级（ov.pp.qc）和三级（ov.pp.ambient.remove_ambient）API。
+    模块名覆盖 omicverse (pp/pl/single/space/bulk/io/plot/read/utils/fm/style)
+    和 pertpy (tl/pl/tools) 等不同包的命名约定。
+    """
+    # 包内子模块名集合——按 prefix 区分（omicverse vs pertpy 命名不同）
+    if prefix == "pt":
+        modules = r"tl|pl|tools|data|datasets|io|utils"
+    else:
+        modules = r"pp|pl|single|space|bulk|io|plot|read|utils|fm|style"
     apis = set()
-    pattern = re.compile(rf"\b{re.escape(prefix)}\.(pp|pl|single|space|bulk|io|plot|read|utils|fm|style)\.[a-zA-Z_][a-zA-Z_0-9]*")
+    # 二级 API: <prefix>.<module>.<name>
+    two_level = rf"\b{re.escape(prefix)}\.(?:{modules})\.[a-zA-Z_][a-zA-Z_0-9]*"
+    # 三级 API: <prefix>.<module>.<sub>.<name>  （用于 ov.pp.ambient.remove_ambient 这种子包）
+    three_level = rf"\b{re.escape(prefix)}\.(?:{modules})\.[a-zA-Z_][a-zA-Z_0-9]*\.[a-zA-Z_][a-zA-Z_0-9]*"
     for root, _, files in os.walk(skill_dir):
         if ".git" in root:
             continue
@@ -69,9 +88,10 @@ def extract_apis_from_skill(skill_dir, prefix="ov"):
             try:
                 with open(fp, encoding="utf-8") as f:
                     text = f.read()
-                for m in pattern.findall(text):
-                    pass  # group 只取了中间模块名，重新完整匹配
-                for m in re.finditer(rf"\b{re.escape(prefix)}\.(?:pp|pl|single|space|bulk|io|plot|read|utils|fm|style)\.[a-zA-Z_][a-zA-Z_0-9]*", text):
+                # 先吃三级（更具体），再吃二级；set 自动去重
+                for m in re.finditer(three_level, text):
+                    apis.add(m.group(0))
+                for m in re.finditer(two_level, text):
                     apis.add(m.group(0))
             except Exception:
                 pass
@@ -187,8 +207,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
-  python scripts/api_check.py                                 # 默认检查 omicverse
-  python scripts/api_check.py --package omicverse
+  python scripts/api_check.py                       # 默认检查全部已配置包（omicverse + pertpy）
+  python scripts/api_check.py --package omicverse   # 只检查 omicverse
+  python scripts/api_check.py --package pertpy      # 只检查 pertpy
   python scripts/api_check.py --skill-dir ~/.agents/skills/cns-bio-pilot
 
 退出码: 0 = 全部通过; 1 = 有缺失 API
@@ -197,14 +218,23 @@ def main():
     # 默认 skill 目录：脚本上两级（scripts/ -> skill 根）
     default_skill_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ap.add_argument("--skill-dir", default=default_skill_dir, help="cns-bio-pilot skill 根目录（默认: 脚本上两级）")
-    ap.add_argument("--package", default="omicverse", choices=list(PACKAGE_MAP), help="要检查的包（默认: omicverse）")
+    ap.add_argument("--package", default=None, choices=list(PACKAGE_MAP) + [None],
+                    help=f"要检查的包（默认: 全部 = {list(PACKAGE_MAP)}）")
     a = ap.parse_args()
 
     if not os.path.isdir(a.skill_dir):
         print(f"❌ skill 目录不存在: {a.skill_dir}")
         return 1
 
-    return check_apis(a.skill_dir, a.package)
+    # 默认跑全部已配置包；任一失败则返回 1
+    targets = [a.package] if a.package else list(PACKAGE_MAP)
+    final_rc = 0
+    for pkg in targets:
+        print()
+        rc = check_apis(a.skill_dir, pkg)
+        if rc != 0:
+            final_rc = 1
+    return final_rc
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 ---
-name: bio-spatial-transcriptomics-spatial-proteomics
+name: spatial-proteomics
 description: 空间蛋白组（CODEX / IMC / MIBI）分析——细胞分割、phenotyping（scimap）、蛋白共定位、与空转整合。当用户要做空间蛋白、multiplexed imaging、CODEX/IMC/MIBI、蛋白 gating、protein colocalization 时触发。
 tool_type: python
 primary_tool: scimap
@@ -140,4 +140,4 @@ sq.gr.spatial_neighbors(adata_rna)
 - **After phenotyping, run a marker-proportion sanity check** (meta-methodology principle ①)
 - **CODEX/IMC channel crosstalk**: check compensation between adjacent fluorophores
 - **Protein ≠ mRNA**: don't directly apply transcriptomics annotations; use protein markers (CD3/CD20/CD68...)
-- After finishing, run `scripts/postcheck.py` to verify spatial coordinates + proportion sanity
+- After finishing, run `scripts/postcheck.py` (repo root) to verify spatial coordinates + proportion sanity

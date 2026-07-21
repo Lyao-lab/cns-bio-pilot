@@ -6,7 +6,7 @@
 >
 > **19 sub-skills** · router architecture · meta-methodology discipline · publication-grade aesthetics.
 
-[![version](https://img.shields.io/badge/version-12.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
+[![version](https://img.shields.io/badge/version-14.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
 
 ---
 

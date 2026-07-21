@@ -1,5 +1,5 @@
 ---
-name: omicverse-rna-velocity
+name: rna-velocity
 description: RNA velocity 全家桶。基于 OmicVerse V2 的 ov.single.Velo（统一 dynamo/scvelo/latentvelo/graphvelo/regvelo 五引擎）从 spliced/unspliced 推断方向、潜在时间、驱动基因；下游命运推断走 CellRank 2（统一 kernel 框架）；cellDancer/DeepVelo/pyro-Velocity 等未封装算法走原生 fallback。
 ---
 

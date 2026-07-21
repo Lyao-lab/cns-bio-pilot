@@ -120,7 +120,7 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
 When the task is **generating a Graphical Abstract / TOC figure for a paper**, follow the 4-step workflow in `references/graphical_abstract_layout.md`:
 
 1. **Parse the abstract** → extract topic / methods / findings / implications
-2. **Map visual elements** → for each concept choose a symbol + palette + position (palette follows `references/figure_aesthetics.md` dual-track)
+2. **Map visual elements** → for each concept choose a symbol + palette + position (palette follows **top-level** `references/figure_aesthetics.md` dual-track)
 3. **Recommend a layout grid** → choose by the abstract's narrative structure (three-column horizontal / vertical flow / left-right comparison / central radial)
 4. **Generate AI prompts** → produce both Midjourney-style and DALL-E-style versions
 

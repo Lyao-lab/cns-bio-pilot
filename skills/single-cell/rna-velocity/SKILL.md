@@ -226,7 +226,7 @@ v.velocity_streamplot(basis='umap', velocity_key='velocity_S_umap')  # streamlin
 | Need | Go to |
 |---|---|
 | Pseudotime (no S/U needed) | `single-cell/omicverse-pipeline` → `ov.single.Monocle` |
-| TF-target GRN construction (a regvelo prerequisite) | `single-cell/scop` (GRN inference) |
+| TF-target GRN construction (a regvelo prerequisite) | standalone pySCENIC / CellOracle / GRNBoost2 (NOT in scop 0.8.0 — install directly); or `single-cell/perturbation-prediction` Route B |
 | Assemble a velocity figure for publication | `visualization/multi-panel-figures` |
 | Use RegVelo perturbation simulation for prediction | `single-cell/perturbation-prediction` (if no GRN prior needed) |
 

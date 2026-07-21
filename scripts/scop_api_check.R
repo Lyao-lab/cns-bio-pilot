@@ -72,8 +72,18 @@ NEGATIVE_WHITELIST <- c(
   # 非 scop 工具（在 skill 文档里作为依赖/对比被提到，正则会误命中）
   "ComplexHeatmap", "PyComplexHeatmap",          # R/Python 热图包，不是 scop
   "LDAPlot",                                       # Seurat 5 已移除，skill 里有警告说明
-  "ClusterTreePlot", "PseudotimeProjectionPlot",  # thisplot 的 plotter（可能存在但与 Run* 不同类，单独核实）
   "RunSpatial", "RunX"                             # 占位符/模板词，非具体 API
+)
+
+# ============================================================
+# 负向白名单：经审计确认"宣称不存在且 scop 0.8.0 里确实不存在"的 API
+# 每个条目注明来源（哪次审计 + 日期）。未来 scop 升级若引入，会触发 WARN
+# 提醒"文档需要更新"，而不是阻断检查脚本。
+# ============================================================
+NEGATIVE_WHITELIST_VERIFIED_ABSENT <- c(
+  "ClusterTreePlot",           # verified absent 2026-07 v15.1 audit; cluster tree: use Seurat::BuildClusterTree + plot
+  "PseudotimeProjectionPlot",  # verified absent 2026-07 v15.1 audit; use sc.pl.pseudotime or thisplot native
+  "WNN_integrate"              # verified absent 2026-07 v15.1 audit; WNN = Seurat-native FindMultiModalNeighbors
 )
 
 # ============================================================
@@ -99,7 +109,7 @@ files <- list.files(skill_dir, pattern = "\\.(md|json|R)$",
                     recursive = TRUE, full.names = TRUE)
 files <- files[!grepl("(\\.git/|scripts/scop_api_check\\.R)", files)]
 
-api_pattern <- "(\\bRun[A-Z][a-zA-Z0-9_]*\\b|\\b[a-z]+_integrate\\b|\\bintegration_scop\\b|\\bstandard_scop\\b|\\badata_to_srt\\b|\\bsrt_to_adata\\b|\\b[a-zA-Z]+Plot\\b|\\b[a-zA-Z]+Heatmap\\b|\\bConvertHomologs\\b|\\bFindAllMarkers\\b|\\bFindMarkers\\b|\\bFoldChange\\b|\\bLISIPlot\\b|\\bVelocityPlot\\b|\\bLoadScopDataset\\b|\\bListScopDatasets\\b)"
+api_pattern <- "(\\bRun[A-Z][a-zA-Z0-9_]*\\b|\\b[A-Za-z]+_integrate\\b|\\bintegration_scop\\b|\\bstandard_scop\\b|\\badata_to_srt\\b|\\bsrt_to_adata\\b|\\b[a-zA-Z]+Plot\\b|\\b[a-zA-Z]+Heatmap\\b|\\bConvertHomologs\\b|\\bFindAllMarkers\\b|\\bFindMarkers\\b|\\bFoldChange\\b|\\bLISIPlot\\b|\\bVelocityPlot\\b|\\bLoadScopDataset\\b|\\bListScopDatasets\\b)"
 
 extracted <- character()
 for (f in files) {
@@ -113,10 +123,12 @@ cat("从 skill 文档提取", length(extracted), "个候选 scop API\n\n")
 # ============================================================
 # 3. 逐个核对
 # ============================================================
-ok <- c(); missing <- c(); whitelisted <- c()
+ok <- c(); missing <- c(); whitelisted <- c(); neg_whitelisted <- c()
 for (api in extracted) {
   if (api %in% NEGATIVE_WHITELIST) {
     whitelisted <- c(whitelisted, api)
+  } else if (api %in% NEGATIVE_WHITELIST_VERIFIED_ABSENT) {
+    neg_whitelisted <- c(neg_whitelisted, api)
   } else if (exists(api, where = asNamespace("scop")) ||
              api %in% c("NormalizeData","FindVariableFeatures","ScaleData","FindNeighbors",
                         "FindMarkers","FindAllMarkers","FoldChange","SCTransform","Read10X",
@@ -133,12 +145,32 @@ for (api in extracted) {
 cat(paste(rep("=", 60), collapse = ""), "\n")
 cat("存在:", length(ok), " ")
 cat("白名单（诚实标注为 standalone 的）:", length(whitelisted), " ")
+cat("负向白名单（审计确认不存在）:", length(neg_whitelisted), " ")
 cat("缺失（skill 提到但 scop 不存在）:", length(missing), "\n")
 cat(paste(rep("=", 60), collapse = ""), "\n\n")
 
 if (length(whitelisted) > 0) {
   cat("⬜ 白名单 API（跳过——文档已诚实标注为 standalone / Seurat-native）：\n")
   for (a in sort(whitelisted)) cat("  ", a, "\n", sep = "")
+  cat("\n")
+}
+
+if (length(neg_whitelisted) > 0) {
+  cat("⚫ 负向白名单 API（审计确认 scop 不存在，文档里作为 standalone/Seurat-native 提到）：\n")
+  for (a in sort(neg_whitelisted)) cat("  ", a, "\n", sep = "")
+  cat("\n")
+}
+
+# 负向白名单校验：若 scop 升级后真的引入了这些 API，提醒更新文档（WARN 不阻断）
+# 只检查 NEGATIVE_WHITELIST_VERIFIED_ABSENT —— 这些是被断言"不存在"的；
+# 普通 NEGATIVE_WHITELIST 里的 Seurat-native（RunPCA/FindAllMarkers 等）存在是正常的
+leaks <- character()
+for (fn in NEGATIVE_WHITELIST_VERIFIED_ABSENT) {
+  if (exists(fn, where = asNamespace("scop"))) leaks <- c(leaks, fn)
+}
+if (length(leaks) > 0) {
+  cat("⚠️  WHITELIST LEAK（scop 已引入这些 API，考虑更新文档移出白名单）:\n")
+  for (a in leaks) cat("  ", a, "\n", sep = "")
   cat("\n")
 }
 

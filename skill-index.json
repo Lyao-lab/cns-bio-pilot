@@ -1,7 +1,7 @@
 {
   "_meta": {
     "skill": "cns-bio-pilot",
-    "version": "15.0.0",
+    "version": "15.1.0",
     "purpose": "Compact index — read this to locate a sub-skill, then load the matched one. Never load multiple at once.",
     "engines": [
       "omicverse (Python default)",
@@ -43,9 +43,9 @@
         "RunPCA",
         "RunCellChat",
         "CytoTRACE",
-        "SCENIC+"
+        "RunMonocle3"
       ],
-      "summary": "R/Seurat 200+ Run* verbs; tools without omicverse equivalents (CytoTRACE/Milo/SecAct/Giotto/EcoTyper) go here"
+      "summary": "R/Seurat pipeline, 40 verified Run* verbs (scop 0.8.0); CytoTRACE/Palantir/CellChat/Monocle3/SCVELO wrapped; SCENIC+/Milo/SecAct/RCTD/Giotto/EcoTyper NOT wrapped (use standalone)"
     },
     {
       "name": "perturbation-prediction",

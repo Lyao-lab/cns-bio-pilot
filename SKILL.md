@@ -89,7 +89,7 @@ Data has spatial coords / tissue image?
 | Formal talk (conference / defense) | `presentation/scientific-slides` | same | same |
 | Methods / Results / Legend writing | `presentation/{methods,results,figure-legend}-writer` | same | same |
 | Study design (pre-analysis) | `single-cell/research-planner` | same | same |
-| R / Seurat pipeline or scop-only tools (CytoTRACE/Milo/SCENIC+/Giotto) | `single-cell/scop` | `single-cell/scop` | — |
+| R / Seurat pipeline, or scop-wrapped tools (CytoTRACE/Palantir/CellChat/Monocle3/SCVELO) | `single-cell/scop` | `single-cell/scop` | — |
 
 ### Special Routing Rules (override the table above)
 
@@ -104,7 +104,7 @@ Data has spatial coords / tissue image?
 | Use engine | When |
 |---|---|
 | **OmicVerse** (Python default) | 90% of routine analyses; `ov.pp.*` / `ov.single.*` / `ov.bulk.*` / `ov.pl.*` cover QC → batch → annotation → DE → trajectory → comm → plotting |
-| **scop** (R/Seurat) | R ecosystem, or scop-only tools without omicverse equivalents (CytoTRACE / Milo / SecAct / EcoTyper / Giotto / SmoothClust / SCENIC+) |
+| **scop** (R/Seurat) | R ecosystem, or scop-wrapped tools (CytoTRACE / Palantir / CellChat / Monocle3 / SCVELO / WOT / Slingshot / PAGA). NOT wrapped: Milo / SCENIC+ / SecAct / EcoTyper / Giotto / SmoothClust / RCTD / BANKSY → standalone packages |
 | **Perturbation models** | Predicting unseen perturbations via two routes — `single-cell/perturbation-prediction`: (A) ML-based GEARS/CPA/scGPT/scGen needs Perturb-seq training, **linear baseline mandatory**; (B) GRN-based virtual KO via CellOracle/SCENIC+/scTenifoldKnk needs only WT scRNA-seq, infers GRN then simulates KO. Pick by data availability |
 
 ## Core Principles (rationale flows through; ✅ = postcheck.py machine-checkable)
@@ -127,7 +127,11 @@ Data has spatial coords / tissue image?
 
 ## Version & architecture
 
-- **Version**: 15.0.0 (capability honesty + multi-agent review: scop API truth — verified 40 Run\* verbs in 0.8.0, removed ~25 fabricated APIs across routing table + examples + postcheck; pertpy 1.0 API bugs fixed; mixscape LDAPlot→RunLDA; compositional DA discipline + §9c new section; cluster stability + integration diagnostics + CCC/pseudotime writing rules; postcheck.py +3 new checks (D4 pseudobulk / L2 CCC hypothesis / C1 compositional); new scop_api_check.R; README 18→19 + figure-architect added)
+- **Version**: 15.1.0 (audit patch: surface-file narrative cleanup — top SKILL.md / README / skill-index.json / workflow_routing / omicverse-pipeline / rna-velocity all now reflect "40 verified Run\* in scop 0.8.0; Milo/SCENIC+/SecAct/RCTD/Giotto/BANKSY/EcoTyper NOT wrapped, use standalone"; 3 surviving fabricated scop APIs fixed (WNN_integrate / ClusterTreePlot / PseudotimeProjectionPlot) + h5ad_to_srt prereq contradiction; scop_api_check.R regex tightened `[A-Za-z]+_integrate` + negative-whitelist leak detection; postcheck docstring L2/C1; path disambiguation + §9b/§9c order)
+
+<!-- v15.1: 2026-07-21, narrative+API audit patch (scope: surface files + 3 surviving fabricated APIs + checker hardening) -->
+<!-- v15.0: 2026-07-21, capability honesty — scop 40-verb truth + pertpy 1.0 + postcheck D4/L2/C1 + compositional §9c + scop_api_check.R -->
+<!-- v14.0: 2026-07-21, code externalization — SKILL.md → examples/ + references/ -->
 - **Engines**: [OmicVerse V2](https://github.com/Starlitnightly/omicverse) (Python primary) + [scop](https://github.com/mengxu98/scop) (R/Seurat) + perturbation models (GEARS/CPA/scGPT, mandatory linear baseline)
 - **Sub-skills**: 19 (see `skill-index.json` compact index)
 - **Architecture evolution**: v8 (42 standalone) → v9 (omicverse unification + scop + perturbation track) → v10 (structural engineering: routing / closed-loop / protocol) → v11 (consolidation + meta-methodology + English rewrite) → v12–v13 (annotation principles / QC two-step / figure-architect) → **v14 (code externalization — SKILL.md back to routing + decisions, code to examples/, API references to references/)**
@@ -143,7 +147,7 @@ Data has spatial coords / tissue image?
 | heatmap/volcano/specialized/interactive | **Merged into** `visualization/omicverse-plotting` (`ov.pl.*`) |
 | **v11 new merge**: graphical-abstract | into `visualization/scientific-schematics` (graphical-abstract mode + reference) |
 | **v11 new merge**: lab-meeting-slides | into `presentation/scientific-slides` (lab-meeting mode + 9 steps + 7 rules) |
-| **v14 code externalization**: SKILL.md → examples/ + references/ | `perturb-seq`/`multiomics` code → `examples/`; `scop` Run\* enumeration → `skills/single-cell/scop/references/run_verbs_reference.md`; `omicverse-pipeline` §1.5 ambient + §9b multi-omics → `skills/single-cell/omicverse-pipeline/references/ambient_removal.md` + `references/multiomics_integration.md`. SKILL.md keeps only canonical entry snippets + decision tables + pitfalls. |
+| **v14 code externalization**: SKILL.md → examples/ + references/ | `perturb-seq`/`multiomics` code → `examples/`; `scop` Run\* enumeration → `skills/single-cell/scop/references/run_verbs_reference.md`; `omicverse-pipeline` §1.5 ambient + §9b multi-omics → `skills/single-cell/omicverse-pipeline/references/ambient_removal.md` + `skills/single-cell/omicverse-pipeline/references/multiomics_integration.md`. SKILL.md keeps only canonical entry snippets + decision tables + pitfalls. |
 | Irreplaceable (kept standalone) | deconvolution / multiomics / proteomics / perturb-seq / perturbation-prediction / research-planner / multi-panel-figures / scientific-schematics / scientific-slides / methods-writer / results-writer / figure-legend-writer |
 
 ## Index file roles

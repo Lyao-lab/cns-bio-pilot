@@ -26,8 +26,14 @@ cns-bio-pilot postcheck — 科学严谨性自动校验
     S1  关键数值图保留 N / 统计检验标注                  原则 2/3
   [LANG]  措辞
     L1  无未授权因果词 (regulates/causes/induces)       原则 5 🚨
+    L2  CCC 分析的因果词纪律（启发式）                   原则 1/3
+  [COMP]  组成型数据
+    C1  细胞比例分析勿用卡方/Fisher（启发式）            原则 3
   [FACT] 虚构检测（原则 1：基于事实，不猜测不虚构）
     F1  无虚构信号（example/demo/test 占位、编造的 accession）   原则 1 🚨
+
+注：D4 / L2 / C1 均为启发式 WARN，需人工判断（如 method='wilcoxon' 的画图调用
+可能触发 D4；C1 的 'composition' 子串较宽）。FAIL 仍是确定性错误。
 """
 import argparse
 import json

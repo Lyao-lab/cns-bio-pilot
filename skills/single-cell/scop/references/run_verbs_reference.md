@@ -1,6 +1,6 @@
 # scop API Reference (verified against scop 0.8.0)
 
-> **All 126 exports below verified via `getNamespaceExports("scop")` on scop 0.8.0**.
+> **All Run\* verbs + most helpers below verified via `getNamespaceExports("scop")` on scop 0.8.0** (126 total exports; Visualization section lists representative plotters — full list via `ls("package:scop")`).
 > Re-verify after any scop upgrade by running `scripts/scop_api_check.R` (repo root).
 >
 > Previous versions of this file listed many APIs that do not exist in scop 0.8.0
@@ -156,6 +156,8 @@ scop::remove_python("scvelo")
 
 ## Visualization (thisplot integration, representative)
 
+> Only plotters verified to exist in scop 0.8.0 are listed below. For cluster dendrograms use Seurat-native `BuildClusterTree()` + `plot()`; for pseudotime projection use `DynamicPlot(srt)` (scop) or scanpy `sc.pl.pseudotime` (Python side).
+
 ```r
 CellDimPlot(srt, group.by = "cell_type", reduction = "umap")
 CellDimPlot3D(srt, reduction = "umap2")
@@ -166,12 +168,10 @@ GroupHeatmap(srt, group.by = "cell_type")
 CellCorHeatmap(srt)
 VolcanoPlot(de)
 DynamicHeatmap(srt, along = "pseudotime"); DynamicPlot(srt)
-PseudotimeProjectionPlot  # check existence
 PAGAPlot(srt); LineagePlot(srt); TACSPlot(srt)
 CytoTRACEPlot(srt)
 CellStatPlot(srt, group.by = "cell_type")
 CellDensityPlot(srt, reduction = "umap")
-ClusterTreePlot(srt)
 GSEAPlot(gsea); EnrichmentPlot(enr)
 CellScoring(srt, ...)
 FeatureStatPlot(srt); FeatureCorPlot(srt)

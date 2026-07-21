@@ -135,7 +135,7 @@ When information is missing, use explicit placeholders:
 
 ## Pre-Output Checklist (core 5 in **top-level** `references/preoutput_checklist.md` + skill-specific)
 
-- [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see `references/preoutput_checklist.md`)
+- [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see **top-level** `references/preoutput_checklist.md`)
 - [ ] Legend self-contained (readable without body text)
 - [ ] Figure type stated correctly (bar/line/violin/heatmap/etc.)
 

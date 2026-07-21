@@ -1,6 +1,6 @@
 ---
 name: scop-single-cell
-description: 用 scop R 包做单细胞全流程（基于 Seurat，40+ Run* 动词）——QC/整合/注释/DE/轨迹/通讯/velocity。当用户要用 R、Seurat、scop、R 单细胞、standard_scop/integration_scop/RunPCA/RunUMAP/RunCellChat/RunSCVELO/RunMonocle3 等 Run* 动词时触发。CytoTRACE/Palantir/CellChat 在 scop 有包装；SCENIC+/Milo/scCODA/RCTD/Giotto 等不在 scop，走独立包。
+description: 用 scop R 包做单细胞全流程（基于 Seurat，40 verified Run* 动词 in scop 0.8.0）——QC/整合/注释/DE/轨迹/通讯/velocity。当用户要用 R、Seurat、scop、R 单细胞、standard_scop/integration_scop/RunPCA/RunUMAP/RunCellChat/RunSCVELO/RunMonocle3 等 Run* 动词时触发。CytoTRACE/Palantir/CellChat 在 scop 有包装；SCENIC+/Milo/scCODA/RCTD/Giotto 等不在 scop，走独立包。
 ---
 
 ## When NOT to use this skill
@@ -93,7 +93,7 @@ srt <- standard_scop(
 
 ## Prerequisites (where data comes from)
 
-- **scRNA-seq raw data** → 10x matrices from Cell Ranger / STARsolo (`Read10X`), or `.h5`/`.loom`/`.h5ad` (`h5ad_to_srt` / `loom_to_srt`)
+- **scRNA-seq raw data** → 10x matrices from Cell Ranger / STARsolo (`Seurat::Read10X`), or convert h5ad/loom via `adata_to_srt(srt_to_adata(...))` round-trip (NOT direct `h5ad_to_srt` — see Capability gaps)
 - **Annotation reference** (optional, for `RunSingleR` / `RunCellTypist` / `RunScmap`) → annotated reference Seurat object or celldex/CellTypist model
 - **loom file** (for RNA velocity) → produced by velocyto, consumed by `RunSCVELO`
 

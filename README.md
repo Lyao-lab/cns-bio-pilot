@@ -6,7 +6,7 @@
 >
 > **19 sub-skills** · router architecture · meta-methodology discipline · publication-grade aesthetics.
 
-[![version](https://img.shields.io/badge/version-15.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
+[![version](https://img.shields.io/badge/version-15.1-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
 
 ---
 
@@ -97,7 +97,8 @@ pip install squidpy scanpy
 ```r
 # In R (>= 4.4):
 if (!require("scop")) remotes::install_github("mengxu98/scop")
-# scop provides 200+ Run* verbs wrapping Seurat, CellChat, SCENIC+, CytoTRACE, Milo, etc.
+# scop wraps Seurat/CellChat/CytoTRACE/Palantir/Monocle3/SCVELO under ~40 Run* verbs
+# (verified in scop 0.8.0); other tools (Milo, SCENIC+, Giotto, SecAct, etc.) via standalone R packages.
 ```
 
 ### Which env for which task?
@@ -108,7 +109,7 @@ if (!require("scop")) remotes::install_github("mengxu98/scop")
 | Batch integration (Harmony/scVI) | `sc` | omicverse (wraps scvi-tools) |
 | Spatial deconvolution (cell2location/Tangram/RCTD) | `sc` | `ov.space.Deconvolution` (5 methods unified) |
 | Spatial domains / SVG / spatial communication | `st` | squidpy, omicverse |
-| R/Seurat pipeline, CytoTRACE, Milo, SCENIC+, Giotto | `scop_env` | scop (R) |
+| R/Seurat pipeline (CytoTRACE/Palantir/CellChat/Monocle3/SCVELO) | `scop_env` (system R) | scop (R); Milo/SCENIC+/Giotto/SecAct via standalone |
 | Perturbation prediction (GEARS/CPA/scGPT) | `sc` | pertpy + GPU |
 | GRN-based virtual KO (CellOracle/SCENIC+) | `sc` | standalone `pip install celloracle scenicplus` |
 

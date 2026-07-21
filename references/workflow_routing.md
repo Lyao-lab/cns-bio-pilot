@@ -57,7 +57,8 @@ Does the data have spatial coordinates / tissue section images?
    ├─ Cell-cell signaling → ov.single.run_liana (LIANA consensus) or run_cellphonedb_v5
    ├─ CRISPR perturbation (measured) → single-cell/perturb-seq
    ├─ Perturbation prediction (no experiment) → single-cell/perturbation-prediction (run linear baseline)
-   └─ R/Seurat ecosystem or scop-only tools (CytoTRACE/Milo/SCENIC+) → single-cell/scop
+   └─ R/Seurat ecosystem or scop-wrapped tools (CytoTRACE/Palantir/CellChat/Monocle3/SCVELO) → single-cell/scop
+   └─ Standalone tools (Milo/SCENIC+/SecAct/RCTD/Giotto/BANKSY/etc) → install package directly
 
 4. DE analysis (key discipline)
    ├─ ⚠️ No per-cell Wilcoxon (pseudoreplication, meta-methodology principle ③)

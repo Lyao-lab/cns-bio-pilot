@@ -196,10 +196,12 @@ Panel 数: 6 (A-F)
 ## 交付物
 
 审查全 PASS 后，产出 `outline.json`（如 Step 3 格式），交给：
-- **`visualization/multi-panel-figures`**：按 outline 拼 6-panel A-F（panel_order + chart_type + data_source）
+- **`visualization/multi-panel-figures`**：**人类/LLM 阅读规范**（outline.json 不是 CLI 输入）——按 outline 的 panel_order 把 6 张 PNG (A-F) 传给 `multi-panel-figures/scripts/main.py --input A.png B.png C.png D.png E.png F.png`；几何 QA 由 multi-panel-figures 负责
 - **`presentation/results-writer`**：按 narrative_spine 写 Results 文字（每段对应一个 panel）
 - **`presentation/figure-legend-writer`**：按 panel spec 写自洽图注
 
+> **outline.json 的契约**：它是**设计规格**（panel_order / chart_type / data_source / title），消费者是组装面板时的 LLM/人，不是 multi-panel-figures 的机器输入。multi-panel-figures 的 main.py 只接受 6 张图片文件路径（按 A-F 字母序拼图），不解析 outline.json。
+>
 > **不要自己拼图**——本 skill 只设计，拼图走 multi-panel-figures（它有几何 QA）。
 
 ## Prerequisites (where it comes from)

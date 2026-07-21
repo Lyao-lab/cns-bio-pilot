@@ -158,6 +158,12 @@ ov.pp.leiden(adata, resolution='auto')   # auto invokes ov.single.auto_resolutio
 # result in adata.obs['leiden']
 ```
 
+> **Cluster stability is part of the evidence** (meta-methodology ④). `resolution='auto'` is a starting point, not proof. For clusters that anchor key conclusions:
+> - Bootstrap / sub-sampling stability (re-cluster on 80% subsamples × 10 runs, Jaccard similarity per cluster; >0.7 = stable)
+> - Resolution sensitivity (does the main conclusion hold at resolution ±1 step?)
+> - Optional statistical significance of clusters: `scSHC` (Python/R) tests cluster separation rigorously
+> Reporting a single clustering at a single resolution without stability check = hidden fork-in-the-path.
+
 ## 6. Cell cycle scoring
 
 ```python
@@ -178,6 +184,18 @@ ov.pp.neighbors(adata, use_rep='X_scVI'); ov.pp.umap(adata)
 ```
 
 Decision: Harmony for shallow batch / fast iteration; scVI for complex batch and CNS main figures (original scvi-tools is now merged in, params pass through).
+
+> **Integration diagnostics are mandatory** (meta-methodology ④). Correction without diagnosis = blind trust. After any integration, report **both**:
+> - **Batch mixing**: iLISI / kBET / ASW_batch — higher = better batch mixing
+> - **Bio conservation**: cLISI / ASW_celltype / iso-label F1 — higher = better biological signal retention
+> - **Over-correction signal**: bio conservation drops sharply → downgrade method (scVI → Harmony → or no integration if batch is small)
+>
+> Install: `pip install scib-metrics` (Luecken et al. 2022 Nat Methods), then:
+> ```python
+> from scib_metrics.benchmark import Benchmarker
+> # compute iLISI/cLISI/ASW_batch/ASW_celltype on X_pca vs X_scVI vs X_harmony
+> ```
+> A corrected embedding with great batch mixing but poor bio conservation has **erased real biology** — your DE / trajectory / annotation downstream will be silently wrong.
 
 > **Time-series / spatial alignment** (multi-timepoint development, spatial OT registration): Harmony/scVI are not optimal — **moscot** (optimal transport, Nature 2024) is SOTA here. But moscot **is not installed in the sc env and not wrapped by omicverse**. If needed: `pip install moscot`, then call native per [moscot.readthedocs.io](https://moscot.readthedocs.io/); output feeds CellRank's RealTimeKernel. Routine batch correction does NOT need moscot.
 
@@ -269,6 +287,23 @@ ov.single.Monocle(adata)
 > - **LEMUR** (Ahlmann-Eltze & Huber, Nat Genet 2025, [s41588-024-01996-0](https://www.nature.com/articles/s41588-024-01996-0)) — cluster-free multi-condition DE on a Grassmann manifold; same lab as the linear-baseline paper; new paradigm for "does condition X shift cells along trajectory Y" without pre-clustering.
 > - Standalone Monocle3/Slingshot/Palantir: legacy/teaching fallback, not first choice.
 > - Diffusion map / DPT: obsolete, only as pseudotime input to CellRank.
+
+### Discipline for §9 outputs (non-negotiable writing rules)
+
+- **CCC results are hypotheses, not mechanism**: mRNA co-expression of ligand–receptor ≠ protein activity ≠ pathway activation. When writing about CCC outputs, use **"associated with" / "enriched for"**, never **"regulates" / "activates" / "drives"** without orthogonal protein/functional evidence. (Meta-methodology principle ①③; enforced in `scripts/postcheck.py` L2 check.)
+- **Pseudotime is ordering, not time**: `latent_time` / `dpt_pseudotime` / `monocle3_pseudotime` are relative ordering along the learned graph — they do **not** measure real duration, rate, or physical time. Never write "cells transition at rate V" or "the process takes T hours" from pseudotime alone. Real time requires metabolic labeling (4sU/SLAM-seq) or pulse-chase data. (See `single-cell/rna-velocity` benchmark caveats.)
+
+## 9c. Differential abundance / cell-type composition (NOT in omicverse — use standalone)
+
+> omicverse has `ov.pl.cellproportion` / `ov.pl.bardotplot` for **visualization only**. There is no omicverse wrapper for compositional-aware statistical testing. Do NOT apply plain chi-square / Fisher / t-test to cell-type proportions — they violate the compositional constraint (sum to 1) and inflate false positives.
+
+| Method | Language | When to use | Install |
+|---|---|---|---|
+| **Milo** (`miloR`) | R | Neighborhood-level DA — does not depend on annotation labels; handles continuous shifts | `install.packages("miloR")` |
+| **scCODA** | Python/R | Bayesian compositional analysis; requires a reference cell type | `pip install scCODA` |
+| **propeller** | R | Cell-type proportion test with sample-level replicate (limma-backed) | `propeller` (GitHub) |
+
+> R-side `scop::RunProportionTest` is a basic proportion test — use it only for quick looks, not publication. For CNS-grade composition claims, **always** use Milo / scCODA / propeller. (Meta-methodology principle ③ — "who is my N"; enforced in `scripts/postcheck.py` C1 check.)
 
 ## 9b. Multi-omics integration (ov.single.* — all wrapped, no separate package needed)
 

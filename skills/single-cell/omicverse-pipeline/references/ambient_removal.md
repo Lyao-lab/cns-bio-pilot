@@ -33,6 +33,19 @@ Output written to the AnnData:
 
 ## Run removal
 
+> **Pre-flight install (NOT auto-installed)**. The pure-Python backends are opt-in extras;
+> the DL backends are standalone:
+> ```bash
+> pip install 'omicverse[ambient]'   # installs pysoupx / pyfastcar / pydecontx / pysccdc
+> pip install cellbender             # optional, DL, CNS-grade (GPU helps)
+> ```
+> Verify before use:
+> ```python
+> import importlib.util as _u
+> for m in ['pysoupx','pyfastcar','pydecontx','pysccdc','cellbender','scar']:
+>     print(m, 'INSTALLED' if _u.find_spec(m) else 'MISSING')
+> ```
+
 ```python
 import omicverse as ov
 

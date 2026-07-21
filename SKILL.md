@@ -127,7 +127,7 @@ Data has spatial coords / tissue image?
 
 ## Version & architecture
 
-- **Version**: 14.0.0 (structural refactor: code migrated out of SKILL.md into examples/references; index↔frontmatter names aligned; orphan usage-guide.md removed; ambient removal + §9b multi-omics externalized)
+- **Version**: 15.0.0 (capability honesty + multi-agent review: scop API truth — verified 40 Run\* verbs in 0.8.0, removed ~25 fabricated APIs across routing table + examples + postcheck; pertpy 1.0 API bugs fixed; mixscape LDAPlot→RunLDA; compositional DA discipline + §9c new section; cluster stability + integration diagnostics + CCC/pseudotime writing rules; postcheck.py +3 new checks (D4 pseudobulk / L2 CCC hypothesis / C1 compositional); new scop_api_check.R; README 18→19 + figure-architect added)
 - **Engines**: [OmicVerse V2](https://github.com/Starlitnightly/omicverse) (Python primary) + [scop](https://github.com/mengxu98/scop) (R/Seurat) + perturbation models (GEARS/CPA/scGPT, mandatory linear baseline)
 - **Sub-skills**: 19 (see `skill-index.json` compact index)
 - **Architecture evolution**: v8 (42 standalone) → v9 (omicverse unification + scop + perturbation track) → v10 (structural engineering: routing / closed-loop / protocol) → v11 (consolidation + meta-methodology + English rewrite) → v12–v13 (annotation principles / QC two-step / figure-architect) → **v14 (code externalization — SKILL.md back to routing + decisions, code to examples/, API references to references/)**
@@ -158,5 +158,7 @@ Data has spatial coords / tissue image?
 | `references/figure_layout.md` | Multi-panel composition (omicverse 5 signature decisions / shared legend / panel labels / 5 composite templates) | **When assembling multi-panel figures** |
 | `references/figure_design.md` | Chart-type selection + information hierarchy + statistics visualization (what to plot, take-home message, error bars, n, self-contained legend) | **Must read before any plotting — the design layer above aesthetics** |
 | `references/meta_methodology.md` | **Meta-methodology 6 rules** (verify prerequisites / semantic boundaries / what is N / report the path / chain failure / design up front) | Self-check checklist after each analysis step |
-| `scripts/postcheck.py` | Scientific rigor auto-check (counts / Padj / pseudobulk / deconv quality) | **Must run after analysis** |
-| `scripts/api_check.py` | API existence self-check (verify all `ov.*` in skill docs actually exist in current env) | **Run after installing/updating omicverse** |
+| `references/preoutput_checklist.md` | Shared 5-bullet core pre-output checklist (numeric integrity / citation / no speculation / association≠causation / no fabrication) | **Before delivering any result** (referenced by 6+ output skills) |
+| `scripts/postcheck.py` | Scientific rigor auto-check (counts / Padj / pseudobulk / CCC hypothesis / compositional / deconv quality) | **Must run after analysis** |
+| `scripts/api_check.py` | API existence self-check (verify all `ov.*` and `pt.*` in skill docs actually exist in current env) | **Run after installing/updating omicverse or pertpy** |
+| `scripts/scop_api_check.R` | scop API existence self-check (R; verify Run\* verbs against installed scop) | **Run after installing/updating scop** |

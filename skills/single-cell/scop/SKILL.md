@@ -1,17 +1,20 @@
 ---
 name: scop-single-cell
-description: 用 scop R 包做单细胞 + 空间转录组全流程（200+ Run* 动词，基于 Seurat）——QC/整合/注释/DE/轨迹/通讯/GRN/CNV/代谢/空转。当用户要用 R、Seurat、scop、R 单细胞、RunPCA/RunUMAP/RunHarmony/RunCellChat/RunSCENIC/standard_scop/integration_scop 等 Run* 动词、或在 R 生态做 CytoTRACE/Milo/SecAct/Giotto/SmoothClust 等 omicverse 无对应工具时触发。
+description: 用 scop R 包做单细胞全流程（基于 Seurat，40+ Run* 动词）——QC/整合/注释/DE/轨迹/通讯/velocity。当用户要用 R、Seurat、scop、R 单细胞、standard_scop/integration_scop/RunPCA/RunUMAP/RunCellChat/RunSCVELO/RunMonocle3 等 Run* 动词时触发。CytoTRACE/Palantir/CellChat 在 scop 有包装；SCENIC+/Milo/scCODA/RCTD/Giotto 等不在 scop，走独立包。
 ---
 
 ## When NOT to use this skill
 - Pure Python/AnnData-native large-scale analysis (>1M cells, AnnDataOOM backend) → `single-cell/omicverse-pipeline`
-- cell2location deconvolution (not registered in omicverse, absent from scop too) → `spatial/deconvolution`
+- Spatial deconvolution (cell2location/Tangram/RCTD) → `spatial/deconvolution` (omicverse unified wrapper)
 - Predict unmeasured perturbation experiments → `single-cell/perturbation-prediction`
 - Downstream analysis of measured Perturb-seq data → `single-cell/perturb-seq`
+- SCENIC+/Milo/scCODA/RCTD/Giotto/SecAct/EcoTyper/SmoothClust — **not wrapped in scop 0.8.0**, use standalone packages (see `references/run_verbs_reference.md` Capability gaps table)
 
-# scop — Single-Cell & Spatial Omics Analysis Pipeline (R)
+# scop — Single-Cell Omics Analysis Pipeline (R)
 
-`scop` is an R package ([mengxu98/scop](https://github.com/mengxu98/scop), v0.8.9, GPL-3) providing a unified, end-to-end pipeline for single-cell and spatial omics. It wraps hundreds of community tools under consistent `Run*` verbs on the **Seurat** object. Use this when the user prefers R/Seurat or needs a tool that omicverse does not cover.
+`scop` is an R package ([mengxu98/scop](https://github.com/mengxu98/scop), **v0.8.0** verified, GPL-3) providing a unified pipeline for single-cell omics. It wraps ~40 community tools under consistent `Run*` verbs on the **Seurat** object, plus a one-call `standard_scop()` pipeline. Use this when the user prefers R/Seurat.
+
+> **Capability honesty**: scop 0.8.0 has **~40 Run\* verbs** (not 200+, despite some older docs claiming that). It covers QC / DR / clustering / integration (via `integration_scop`) / annotation (SingleR/CellTypist/Scmap) / DE / trajectory (Monocle2/3, Slingshot, PAGA, Palantir, CytoTRACE, CellRank, WOT) / velocity (SCVELO) / CellChat / GSEA / proportion test. SCENIC+/Milo/scCODA/SecAct/Giotto/RCTD/BayesSpace/BANKSY and many others are **NOT wrapped** — see the Capability gaps table in `references/run_verbs_reference.md` for the standalone package to install.
 
 ## Installation
 
@@ -31,12 +34,13 @@ Key R deps: `Seurat`, `SeuratObject`, `Signac`, `ggplot2`, `ComplexHeatmap`, `re
 
 ```r
 library(scop)
-srt  <- adata_to_srt(adata)        # AnnData (Python) -> Seurat (via reticulate)
-adata <- srt_to_adata(srt)         # Seurat -> AnnData
-srt  <- h5ad_to_srt("data.h5ad"); srt_to_h5ad(srt, "out.h5ad")
-srt  <- spe_to_srt(spe); srt_to_spe(srt)                       # SpatialExperiment
-adata <- loom_to_adata("data.loom"); srt <- loom_to_srt("data.loom")
+srt    <- adata_to_srt(adata)        # AnnData (Python) -> Seurat (verified)
+adata  <- srt_to_adata(srt)          # Seurat -> AnnData (verified)
+# Python env management (verified):
+scop::check_python(); scop::PrepareEnv("scvelo"); scop::ListEnv(); scop::RemoveEnv()
 ```
+
+> **NOT in scop 0.8.0** (despite older docs): `h5ad_to_srt` / `srt_to_h5ad`, `spe_to_srt` / `srt_to_spe`, `loom_to_adata` / `loom_to_srt`. For these, save in Python (anndata/sceasy) then read into R, or use `adata_to_srt(srt_to_adata(...))` round-trip via reticulate.
 
 ## Standard Pipeline (one call)
 
@@ -61,11 +65,11 @@ srt <- standard_scop(
 )
 ```
 
-> **Full Run\* verb enumeration** (QC / DR / Clustering / 20+ Integration methods / Annotation / DE / Trajectory / Velocity / CCC / GRN / Enrichment / CNV / Composition / 30+ Spatial verbs / 35+ Plotters / Datasets): see `references/run_verbs_reference.md`. That file is the API lookup; this SKILL is the workflow + decisions.
+> **Full Run\* verb enumeration** (verified against scop 0.8.0; ~40 verbs across QC / DR / Clustering / Integration / Annotation / DE / Trajectory / Velocity / CCC / Enrichment / Composition / Reference mapping / Datasets): see `references/run_verbs_reference.md`. That file also has the **Capability gaps** table — capabilities NOT wrapped in scop and the standalone package to use instead. SKILL is the workflow + decisions; that file is the API lookup.
 
 ## Integration method ranking (2024-2026 benchmarks)
 
-**Harmony / scVI / scANVI** are the SOTA defaults for the vast majority of single-cell integration. BBKNN is **only** worth considering for ultra-fast >500k-cell alignment (Luecken et al. Nat Methods 2022; OpenProblems v2 show it is otherwise outperformed). fastMNN is acceptable but no longer first-choice. **Combat is for bulk only — not recommended for scRNA-seq.** Full verb list: `Harmony_integrate` / `scVI_integrate` / `CCA_integrate` / `RPCA_integrate` / `BBKNN_integrate` / `fastMNN_integrate` / `LIGER_integrate` / `Scanorama_integrate` / `WNN_integrate` / `CSS_integrate` / `GLUE_integrate` / etc.
+**Harmony / scVI / scANVI** are the SOTA defaults for the vast majority of single-cell integration. BBKNN is **only** worth considering for ultra-fast >500k-cell alignment (Luecken et al. Nat Methods 2022; OpenProblems v2 show it is otherwise outperformed). fastMNN is acceptable but no longer first-choice. **Combat is for bulk only — not recommended for scRNA-seq.** In scop, the unified entry is `integration_scop(object_list, method='Harmony', ...)` — `method` accepts Harmony / fastMNN / LIGER / scVI etc. (verify the method string against `?integration_scop` for your scop version).
 
 ## When to Use scop vs omicverse
 
@@ -73,7 +77,8 @@ srt <- standard_scop(
 |---|---|
 | Python-only environment, large-scale, AnnData-native | `omicverse-pipeline` skill |
 | R/Seurat environment, or user prefers R | **scop (this skill)** |
-| Tool only in scop (e.g., CytoTRACE, Milo, scCODA, SecAct, Giotto, SmoothClust, EcoTyper, scTenifold) | **scop** |
+| Tool wrapped in scop (CytoTRACE, Palantir, CellChat, Monocle3, WOT, Slingshot, SCVELO) | **scop** |
+| Tool NOT in scop (SCENIC+, Milo, scCODA, SecAct, Giotto, SmoothClust, EcoTyper, RCTD, BayesSpace, BANKSY) | **standalone packages** — see Capability gaps in `references/run_verbs_reference.md` |
 | Tool only in omicverse (AnnDataOOM million-cell backend) | `omicverse-pipeline` |
 | Need both ecosystems | Convert via `srt_to_adata` / `adata_to_srt` |
 
@@ -89,16 +94,13 @@ srt <- standard_scop(
 ## Prerequisites (where data comes from)
 
 - **scRNA-seq raw data** → 10x matrices from Cell Ranger / STARsolo (`Read10X`), or `.h5`/`.loom`/`.h5ad` (`h5ad_to_srt` / `loom_to_srt`)
-- **Spatial data** → Visium/Xenium output (`Load10X_Spatial`), or convert from AnnData via `adata_to_srt`
-- **Annotation reference** (optional, for `RunSingleR`/`RunSciBet`/`RunCellTypist`) → annotated reference Seurat object or celldex/CellTypist model
+- **Annotation reference** (optional, for `RunSingleR` / `RunCellTypist` / `RunScmap`) → annotated reference Seurat object or celldex/CellTypist model
 - **loom file** (for RNA velocity) → produced by velocyto, consumed by `RunSCVELO`
-- **Spatial neighbor graph** (for the spatial workflow) → `RunSpatialNeighborhood` MUST run first; all spatial domain / SVG / communication steps depend on it
 
 ## When to leave this skill (where to go)
 
 - Python/AnnData-native large-scale analysis (>1M cells) → `single-cell/omicverse-pipeline` (AnnDataOOM backend)
-- Standalone cell2location deconvolution (not registered in omicverse) → `spatial/deconvolution`
-- Dedicated high-res spatial workflow (Stereo-seq / Visium HD) → `spatial/multiomics`
+- Spatial transcriptomics (Visium/Xenium/high-res) → `spatial/omicverse-spatial` / `spatial/deconvolution` / `spatial/multiomics` (omicverse Python unified; scop does NOT wrap spatial tools in 0.8.0)
 - Spatial proteomics (CODEX/IMC) → `spatial/proteomics`
 - Perturbation prediction (unmeasured experiments) → `single-cell/perturbation-prediction`; measured-perturbation analysis → `single-cell/perturb-seq`
 - Move Seurat results back to Python for plotting → `srt_to_adata`, then `visualization/omicverse-plotting`
@@ -107,14 +109,16 @@ srt <- standard_scop(
 
 ## Key pitfalls
 
-- **scop ≠ Seurat**: scop is a wrapper layer with 200+ Run\* verbs; calling Seurat functions directly does NOT go through this skill — LLMs easily confuse `RunPCA(scop)` with `Seurat::RunPCA`.
+- **scop ≠ Seurat**: scop is a wrapper layer with **~40 Run\* verbs** (verified 0.8.0); calling Seurat functions directly does NOT go through this skill — LLMs easily confuse `RunPCA(scop)` with `Seurat::RunPCA`.
+- **Verify before trusting any Run\* verb**: scop has fewer verbs than some tutorials claim. Before using a `RunX` not in `references/run_verbs_reference.md`, check `exists("RunX", where = asNamespace("scop"))` or run `scripts/scop_api_check.R`.
 - **Python ↔ R object conversion**: `srt_to_adata` / `adata_to_srt` is the boundary and may drop metadata/assay — verify obs/var columns before and after conversion.
-- **Run\* argument pass-through**: each Run\* wraps a native R function whose parameter names may differ (e.g. `RunHarmony` vs `harmony::RunHarmony`) — check `?scop::RunX` for the real signature, do not rely on memory.
-- **SCENIC+/CellChat and similar downstream tools are version-sensitive**: scop depends on SCENIC+ v1.x and CellChat v2; mismatched versions crash Run\* — confirm the R environment versions.
+- **Run\* argument pass-through**: each Run\* wraps a native R function whose parameter names may differ (e.g. `RunHarmony2` vs `harmony::RunHarmony`) — check `?scop::RunX` for the real signature, do not rely on memory.
+- **RunHarmony does not exist** — scop 0.8.0 ships `RunHarmony2` and the unified `integration_scop(method='Harmony', ...)`. Prefer `integration_scop` as the entry.
 - **DE still requires pseudobulk**: `RunDEtest` defaults to per-cell Wilcoxon; for publication-grade single-cell DE switch to pseudobulk (aggregate by sample × cell type, then DESeq2/edgeR) — meta-methodology principle ③.
-- **scop-only tools are the differentiator**: CytoTRACE/Milo/SecAct/EcoTyper/Giotto/SmoothClust have no omicverse equivalent — when the user wants these, route to scop, not omicverse.
-- **Spatial analysis lives in scop**: RunGiotto/RunBayesSpace/RunRCTD here vs the omicverse-spatial Python route — results are not directly comparable.
+- **SCENIC+/Milo/scCODA/RCTD/Giotto/SecAct are NOT in scop** — these tools require standalone installation. See Capability gaps table.
+- **Spatial is NOT scop's strength in 0.8.0** — many `RunSpatial*` verbs listed in older docs do not exist. Prefer omicverse-spatial Python route for spatial work.
 - After finishing, run `scripts/postcheck.py` (repo root) to verify: DE used pseudobulk, Padj reported, integration diagnostics done.
 
 ## Resources
-- `references/run_verbs_reference.md` — 200+ Run\* verbs by domain (QC / DR / Clustering / Integration / Annotation / DE / Trajectory / Velocity / CCC / GRN / Enrichment / CNV / Composition / Spatial / 35+ Plotters / Datasets)
+- `references/run_verbs_reference.md` — ~40 verified Run\* verbs by domain + Capability gaps table (what's NOT in scop and the standalone package to use instead)
+- `scripts/scop_api_check.R` (repo root) — re-verify scop API surface after any scop upgrade

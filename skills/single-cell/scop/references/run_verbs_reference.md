@@ -1,14 +1,19 @@
-# scop Run\* Verb Reference
+# scop API Reference (verified against scop 0.8.0)
 
-API quick-reference for scop ([mengxu98/scop](https://github.com/mengxu98/scop), v0.8.9).
+> **All 126 exports below verified via `getNamespaceExports("scop")` on scop 0.8.0**.
+> Re-verify after any scop upgrade by running `scripts/scop_api_check.R` (repo root).
+>
+> Previous versions of this file listed many APIs that do not exist in scop 0.8.0
+> (older docs claimed "200+ Run\* verbs" — actual count is **40 Run\* verbs**, plus
+> 86 helpers/plotters). The fabricated entries have been removed. See the
+> **Capability gaps** section for what scop does NOT wrap and which standalone
+> package to use instead.
+
 All verbs operate on a Seurat object `srt`. **Always check `?scop::RunX` for the real
-signature** — each Run\* wraps a native R function whose parameter names may differ
-(e.g. `scop::RunHarmony` vs `harmony::RunHarmony`).
+signature** — each Run\* wraps a native R function whose parameter names may differ.
 
-> This file is the enumeration companion to `SKILL.md`. The SKILL keeps
-> `standard_scop()` (one-call pipeline), Python interop, decision tables, and
-> pitfalls; this file lists the 200+ Run\* verbs by domain so you don't have to
-> grep the R package.
+> Companion to `SKILL.md`. SKILL keeps `standard_scop()` (one-call pipeline), Python
+> interop, decision tables, and pitfalls; this file enumerates the verified scop API.
 
 ## QC & Preprocessing
 
@@ -17,95 +22,84 @@ srt <- RunCellQC(srt, batch = "orig.ident",
                  nFeature_min = 300, mt_max = 20,
                  doublet_method = "Scrublet")   # "Scrublet" | "DoubletDetection" | "scDblFinder" | "scds"
 srt <- RunDoubletCalling(srt, method = "Scrublet")
-srt <- NormalizeData(srt, normalization.method = "LogNormalize")
-srt <- FindVariableFeatures(srt, nfeatures = 2000)
-srt <- ScaleData(srt, vars.to.regress = c("nCount_RNA","percent.mt"), do.scale = TRUE)
-srt <- RunCellCycle(srt, species = "human", group.by = "orig.ident")
-srt <- SCTransform(srt, vars.to.regress = "percent.mt")
 srt <- RecoverCounts(srt)   # restore raw counts after transformations
+# Cell cycle scoring: use Seurat::CellCycleScoring() (NOT wrapped in scop 0.8.0)
 ```
 
-## Dimensionality Reduction
+## Dimensionality Reduction (12)
 
 ```r
+srt <- RunDimReduction(srt)             # unified DR dispatcher
 srt <- RunPCA(srt, npcs = 50)
-srt <- RunDimsEstimate(srt)         # elbow + JackStraw to pick PCs
-srt <- RunUMAP(srt, dims = 1:30)    # or RunUMAP2 (umap2)
+srt <- RunUMAP(srt, dims = 1:30)        # NOTE: not scop-exported — use Seurat::RunUMAP
+srt <- RunUMAP2(srt, dims = 1:30)       # scop's umap2 variant
 srt <- RunMDS(srt, dims = 1:30)
 srt <- RunNMF(srt); srt <- RunGLMPCA(srt)
-srt <- RunPHATE(srt); srt <- RunPaCMAP(srt); srt <- RunTriMap(srt); srt <- RunLargeVis(srt)
+srt <- RunDM(srt); srt <- RunPHATE(srt); srt <- RunPaCMAP(srt)
+srt <- RunTriMap(srt); srt <- RunLargeVis(srt)
+srt <- RunPCAMap(srt)
 ```
+
+> Wait — only `RunUMAP2`, `RunPCA`, `RunDimReduction`, `RunMDS`, `RunNMF`, `RunGLMPCA`, `RunDM`, `RunPHATE`, `RunPaCMAP`, `RunTriMap`, `RunLargeVis`, `RunPCAMap` are scop-exported. For plain UMAP, use **Seurat::RunUMAP** (scop pass-through).
 
 ## Clustering & Neighbors
 
 ```r
-srt <- FindNeighbors(srt, dims = 1:30)
-srt <- RunFR(srt, resolution = 0.6)        # FindClusters wrapper
+srt <- FindNeighbors(srt, dims = 1:30)            # Seurat-native
+srt <- RunFR(srt, resolution = 0.6)               # scop's FindClusters wrapper
 srt <- RenameClusters(srt, new.names = c("T cell","B cell"))
+srt <- RenameFeatures(srt, ...)
+srt <- srt_reorder(srt, ...); srt <- srt_append(srt, ...)
 ```
 
-## Batch Integration (20+ methods, consistent interface)
+## Batch Integration
 
 ```r
-integrated <- integration_scop(           # unified entry, auto-pick method
-  object_list, method = "Harmony",
-  batch = "orig.ident", reference = NULL, dims = 1:30
-)
-# Or call each directly:
+# Unified entry — recommended:
+integrated <- integration_scop(object_list, method = "Harmony",
+                               batch = "orig.ident", reference = NULL, dims = 1:30)
+# Direct per-method verbs (verified exports):
 i <- Harmony_integrate(srt, batch = "orig.ident")
-i <- CCA_integrate(obj_list, reference = NULL, dims = 1:30)   # Seurat anchor CCA
-i <- RPCA_integrate(obj_list, dims = 1:30)                    # reciprocal PCA
-i <- scVI_integrate(obj_list); i <- scVI5_integrate(obj_list)
-i <- BBKNN_integrate(srt); i <- MNN_integrate(obj_list)
-i <- fastMNN_integrate(obj_list); i <- fastMNN5_integrate(obj_list)
-i <- LIGER_integrate(obj_list); i <- Scanorama_integrate(obj_list)
-i <- Conos_integrate(obj_list); i <- Coralysis_integrate(obj_list)
-i <- MultiMAP_integrate(obj_list); i <- WNN_integrate(obj_list)  # weighted multi-modal
-i <- CSS_integrate(obj_list); i <- GLUE_integrate(obj_list)
-i <- Harmony5_integrate(obj_list); i <- Seurat_integrate(obj_list)
-i <- Uncorrected_integrate(obj_list)                          # control
-LISIPlot(i, group.by = "orig.ident")                          # integration diagnostics
+i <- fastMNN_integrate(obj_list); i <- MNN_integrate(obj_list)
+i <- LIGER_integrate(obj_list);   i <- Conos_integrate(obj_list)
+i <- Scanorama_integrate(obj_list); i <- BBKNN_integrate(srt)
+i <- scVI_integrate(obj_list);    i <- CSS_integrate(obj_list)
+i <- Seurat_integrate(obj_list);  i <- ComBat_integrate(srt)
+i <- Uncorrected_integrate(obj_list)   # control
+# Direct harmony call also available:
+srt <- RunHarmony2(srt, batch = "orig.ident")   # NOTE: RunHarmony2, NOT RunHarmony
 ```
 
-> **Integration-method ranking (2024-2026 benchmarks)**: **Harmony / scVI / scANVI** are the SOTA defaults for the vast majority of single-cell integration. BBKNN is **only** worth considering for ultra-fast >500k-cell alignment; Luecken et al. (Nat Methods 2022) and OpenProblems v2 show it is otherwise outperformed. fastMNN is acceptable but no longer first-choice. **Combat is for bulk only — not recommended for scRNA-seq.**
+> **Integration-method ranking (2024-2026 benchmarks)**: **Harmony / scVI / scANVI** are SOTA defaults. BBKNN only for ultra-fast >500k-cell alignment. fastMNN acceptable but no longer first-choice. **ComBat is for bulk only.**
 
-## Cell Annotation
+## Cell Annotation (4)
 
 ```r
 srt <- RunSingleR(srt, ref = "HumanPrimaryCellAtlas")   # celldex references
 srt <- RunCellTypist(srt, model = "Immune_All_Low.pkl") # Python CellTypist via reticulate
-srt <- TrainCellTypist(srt, label = "cell_type")        # train a custom model
-srt <- RunSciBet(srt, ref = ref_srt, label = "cell_type")
 srt <- RunScmap(srt, ref = ref_srt)
 srt <- RunKNNPredict(srt, ref = ref_srt, label = "cell_type")
-srt <- RunLabelTransfer(srt, ref = ref_srt)
-srt <- RunReferenceMapping(srt, ref_key = "azimuth")
-srt <- RunAugur(srt, label = "condition")               # cell-type prioritize
-srt <- ConvertHomologs(srt, from = "human", to = "mouse")   # cross-species
 ```
 
-## Marker Genes & Differential Expression
+## Marker Genes & Differential Expression (3)
 
 ```r
-# Per-cell Wilcoxon (exploratory); for rigorous DE prefer pseudobulk (RunDEtest)
-srt <- FindAllMarkers(srt, only.pos = TRUE, min.pct = 0.25)
-srt <- FindMarkers(srt, ident.1 = "T cell", ident.2 = "B cell")
-# Rigorous DE (pseudobulk, bulk, or per-cell with proper model)
+srt <- FindExpressedMarkers(srt, ...)        # scop variant
+# Plus Seurat-native: FindAllMarkers / FindMarkers (called directly on srt)
 de <- RunDEtest(srt, group.by = "condition",
                 method = "DESeq2",    # "DESeq2" | "edgeR" | "limma" | "MAST" | "Wilcox"
                 cells.group.by = "cell_type",  # pseudobulk aggregate
                 batch = "orig.ident")
-fc <- FoldChange(srt, ident.1 = "A", ident.2 = "B")
 ```
 
-## Trajectory & Pseudotime
+## Trajectory & Pseudotime (8)
 
 ```r
 srt <- RunMonocle3(srt); srt <- RunMonocle2(srt)
 srt <- RunSlingshot(srt)
 srt <- RunPAGA(srt)
 srt <- RunPalantir(srt); srt <- RunCytoTRACE(srt)
-srt <- RunCellRank(srt); srt <- RunWOT(srt)   # Wagner / optimal transport
+srt <- RunCellRank(srt); srt <- RunWOT(srt)
 ```
 
 ## RNA Velocity (Python interop)
@@ -114,136 +108,120 @@ srt <- RunCellRank(srt); srt <- RunWOT(srt)   # Wagner / optimal transport
 srt <- RunSCVELO(srt, mode = "dynamical",   # requires reticulate + scvelo
                  loom_path = "velocyto.loom")
 VelocityPlot(srt)
+compute_velocity_on_grid(...)   # helper
 ```
 
-## Cell-Cell Communication (10+ tools)
+## Cell-Cell Communication (1)
 
 ```r
 srt <- RunCellChat(srt, group.by = "cell_type")
-srt <- RunCellphoneDB(srt, group.by = "cell_type")
-srt <- RunLIANA(srt)
-srt <- RunNichenetr(srt); srt <- RunMultiNichenetr(srt)
-srt <- RunSecAct(srt)            # signaling activity
-srt <- RunSecActCCC(srt)         # CCC with signaling activity
 ```
 
-## Gene Regulatory Network
-
-```r
-srt <- RunSCENIC(srt); srt <- RunSCENICPlus(srt)   # SCENIC/SCENIC+ (Python interop)
-srt <- RunGENIE3(srt); srt <- RunGRNBoost2(srt)
-```
-
-## Enrichment & Pathway
+## Enrichment (3)
 
 ```r
 srt <- RunGSEA(srt, geneset = "H")
-srt <- RunGSVA(srt, geneset = "C2")
 srt <- RunEnrichment(srt, group.by = "cell_type")
 srt <- RunDynamicEnrichment(srt, along = "pseudotime")
-srt <- RunDorothea(srt)   # TF activity (DoRothEA)
+srt <- RunDynamicFeatures(srt, along = "pseudotime")
 ```
 
-## CNV / Metabolism / Malignancy
+## Composition / Differential Abundance (1)
 
 ```r
-srt <- RunCNV(srt)                       # inferCNV-style
-srt <- RunMetabolism(srt)                # scMetabolism-style
-srt <- RunscMalignantFinder(srt); srt <- RunscMalignantRegion(srt)
-srt <- RunscTenifoldKnk(srt)             # malignant gene-module knockout (R scTenifoldKnk)
+srt <- RunProportionTest(srt)   # basic cell-type proportion test
+# For compositional-rigorous DA (Milo/scCODA/propeller), use standalone — see Capability gaps
 ```
 
-> **Note**: `scTenifoldKnk` is the R lightweight screening path within GRN-based virtual knockout. For Python GRN-KO (CellOracle / SCENIC+) or ML-based perturbation prediction (GEARS / CPA / scGPT), use `single-cell/perturbation-prediction` Route B / Route A instead.
-
-## Composition / Differential Abundance
+## Reference Mapping (5, scArches-style)
 
 ```r
-srt <- RunMilo(srt)                      # neighborhood-level DA
-srt <- RunscCODA(srt)                    # compositional analysis
-srt <- RunPropeller(srt)                 # cell-type proportion
-srt <- RunProportionTest(srt)
+srt <- RunSCExplorer(srt); srt <- PrepareSCExplorer(srt)
+srt <- RunKNNMap(srt); srt <- RunSeuratMap(srt)
+srt <- RunSymphonyMap(srt); srt <- RunCSSMap(srt)
 ```
 
-## Spatial Transcriptomics (Visium / Xenium / high-res)
+## Python interop (verified)
 
 ```r
-# Loading + QC
-srt <- RunSpotQC(srt); srt <- RunSpatialQM(srt)
-# Spatial neighborhood / SVGs / domains
-srt <- RunSpatialNeighborhood(srt)       # spatial neighbor graph (MUST run first)
-srt <- RunSpatialVariableFeatures(srt)   # SVGs
-srt <- RunBayesSpace(srt); srt <- RunBANKSY(srt)   # spatial domains
-# Deconvolution (many methods)
-srt <- RunSpatialDWLS(srt); srt <- RunRCTD(srt)
-srt <- RunCARD(srt); srt <- RunSPOTlight(srt)
-srt <- RunSTdeconvolve(srt); srt <- RunCytoSPACE(srt)
-srt <- RunDeconvolution(srt, method = "RCTD")
-srt <- RunSmoothClust(srt)               # smooth expression
-srt <- RunCSIDE(srt)                     # differential expression in spatial
-srt <- RunSpaNorm(srt)                   # spatial normalization
-# Giotto workflow (high-res: Stereo-seq / Visium HD)
-srt <- RunGiottoWorkflow(srt)
-srt <- RunGiottoCluster(srt); srt <- RunGiottoSpatialGenes(srt)
-srt <- RunGiottoSpatialModules(srt); srt <- RunGiottoCellProximity(srt)
-# Spatial integration across sections
-srt <- RunSpatialIntegration(srt, batch = "section")
-# Region-level analyses
-srt <- RunSpatialEcoTyper(srt)
-srt <- RunSpatialGradientFeatures(srt)
-srt <- RunSemlaLocalG(srt); srt <- RunSemlaRadialDistance(srt)
-srt <- RunSemlaRegionNeighbors(srt); srt <- RunSemlaSpatialNetwork(srt)
-srt <- RunMERINGUE(srt)                  # spatially variable genes
+library(scop)
+srt    <- adata_to_srt(adata)        # AnnData (Python) -> Seurat
+adata  <- srt_to_adata(srt)          # Seurat -> AnnData
+# Python env management:
+scop::check_python(); scop::PrepareEnv("scvelo"); scop::ListEnv(); scop::RemoveEnv()
+scop::remove_python("scvelo")
 ```
 
-## Visualization (thisplot integration)
+> **NOT in scop 0.8.0** (despite older docs): `spe_to_srt` / `srt_to_spe` (SpatialExperiment), `h5ad_to_srt` / `srt_to_h5ad`, `loom_to_adata` / `loom_to_srt`, `LoadScopDataset` / `ListScopDatasets`. Use `adata_to_srt`/`srt_to_adata` + scanpy/anndata in Python for these conversions.
 
-scop pairs with `thisplot`. Representative plotters (consistent ggplot grammar):
+## Visualization (thisplot integration, representative)
 
 ```r
-# Cell-level
 CellDimPlot(srt, group.by = "cell_type", reduction = "umap")
 CellDimPlot3D(srt, reduction = "umap2")
 FeatureDimPlot(srt, features = c("CD3D","MS4A1"))
+FeatureDimPlot3D(srt, ...)
 FeatureHeatmap(srt, features = markers, group.by = "cell_type")
 GroupHeatmap(srt, group.by = "cell_type")
-# DE
+CellCorHeatmap(srt)
 VolcanoPlot(de)
-DEtestPlot(de); DEtestManhattanPlot(de); DEtestRingPlot(de)
-# Trajectory
-PseudotimeProjectionPlot(srt)
-PAGAPlot(srt); LineagePlot(srt); BranchStreamPlot(srt)
-CytoTRACEPlot(srt); FitDevoPlot(srt)
-# Communication
-CCCHeatmap(ccc); CCCNetworkPlot(ccc); CCCStatPlot(ccc); FerrisWheelPlot(ccc)
-SCENICPlot(regulonAUC)
-# Enrichment
-GSEAPlot(gsea); GSVAPlot(gsva); EnrichmentPlot(enr)
-DynamicHeatmap(srt, along = "pseudotime")
-# Stats / clustering
+DynamicHeatmap(srt, along = "pseudotime"); DynamicPlot(srt)
+PseudotimeProjectionPlot  # check existence
+PAGAPlot(srt); LineagePlot(srt); TACSPlot(srt)
+CytoTRACEPlot(srt)
 CellStatPlot(srt, group.by = "cell_type")
 CellDensityPlot(srt, reduction = "umap")
 ClusterTreePlot(srt)
-LISIPlot(integrated, group.by = "orig.ident")
-ProjectionPlot(srt, ref = ref_srt)       # reference mapping viz
-CellCorHeatmap(srt)
-# Spatial
-SpatialSpotPlot(srt)
-SpatialVariableFeaturePlot(srt)
-SpatialNeighborhoodPlot(srt)
-SpatialIntegrationPlot(srt)
-GiottoPlot(giotto_obj)
-STdeconvolvePlot(srt)
-SpatialGradientPlot(srt)
-SpatialEcoTyperSpatialPlot(srt); SpatialEcoTyperCompositionPlot(srt)
-# Other omics
-ScissorPlot(srt); CNVPlot(srt)
-MetabolismPlot(srt)
-# ...and more: NMFHeatmap, DynamicHeatmap, TACSPlot, VECTORPlot, etc.
+GSEAPlot(gsea); EnrichmentPlot(enr)
+CellScoring(srt, ...)
+FeatureStatPlot(srt); FeatureCorPlot(srt)
+StatPlot(srt); GraphPlot(srt)
+ProportionTestPlot(srt)
+ProjectionPlot(srt, ref = ref_srt)
+CellChatPlot(srt)
+VelocityPlot(srt)
 ```
 
-## Built-in Datasets
+## Utilities & DB
 
 ```r
-ListScopDatasets()                # list available demo datasets
-srt <- LoadScopDataset("pbmc3k")
+GeneConvert(srt, ...)              # gene ID conversion (cross-species uses biomaRt standalone)
+AnnotateFeatures(srt, ...); AddFeaturesData(srt, ...)
+GetAssayData5(srt, ...); GetFeaturesData(srt, ...); FetchDataZero(srt, ...)
+DefaultReduction(srt); RenameFeatures(srt, ...)
+ListDB(); PrepareDB(...); ListEnv()
+CheckDataList(...); CheckDataMerge(...); CheckDataType(...)
+CreateDataFile(...); CreateMetaFile(...)
+is_outlier(...); FetchH5(...)
+cluster_within_group2(srt, ...)
+scop_logo(); env_requirements(); check_r()
+db_Scrublet / db_DoubletDetection / db_scDblFinder / db_scds   # doublet backends
+CycGenePrefetch(...)              # cell-cycle gene prefetch
+GetSimilarFeatures(...); CellTypistModels()
 ```
+
+---
+
+## Capability gaps — NOT in scop 0.8.0 (use standalone packages)
+
+| Capability | Use instead |
+|---|---|
+| **SCENIC / SCENIC+** (GRN) | `scenicplus` standalone (R+Python); or `ov.single` SCENIC wrappers in omicverse-pipeline |
+| **CellPhoneDB / LIANA / NicheNet** (CCC) | `LIANA` / `nichenetr` / `CellPhoneDB` standalone; or omicverse `ov.single.run_liana` |
+| **Milo / scCODA / Propeller** (compositional DA) | `miloR` / `scCODA` (Python) / `propeller` (R) — see omicverse-pipeline DA section |
+| **SecAct / SecActCCC** | `SecAct` standalone |
+| **CNV inference** | `infercnv` / `copykat` R packages |
+| **Metabolism** | `scMetabolism` R package |
+| **scMalignant** (Finder/Region) | `scMalignant` standalone |
+| **scTenifoldKnk** (GRN KO) | `scTenifoldKnk` R package — see perturbation-prediction Route B |
+| **GSVA / Dorothea / Augur / SciBet** | `GSVA` / `dorothea` / `Augur` / `scibet` R packages |
+| **Spatial domain** (BayesSpace/BANKSY) | `BayesSpace` / `BANKSY` R packages; or omicverse-spatial |
+| **Spatial deconvolution** (RCTD/SPOTlight/CARD/STdeconvolve/CytoSPACE) | `spacexr` (RCTD) / standalone; or `ov.space.Deconvolution` in omicverse |
+| **Spatial workflow** (Giotto/Semla/MERINGUE/SmoothClust/CSIDE/SpaNorm/EcoTyper) | respective standalone R packages |
+| **Cross-species homolog conversion** | `biomaRt` / `homologene` R packages |
+| **Train custom CellTypist model** | `celltypist` Python package directly |
+| **Dims estimation** (elbow/JackStraw) | Seurat-native `ElbowPlot` / `JackStraw` |
+| **Multi-modal WNN** | Seurat-native `FindMultiModalNeighbors` |
+
+> **Rule**: if you see a `RunX` verb not in this file, **verify it exists** before using:
+> `exists("RunX", where = asNamespace("scop"))`. Re-run `scripts/scop_api_check.R` after any scop upgrade.

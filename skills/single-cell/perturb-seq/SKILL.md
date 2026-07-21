@@ -8,14 +8,14 @@ primary_tool: Pertpy
 ## When NOT to use this skill
 - Predict perturbation response for **unmeasured** experiments (in-silico KO of unseen genes/drugs) → `single-cell/perturbation-prediction` (GEARS/CPA/scGPT)
 - Only routine scRNA-seq preprocessing / clustering / annotation (no CRISPR guide) → `single-cell/omicverse-pipeline`
-- Only gene essentiality / functional-module simulation (no measured Perturb-seq data) → `single-cell/scop` (`RunscTenifoldKnk`)
+- Only gene essentiality / functional-module simulation (no measured Perturb-seq data) → `single-cell/perturbation-prediction` Route B (scTenifoldKnk via standalone R package — NOT wrapped in scop 0.8.0)
 - bulk CRISPR screen (no single-cell readout) → out of scope (use bulk-screen tools such as MAGeCK)
 
 # Perturb-seq Analysis
 
 **"Analyze my Perturb-seq CRISPR screen"** → Link guide RNA assignments to transcriptional phenotypes in pooled CRISPR screens with single-cell readout to identify gene function.
 
-**Engines**: Python `pertpy` (primary, `pt.tl.Mixscape` / `pt.tl.PseudobulkDE` / `pt.tl.PerturbationSignature`); R `Seurat` Mixscape (alternative classification path).
+**Engines**: Python `pertpy` 1.0+ (primary; `pt.tl.PseudobulkSpace` + `pt.tl.PyDESeq2` / `pt.tl.Mixscape` / `pt.tl.CentroidSpace`); R `Seurat` Mixscape (alternative classification path).
 
 ## Workflow (5 steps)
 
@@ -23,8 +23,8 @@ primary_tool: Pertpy
 |---|---|---|---|
 | 1 | Load + annotate guides | pandas + Cell Ranger CRISPR output | keep only single-guide cells (`num_features==1`); label NT controls `'non-targeting'` (Python) / `'NT'` (Mixscape R) |
 | 2 | Guide QC | value_counts + filter | drop guides with <100 cells; check non-targeting fraction 5–25% |
-| 3 | Pseudobulk DE per perturbation | `pt.tl.PseudobulkDE` | **MANDATORY pseudobulk** — per-cell Wilcoxon = pseudoreplication (meta-methodology principle 3) |
-| 4 | Perturbation signature + embedding | `pt.tl.PerturbationSignature` → `pt.tl.perturbation_embedding` → `pt.tl.cluster_perturbations` | cluster perturbations by phenotype similarity |
+| 3 | Pseudobulk DE per perturbation | `pt.tl.PseudobulkSpace` → `pt.tl.PyDESeq2` (1.0+ API) | **MANDATORY pseudobulk** — per-cell Wilcoxon = pseudoreplication (meta-methodology principle 3) |
+| 4 | Perturbation signature + embedding | `pt.tl.Mixscape().perturbation_signature` → `pt.tl.CentroidSpace.compute` → scanpy `sc.tl.leiden` (1.0+ API) | cluster perturbations by phenotype similarity |
 | 5 | Pathway enrichment | `decoupler.run_ora` on MSigDB | per-perturbation gene sets |
 
 **Canonical entry** (Python — pseudobulk DE is the core path; the discipline lives here):

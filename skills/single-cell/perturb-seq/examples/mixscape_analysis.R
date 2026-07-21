@@ -69,8 +69,10 @@ VlnPlot(seurat, features = 'mixscape_class_p_ko', group.by = 'gene')
 ggsave('mixscape_pko_violin.pdf')
 
 # LDA projection separates perturbed from escaped
+# (Seurat 5+ removed LDAPlot; use RunLDA + DimPlot instead)
 seurat <- MixscapeLDA(seurat, labels = 'gene', nt.class.name = 'NT')
-LDAPlot(seurat)
+seurat <- RunLDA(seurat, reduction.key = 'LDA_')   # compute LDA reduction
+DimPlot(seurat, reduction = 'lda', group.by = 'mixscape_class', label = TRUE)
 ggsave('mixscape_lda.pdf')
 
 # ---------------------------------------------------------------------------

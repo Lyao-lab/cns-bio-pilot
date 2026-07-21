@@ -63,8 +63,9 @@ Source-checked ([omicverse/single/_velo.py](https://github.com/Starlitnightly/om
 ```python
 import omicverse as ov
 v = ov.single.Velo(adata)
-v.preprocess(n_top_genes=2000)           # filter_and_normalize + moments
-v.cal_velocity(method='scvelo')          # default baseline; use 'dynamo' with metabolic labels
+v.preprocess(recipe='monocle', n_neighbors=30, n_pcs=30)   # verified signature (scop-style)
+v.cal_velocity(method='scvelo', n_top_genes=2000)          # NOTE: n_top_genes lives here, not in preprocess.
+                                                            # omicverse default method='dynamo'; 'scvelo' is the recommended baseline.
 # results: adata.layers['velocity'], adata.obsm['velocity_umap']
 ```
 

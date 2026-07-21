@@ -1,6 +1,10 @@
 """Visium HD bin → single-cell segmentation with bin2cell (canonical example).
 
 Reference: omicverse 2.2.3+ (wraps bin2cell) | bin2cell 1.x+ | cellpose 3.0+ | Verify API if version differs
+
+Install (NOT auto-installed in the sc/st envs):
+  pip install bin2cell cellpose
+
 Data assumption: Visium HD output directory with 2µm bin data + paired H&E image.
 
 Pipeline: 2µm bins → cellpose nuclei on H&E → expand to cells → aggregate bins into cells

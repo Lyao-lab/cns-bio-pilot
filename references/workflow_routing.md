@@ -124,7 +124,7 @@ Results look right but the analysis is broken. When you see the left column, run
 | Doublet rate suddenly >15% | QC | ambient RNA or polyploid cells, not true doublets | check cell cycle score; rerun scrublet at lower threshold |
 | cell2location abundance all NaN/0 | spatial deconv | reference signature not trained on raw_counts | check ref_adata.X is log-transformed (should be raw) |
 | Clustering resolution won't rise | scRNA clustering | too few HVGs or batch effect dominates | check n_hvg; run batch_integration first |
-| Annotation confidence all low | annotation | reference/query species or tissue mismatch | ConvertHomologs check; switch to matched reference |
+| Annotation confidence all low | annotation | reference/query species or tissue mismatch | convert homologs via `biomaRt`/`homologene` (NOT scop ConvertHomologs — removed); switch to matched reference |
 | RNA velocity directions scrambled | velocity | spliced/unspliced ratio skewed | check velocyto/kb output; scv.pl.proportions |
 | Spatial domains don't match histology | spatial domains | method ignores space (pure expression clustering) | confirm spatial-aware method (STAGATE/BayesSpace, not K-means) |
 | Enrichment full of housekeeping pathways | GO/KEGG | too few DE genes or no background correction | check universe; use padj<0.05 genes |

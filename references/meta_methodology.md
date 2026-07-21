@@ -51,8 +51,9 @@
 | 10,000 cells treated as 10,000 replicates | per-cell Wilcoxon explosively inflates significance |
 | spots treated as independent samples | spatial autocorrelation inflates n |
 | "cell cluster expresses an LR pair" treated as "cells are signaling" | mRNA co-expression ≠ pathway activation |
+| cell-type proportions (which sum to 1) treated as independent counts | compositional constraint → chi-square / Fisher produce spurious significance + wrong direction |
 
-**Discipline**: Always make **"who is my N"** explicit — into the design matrix, into the legend, into the methods. Default single-cell DE to pseudobulk (aggregate by sample × cell type → DESeq2/edgeR). When n≤3/group, label it exploratory.
+**Discipline**: Always make **"who is my N"** explicit — into the design matrix, into the legend, into the methods. Default single-cell DE to pseudobulk (aggregate by sample × cell type → DESeq2/edgeR). When n≤3/group, label it exploratory. For **cell-type proportion / differential abundance** comparisons: proportions sum to 1, so one cell type going up forces others down — this compositional constraint violates chi-square/Fisher/t-test independence assumptions and inflates false positives. Use **compositional-aware methods**: `miloR` (R, neighborhood-level DA — bypasses annotation-label dependence), `scCODA` (Bayesian compositional, Python/R), or `propeller` (R, cell-type proportion with sample-level replicate). Plain `chi2_contingency` / `fisher_exact` / `chisq.test` on proportion tables is a methodological error at the same level as per-cell DE.
 
 ---
 

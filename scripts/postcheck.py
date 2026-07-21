@@ -293,6 +293,61 @@ def check_code_for_corrected_de(code_text, report):
         report.add("D3", "PASS", f"检测到批次校正 ({hits_corr})，无 DE 调用（合规）")
 
 
+def check_pseudobulk(code_text, report):
+    """D4: 单细胞 DE 是否走 pseudobulk（启发式）。
+    若 DE 信号出现但无 pseudobulk 聚合信号，提示单细胞 DE = 伪重复。
+    """
+    de_signals = ["rank_genes_groups", "FindAllMarkers", "ttest", "wilcoxon"]
+    pb_signals = ["pseudobulk", "PseudobulkSpace", "aggregate_and_filter",
+                  "sc.get.aggregate", "RunDEtest", "PyDESeq2",
+                  "sum", "mean"]   # last two too generic — rely on the specific ones above
+    pb_specific = [p for p in pb_signals if p in code_text if p not in ("sum", "mean")]
+    hits_de = [d for d in de_signals if d in code_text]
+    if hits_de and not pb_specific:
+        report.add("D4", "WARN",
+                   f"检测到单细胞 DE 信号 ({hits_de}) 但无 pseudobulk 聚合 ({pb_specific})——"
+                   "⚠️ 单细胞 Wilcoxon/t-test 是伪重复（meta-methodology 原则 ③）。"
+                   "改用 pseudobulk 聚合（PseudobulkSpace / sc.get.aggregate）+ DESeq2/edgeR。")
+    elif hits_de and pb_specific:
+        report.add("D4", "PASS", f"检测到 pseudobulk 聚合 ({pb_specific}) + DE——合规")
+
+
+def check_ccc_hypothesis(code_text, report):
+    """L2: CCC 分析的语言纪律（启发式）。
+    若代码涉及细胞通讯，提示结果为假设非机制。"""
+    ccc_signals = ["cellchat", "CellChat", "cellphonedb", "CellPhoneDB", "liana",
+                   "LIANA", "run_liana", "run_cellphonedb", "nichenetr", "NicheNet"]
+    causal_words = ["regulates", "activates", "inhibits", "induces", "promotes",
+                    "drives", "causes"]
+    hits_ccc = [c for c in ccc_signals if c in code_text]
+    hits_causal = [w for w in causal_words if w in code_text]
+    if hits_ccc and hits_causal:
+        report.add("L2", "WARN",
+                   f"CCC 分析 ({hits_ccc}) 附近出现因果词 ({hits_causal})——"
+                   "⚠️ mRNA 共表达 ≠ 蛋白活性 ≠ 通路激活；CCC 是统计关联假设，"
+                   "用 'associated with' 而非 'regulates'（meta-methodology 原则 ①③）。")
+    elif hits_ccc:
+        report.add("L2", "PASS", f"检测到 CCC 分析 ({hits_ccc})，无因果词（合规）")
+
+
+def check_compositional(code_text, report):
+    """C1: 细胞比例分析的 compositional 纪律（启发式）。
+    若对细胞比例直接用卡方/Fisher，提示用 scCODA/Milo/propeller。"""
+    proportion_signals = ["cellproportion", "cell_proportion", "obs['celltype'].value_counts",
+                          "groupby('celltype').size", "composition"]
+    chi_signals = ["chi2_contingency", "fisher_exact", "chisquare", "chi_square",
+                   "chi-square", "fisher.test", "chisq.test"]
+    hits_prop = [p for p in proportion_signals if p in code_text]
+    hits_chi = [c for c in chi_signals if c in code_text]
+    if hits_prop and hits_chi:
+        report.add("C1", "WARN",
+                   f"对细胞比例 ({hits_prop}) 直接用卡方/Fisher ({hits_chi})——"
+                   "⚠️ 细胞比例是 compositional data（和为 1，约束），普通卡方/Fisher 忽略此约束 → 假阳性 + 方向误读。"
+                   "改用 miloR / scCODA / propeller（meta-methodology 原则 ③）。")
+    elif hits_prop:
+        report.add("C1", "PASS", f"细胞比例分析 ({hits_prop})，未检测到卡方/Fisher（合规）")
+
+
 # ----------------------------- main -----------------------------
 
 def main():
@@ -349,6 +404,9 @@ def main():
     elif ttype == "code":
         code_text = Path(target).read_text(encoding="utf-8", errors="ignore")
         check_code_for_corrected_de(code_text, report)
+        check_pseudobulk(code_text, report)
+        check_ccc_hypothesis(code_text, report)
+        check_compositional(code_text, report)
         check_language(code_text, report)
         check_fabrication(code_text, report)
 

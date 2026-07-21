@@ -133,7 +133,7 @@ When information is missing, use explicit placeholders:
   - Graphical abstracts → `visualization/scientific-schematics` (graphical-abstract mode)
 - Missing information (n / statistics / error bars) uses the placeholder `[AUTHOR TO SPECIFY: ...]`; never fabricate
 
-## Pre-Output Checklist (core 5 in `references/preoutput_checklist.md` + skill-specific)
+## Pre-Output Checklist (core 5 in **top-level** `references/preoutput_checklist.md` + skill-specific)
 
 - [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see `references/preoutput_checklist.md`)
 - [ ] Legend self-contained (readable without body text)

@@ -6,7 +6,7 @@
 >
 > **19 sub-skills** · router architecture · meta-methodology discipline · publication-grade aesthetics.
 
-[![version](https://img.shields.io/badge/version-14.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
+[![version](https://img.shields.io/badge/version-15.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
 
 ---
 
@@ -147,19 +147,19 @@ The router (`SKILL.md`) reads your request, picks **one** sub-skill, loads only 
 
 ---
 
-## The 18 sub-skills
+## The 19 sub-skills
 
 | # | Category | Sub-skill | What it does |
 |---|---|---|---|
-| 1 | single-cell | `omicverse-pipeline` | Full pipeline: QC → doublet → cluster → annotate → batch → comm → trajectory |
-| 2 | single-cell | `scop` | R/Seurat 200+ Run* verbs; CytoTRACE/Milo/SCENIC+/Giotto (no omicverse equivalent) |
+| 1 | single-cell | `omicverse-pipeline` | Full pipeline: ambient removal → QC → doublet → cluster → annotate → batch → comm → trajectory |
+| 2 | single-cell | `scop` | R/Seurat pipeline, ~40 verified Run* verbs (scop 0.8.0); CytoTRACE/Palantir/CellChat/Monocle3/SCVELO wrapped; SCENIC+/Milo/RCTD NOT wrapped (use standalone) |
 | 3 | single-cell | `perturbation-prediction` | Two routes: (A) ML-based GEARS/CPA/scGPT (needs Perturb-seq); (B) GRN-based virtual KO CellOracle/SCENIC+/scTenifoldKnk (needs only WT scRNA) |
-| 4 | single-cell | `perturb-seq` | Analyze existing Perturb-seq/CROP-seq: Mixscape, differential perturbation, guide QC |
+| 4 | single-cell | `perturb-seq` | Analyze existing Perturb-seq/CROP-seq: Mixscape, pseudobulk DE (pertpy 1.0+ API), guide QC |
 | 5 | single-cell | `rna-velocity` | 5 engines (scvelo/dynamo/latentvelo/graphvelo/regvelo) + cell2fate/cellDancer/pyro-Velocity fallbacks + CellRank 2 |
 | 6 | single-cell | `research-planner` | Zero-code study design: question → pattern → samples → modules → validation ladder |
 | 7 | spatial | `omicverse-spatial` | Full spatial pipeline: IO → spatial neighbors → SVG → domains → comm → viz |
-| 8 | spatial | `deconvolution` | `ov.space.Deconvolution` 5 methods: cell2location/Tangram/RCTD/Starfysh/flashdeconv |
-| 9 | spatial | `multiomics` | High-res platforms (Stereo-seq/Visium HD/Slide-seq): cellpose, SpatialData |
+| 8 | spatial | `deconvolution` | `ov.space.Deconvolution` unified wrapper (cell2location/Tangram/RCTD/Starfysh/flashdeconv; 3 installed by default) |
+| 9 | spatial | `multiomics` | High-res platforms (Stereo-seq/Visium HD/Slide-seq): cellpose/bin2cell, SpatialData |
 | 10 | spatial | `proteomics` | Spatial proteomics (CODEX/IMC/MIBI): scimap phenotyping + gating |
 | 11 | general-bio | `omicverse-bulk` | Bulk DE → enrichment → WGCNA → PPI, pure Python (pyDESeq2/GSEApy/decoupler) |
 | 12 | visualization | `omicverse-plotting` | `ov.pl.*` 80+ functions; dual-track Morlandi palette; CNS aesthetics |
@@ -169,6 +169,7 @@ The router (`SKILL.md`) reads your request, picks **one** sub-skill, loads only 
 | 16 | presentation | `methods-writer` | Protocol → publication-grade Methods text (CONSORT/STROBE/PRISMA/TRIPOD/ARRIVE/STARD) |
 | 17 | presentation | `results-writer` | Results → narrative prose; Results ≠ Discussion; no fabricated PMIDs |
 | 18 | presentation | `figure-legend-writer` | Self-contained publication legends for any figure type |
+| 19 | presentation | `figure-architect` | Main-figure deep design: inventory → narrative spine → panel design → pre-build review |
 
 ---
 
@@ -177,7 +178,7 @@ The router (`SKILL.md`) reads your request, picks **one** sub-skill, loads only 
 ```
 cns-bio-pilot/
 ├── SKILL.md                      # Router (read first; routes to one sub-skill)
-├── skill-index.json              # Compact machine-readable index (18 skills)
+├── skill-index.json              # Compact machine-readable index (19 skills)
 ├── scripts/
 │   └── postcheck.py              # Scientific rigor auto-check (run after analysis)
 ├── references/                   # Top-level references (loaded on demand)
@@ -185,12 +186,12 @@ cns-bio-pilot/
 │   ├── omicverse_guide.md        # OmicVerse API cheat-sheet (task → API)
 │   ├── figure_aesthetics.md      # CNS publication spec (palette / fonts / non-overlap)
 │   └── meta_methodology.md       # 6 meta-methodology principles + self-check
-└── skills/                       # 18 sub-skills (load only the matched one)
+└── skills/                       # 19 sub-skills (load only the matched one)
     ├── single-cell/   (6 skills)
     ├── spatial/       (4 skills)
     ├── general-bio/   (1 skill)
     ├── visualization/ (3 skills)
-    └── presentation/  (4 skills)
+    └── presentation/  (5 skills)
 ```
 
 Each sub-skill has the same 4-piece handoff structure:

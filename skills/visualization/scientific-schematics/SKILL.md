@@ -102,9 +102,9 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
 - Reference docs: `references/best_practices.md`, `references/diagram_types.md`
 - Script entry `scripts/generate_schematic.py`
 
-## Pre-Output Checklist (core 5 in `references/preoutput_checklist.md` + skill-specific)
+## Pre-Output Checklist (core 5 in **top-level** `references/preoutput_checklist.md` + skill-specific)
 
-- [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see `references/preoutput_checklist.md`)
+- [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see **top-level** `references/preoutput_checklist.md`)
 - [ ] No fake/placeholder data in schematic (pure mechanism, no bars/plots)
 - [ ] OPENROUTER_API_KEY set; quality score ≥8.5/10
 

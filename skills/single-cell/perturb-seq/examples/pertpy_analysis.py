@@ -118,7 +118,12 @@ diff = ps.compute_control_diff(pdata, target_col='target_gene',
 sc.pl.umap(adata, color='target_gene')
 sc.pl.heatmap(sig_adata, var_names=sig_adata.var_names[:30],
               groupby='target_gene', swap_axes=True)
-ms.plot_heatmap(adata, pert_key='target_gene', control='non-targeting')
+# Mixscape heatmap requires a specific target_gene (verify the gene exists first):
+_targets = [g for g in adata.obs['target_gene'].unique() if g != 'non-targeting']
+if _targets:
+    ms.plot_heatmap(adata, pert_key='target_gene',
+                    target_gene=_targets[0],   # positional, no default — must be specified
+                    control='non-targeting')
 
 # ---------------------------------------------------------------------------
 # 8. Pathway enrichment (decoupler was removed from pertpy at 0.11.4 —

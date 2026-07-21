@@ -1,7 +1,7 @@
 {
   "_meta": {
     "skill": "cns-bio-pilot",
-    "version": "14.0.0",
+    "version": "15.0.0",
     "purpose": "Compact index — read this to locate a sub-skill, then load the matched one. Never load multiple at once.",
     "engines": [
       "omicverse (Python default)",

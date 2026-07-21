@@ -285,7 +285,7 @@ A weak output:
 - **Figure legends** (companion references) → `presentation/figure-legend-writer`
 - Reference: rule modules under `references/` — clarification-first / full-results-writing / results-boundary / citation-support / upload-recommendation
 
-## Pre-Output Checklist (core 5 in `references/preoutput_checklist.md` + skill-specific)
+## Pre-Output Checklist (core 5 in **top-level** `references/preoutput_checklist.md` + skill-specific)
 
 - [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see `references/preoutput_checklist.md`)
 - [ ] Results ≠ Discussion (no mechanism inference in Results)

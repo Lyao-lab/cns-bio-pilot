@@ -1,6 +1,10 @@
 """Multi-modal spatial analysis with SpatialData (canonical example).
 
 Reference: spatialdata 0.7+ | spatialdata-io 0.1+ | scanpy 1.10+ | Verify API if version differs
+
+Install (NOT auto-installed in the sc/st envs):
+  pip install spatialdata spatialdata-io
+
 Data assumption: platform output directory (Xenium / Visium HD / Stereo-seq) on disk.
 
 API notes:

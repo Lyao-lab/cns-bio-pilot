@@ -133,7 +133,7 @@ If the request is simple, compress the structure but keep assumptions and limits
 - Label fonts require the font to be available on the system; Arial falls back to DejaVu Sans if unavailable
 - PNG output preserves transparency if any input images have alpha channels
 
-## Prerequisites
+## Dependencies
 
 ```text
 pip install Pillow numpy

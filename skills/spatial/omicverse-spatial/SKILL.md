@@ -96,7 +96,7 @@ ov.space.pySpaceFlow(adata)
 - **GraphST** (large data): `pip install GraphST`
 - **MENDER** (2024 Nat Commun, cell-type-aware, fast): standalone
 - **SpatialGlue** (2024 Nat Methods, multi-omics): standalone
-- **BayesSpace** (R): via `single-cell/scop` `RunBayesSpace`
+- **BayesSpace** (R): standalone `BayesSpace` package (NOT wrapped in scop 0.8.0 — install directly)
 
 Decision: default STAGATE (wrapped); sharp boundaries → BANKSY (standalone); large samples → GraphST (standalone); cell-type-aware speed → MENDER (standalone); multi-omics → SpatialGlue (standalone).
 

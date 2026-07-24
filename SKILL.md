@@ -33,11 +33,11 @@ Different tasks live in different conda envs; wrong env → `ModuleNotFoundError
 
 | Task type | conda env | Key packages | Activate |
 |---|---|---|---|
-| Single-cell (omicverse primary) | `sc` | omicverse 2.2.3 + scanpy + scvelo | `conda activate sc` |
+| Single-cell (omicverse primary) | `sc` | omicverse 2.2.4 + scanpy + scvelo | `conda activate sc` |
 | Spatial (squidpy) | `st` | squidpy 1.2.2 + scanpy | `conda activate st` |
 | R/scop | `scop_env` | scanpy + R/scop | `conda activate scop_env` |
 
-> **2026-07 correction**: cell2location 0.1.5 + scvi 1.4.2 + omicverse 2.2.3 coexist in the `sc` env — **no separate c2l env needed** (the early anndata 0.10.x pin conflict is resolved). Deconvolution uses `ov.space.Deconvolution.deconvolution(method='cell2location')`.
+> **2026-07 correction**: cell2location 0.1.5 + scvi 1.4.2 + omicverse 2.2.4 coexist in the `sc` env — **no separate c2l env needed** (the early anndata 0.10.x pin conflict is resolved). Deconvolution uses `ov.space.Deconvolution.deconvolution(method='cell2location')`.
 
 > postcheck.py must also run in an env **with anndata installed** (e.g. `sc`), otherwise "anndata not found".
 
@@ -97,7 +97,7 @@ Data has spatial coords / tissue image?
 - **cell2location deconvolution** → `spatial/deconvolution` (`ov.space.Deconvolution.deconvolution(method='cell2location')` — 5 methods unified; no separate env needed since 2026-07)
 - **After batch correction** → embedding (`X_scVI` / `X_harmony`) is for visualization / clustering only — it removes real biological signal, using it for DE / enrichment also strips disease signal
 - **RNA velocity** → requires spliced/unspliced layers; missing → run velocyto first; without splice kinetics you can only do pseudotime
-- **Foundation models (scGPT/Geneformer/UCE)** → not yet wrapped in omicverse 2.2.3 (`ov.fm` does **not** exist); use as standalone packages; **always run a linear baseline** for perturbation prediction (Nature Methods 2025)
+- **Foundation models (scGPT/Geneformer/UCE)** → not yet wrapped in omicverse 2.2.4 (`ov.fm` does **not** exist); use as standalone packages; **always run a linear baseline** for perturbation prediction (Nature Methods 2025)
 
 ## When to Use / When NOT to Use (engine choice)
 
@@ -127,8 +127,9 @@ Data has spatial coords / tissue image?
 
 ## Version & architecture
 
-- **Version**: 15.1.0 (audit patch: surface-file narrative cleanup — top SKILL.md / README / skill-index.json / workflow_routing / omicverse-pipeline / rna-velocity all now reflect "40 verified Run\* in scop 0.8.0; Milo/SCENIC+/SecAct/RCTD/Giotto/BANKSY/EcoTyper NOT wrapped, use standalone"; 3 surviving fabricated scop APIs fixed (WNN_integrate / ClusterTreePlot / PseudotimeProjectionPlot) + h5ad_to_srt prereq contradiction; scop_api_check.R regex tightened `[A-Za-z]+_integrate` + negative-whitelist leak detection; postcheck docstring L2/C1; path disambiguation + §9b/§9c order)
+- **Version**: 15.2.0 (omicverse 2.2.3→2.2.4 upgrade — verified all 109 ov.* + 12 pt.* APIs still present (0 breakage); `ov.space.GASTON` newly wrapped in 2.2.4, added to spatial-domain methods + decision table; `ov.synbio`/`ov.Agent` new modules noted but out of skill scope; all version refs 2.2.3→2.2.4 across 12 files; anndata pin 0.12.19→0.11.4 noted; BANKSY/BINARY/GraphST/COMMOT/cell2location/Hotspot/SpatialDE/CONCORD/scGPT/Geneformer/scFoundation/UCE confirmed still standalone)
 
+<!-- v15.2: 2026-07-24, omicverse 2.2.3→2.2.4 upgrade + GASTON wrapper added -->
 <!-- v15.1: 2026-07-21, narrative+API audit patch (scope: surface files + 3 surviving fabricated APIs + checker hardening) -->
 <!-- v15.0: 2026-07-21, capability honesty — scop 40-verb truth + pertpy 1.0 + postcheck D4/L2/C1 + compositional §9c + scop_api_check.R -->
 <!-- v14.0: 2026-07-21, code externalization — SKILL.md → examples/ + references/ -->

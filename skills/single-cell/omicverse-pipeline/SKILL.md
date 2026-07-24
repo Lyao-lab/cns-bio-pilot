@@ -64,7 +64,7 @@ import omicverse as ov
 ov.pp.qc(
     adata,
     mode='seurat',                       # 'seurat' (tresh dict) | 'mads' (5×MAD auto)
-    doublets_method='scdblfinder',       # DEFAULT in ov 2.2.3 — Python port of R scDblFinder
+    doublets_method='scdblfinder',       # DEFAULT in ov 2.2.4 — Python port of R scDblFinder
                                          # (xgboost on kNN+cxds). Alt: 'scrublet' / 'doubletfinder' / 'sccomposite'
     batch_key='sample',                  # REQUIRED for multi-sample: detect doublets per sample
     filter_doublets=True,
@@ -89,7 +89,7 @@ Decision: `scdblfinder` default (Python port of R scDblFinder via `pyscdblfinder
 
 Ambient ("soup") RNA = cell-free mRNA from lysed cells that contaminates every droplet. Left uncorrected it inflates marker genes in cell types that never expressed them and biases DE, annotation, and trajectory inference. **For FFPE, nuclei, and any run with visible background, ambient removal is NOT optional** — skipping it is a silent landmine.
 
-**Canonical entry** (6-backend dispatcher, omicverse 2.2.3):
+**Canonical entry** (6-backend dispatcher, omicverse 2.2.4):
 ```python
 import omicverse as ov
 ov.pp.ambient.remove_ambient(adata, method='soupx', raw=raw_adata)   # or 'fastcar' / 'decontx' / 'sccdc' / 'cellbender' / 'scar'
@@ -214,7 +214,7 @@ ov.single.AnnotationRef(adata, ref='...')  # with reference (CellTypist/SingleR 
 ov.single.gptcelltype(adata)        # LLM-assisted, needs API key
 ```
 
-> ⚠️ **Foundation-model reality check (2025)**: scGPT / Geneformer / scFoundation / UCE do **not** dominate annotation or perturbation prediction. Ahlmann-Eltze et al. *Nat Methods* 2025 ([s41592-025-02772-6](https://www.nature.com/articles/s41592-025-02772-6)) showed 5 FMs all lose to a linear baseline for perturbation; Kedzierska et al. *Genome Biol* 2025 ([s13059-025-03574-x](https://link.springer.com/article/10.1186/s13059-025-03574-x), 107+ citations) and Wu et al. *Genome Biol* 2025 ([s13059-025-03781-6](https://link.springer.com/article/10.1186/s13059-025-03781-6), 22-tissue benchmark) show Geneformer/scGPT zero-shot annotation is brittle and simple methods (CellTypist/SingleR/scVI) often win. **Rule: always benchmark any FM against a simple baseline (CellTypist / SingleR / scVI + logistic) and only adopt the FM if it clearly wins for your specific task.** `ov.fm` does **not** exist in omicverse 2.2.3 — use FMs as standalone packages. Frontier options: **scNET** (Nat Methods 2025, PPI-enhanced gene embedding), **TranscriptFormer** (CZI 2025, first generative multi-species FM), **UCE** (cross-species embedding) — all experimental, baseline first.
+> ⚠️ **Foundation-model reality check (2025)**: scGPT / Geneformer / scFoundation / UCE do **not** dominate annotation or perturbation prediction. Ahlmann-Eltze et al. *Nat Methods* 2025 ([s41592-025-02772-6](https://www.nature.com/articles/s41592-025-02772-6)) showed 5 FMs all lose to a linear baseline for perturbation; Kedzierska et al. *Genome Biol* 2025 ([s13059-025-03574-x](https://link.springer.com/article/10.1186/s13059-025-03574-x), 107+ citations) and Wu et al. *Genome Biol* 2025 ([s13059-025-03781-6](https://link.springer.com/article/10.1186/s13059-025-03781-6), 22-tissue benchmark) show Geneformer/scGPT zero-shot annotation is brittle and simple methods (CellTypist/SingleR/scVI) often win. **Rule: always benchmark any FM against a simple baseline (CellTypist / SingleR / scVI + logistic) and only adopt the FM if it clearly wins for your specific task.** `ov.fm` does **not** exist in omicverse 2.2.4 — use FMs as standalone packages. Frontier options: **scNET** (Nat Methods 2025, PPI-enhanced gene embedding), **TranscriptFormer** (CZI 2025, first generative multi-species FM), **UCE** (cross-species embedding) — all experimental, baseline first.
 
 ### Annotation principles (not just API — how to assign labels responsibly)
 
@@ -296,7 +296,7 @@ ov.single.Monocle(adata)
 
 ## 9b. Multi-omics integration (ov.single.* — all wrapped, no separate package needed)
 
-Verified available in omicverse 2.2.3 (`sc` env). Pick by which modalities you have.
+Verified available in omicverse 2.2.4 (`sc` env). Pick by which modalities you have.
 
 ### Method selection by modality combination
 
@@ -357,7 +357,7 @@ ov.pl.violin(adata, keys=['CD3D'], groupby='celltype')
 - `layers['counts']` MUST be saved **before** `ov.pp.qc`, otherwise DE/velocity have no raw counts. After ambient removal (§1.5), re-store it from the corrected `.X` (`adata.layers['counts'] = adata.X.copy()`) so downstream steps use cleaned counts.
 - **Ambient removal order**: §1.5 must run BEFORE §2 QC. Contaminated counts make mt%, doublet rate, and markers misleading. SoupX/FastCAR run on raw counts directly; DecontX/scCDC need a throwaway clustering first (§2-§5 once → decontaminate → re-run §3-§5 on cleaned counts).
 - **`tresh` not `mt_thresh`**: `ov.pp.qc` has NO `mt_thresh` parameter — passing it is silently swallowed by `**kwargs`. Use `tresh={'mito_perc': <frac>, ...}` (seurat mode) or `mode='mads', nmads=5` (auto).
-- **Default doublet method is `scdblfinder`** (not scrublet) in omicverse 2.2.3 — requires `pyscdblfinder` (auto-falls back to `scrublet` if missing). No need to specify unless you want a different method.
+- **Default doublet method is `scdblfinder`** (not scrublet) in omicverse 2.2.4 — requires `pyscdblfinder` (auto-falls back to `scrublet` if missing). No need to specify unless you want a different method.
 - After scVI integration, recompute every neighbors/umap/leiden on `use_rep='X_scVI'`.
 - `ov.pp.leiden(resolution='auto')` depends on an existing neighbors graph — make sure step 4 is done.
 - For multi-sample doublet detection always pass `batch_key`, otherwise cross-sample false doublets explode.

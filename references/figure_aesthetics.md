@@ -223,7 +223,7 @@ sc.pl.umap(adata, color='cell_type', palette=CELL_TYPE_COLORS)
 
 ## 6. Aligning ov.pl with This Spec (source-verified)
 
-> Verified by reading omicverse 2.2.3 source (`omicverse/pl/_plot_backend.py`, `set_rcParams_scanpy` line 1641). `ov.plot_set()` is NOT a black box — here is exactly what it does and the gaps you must fill.
+> Verified by reading omicverse 2.2.x source (`omicverse/pl/_plot_backend.py`, `set_rcParams_scanpy` line 1641 — line number from 2.2.3 read; 2.2.4 may shift but logic unchanged). `ov.plot_set()` is NOT a black box — here is exactly what it does and the gaps you must fill.
 
 ### What `ov.plot_set()` actually sets
 

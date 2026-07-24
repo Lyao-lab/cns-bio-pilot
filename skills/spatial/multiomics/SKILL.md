@@ -64,7 +64,7 @@ sq.gr.spatial_autocorr(adata, mode='moran', genes=adata.var_names[:500])
 | **Any platform + H&E/IF image** | **cellpose** (cyto2 / nuclei model) | Deep-learning segmentation; needs paired image | `pip install cellpose` |
 | **No image, want fast estimate** | **SAINSC** (2024) or **stardist** | SAINSC: kernel-density cell calling from expression only | standalone |
 
-> **Visium HD bin2cell**: full workflow (load → cellpose nuclei → expand → aggregate → sync geometries → quality check) is in `examples/visium_hd_bin2cell.py`. **Verified API** (omicverse 2.2.3): `ov.io.read_visium_hd` / `ov.space.visium_10x_hd_cellpose_expand` / `ov.space.bin2cell` / `ov.space.sync_visium_hd_seg_geometries`.
+> **Visium HD bin2cell**: full workflow (load → cellpose nuclei → expand → aggregate → sync geometries → quality check) is in `examples/visium_hd_bin2cell.py`. **Verified API** (omicverse 2.2.4): `ov.io.read_visium_hd` / `ov.space.visium_10x_hd_cellpose_expand` / `ov.space.bin2cell` / `ov.space.sync_visium_hd_seg_geometries`.
 
 ### Segmentation quality assessment (mandatory after segmenting)
 

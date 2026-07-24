@@ -1,6 +1,6 @@
 # Figure Layout & Composition (omicverse-style)
 
-> Multi-panel figure composition learned from omicverse 2.2.3 source + official plotting tutorials. The philosophy is *not* about layout APIs — it's about five visual decisions that make figures look clean even with plain matplotlib.
+> Multi-panel figure composition learned from omicverse 2.2.x source + official plotting tutorials. The philosophy is *not* about layout APIs — it's about five visual decisions that make figures look clean even with plain matplotlib.
 >
 > **Companion files**: `figure_aesthetics.md` (technical spec: color/font/non-overlap), `figure_design.md` (what chart type + information hierarchy + statistics visualization). Three references together cover CNS-grade plotting end-to-end.
 
@@ -9,7 +9,7 @@
 **omicverse almost never hand-crafts fancy GridSpec layouts.** Its real approach:
 1. Every `ov.pl.*` function accepts `ax=` → make single cells via `plt.subplots`, pass `ax=`, set `show=False`
 2. Each subplot auto-applies omicverse's five signature decisions (below) → looks clean by default
-3. Multi-panel happens in only three built-ins: `embedding(color=[...])`, `embedding_celltype` (UMAP + lollipop), and side-by-side volcanoes (via manual gridspec — `ov.pl.stacking_vol` does NOT exist in omicverse 2.2.3)
+3. Multi-panel happens in only three built-ins: `embedding(color=[...])`, `embedding_celltype` (UMAP + lollipop), and side-by-side volcanoes (via manual gridspec — `ov.pl.stacking_vol` does NOT exist in omicverse 2.2.4, verified)
 4. Cross-heterogeneous composition (UMAP + dotplot + violin) → hand-write GridSpec, but keep the five signatures
 
 So "omicverse-style composite" = **clean single cells × N + external shared legend/colorbar**, not fancy grids.
@@ -143,7 +143,7 @@ ov.pl.marker_heatmap(adata)   # or complexheatmap
 ```
 
 ### Template D — Side-by-side volcanoes (manual gridspec; no built-in)
-> `ov.pl.stacking_vol` does NOT exist in omicverse 2.2.3. Use manual gridspec with `ov.pl.volcano` per panel.
+> `ov.pl.stacking_vol` does NOT exist in omicverse 2.2.4. Use manual gridspec with `ov.pl.volcano` per panel.
 ```python
 fig, axes = plt.subplots(1, n_datasets, figsize=(5*n_datasets, 4))
 for ax, (name, df) in zip(axes, data_dict.items()):

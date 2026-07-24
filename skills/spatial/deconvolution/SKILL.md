@@ -17,17 +17,17 @@ description: Visium 等多细胞 spot 的细胞类型去卷积。基于 OmicVers
 
 | Package | sc env version | Status |
 |---|---|---|
-| omicverse | 2.2.3 | ✅ |
+| omicverse | 2.2.4 | ✅ |
 | cell2location | 0.1.5 | ✅ coexists with omicverse (revises earlier "needs separate env" verdict) |
 | scvi-tools | 1.4.2 | ✅ |
 | tangram | 1.0.4 | ✅ |
 | liana / cellrank | 1.7.3 / 2.0.7 | ✅ |
 
-> **Important correction** (2026-07): earlier omicverse versions pinned anndata 0.10.x, conflicting with cell2location dependencies. **omicverse 2.2.3 resolves this conflict**; cell2location is directly usable in the `sc` env, **no separate c2l env required**. If your env still reports an anndata conflict, upgrade omicverse to ≥2.2.x.
+> **Important correction** (2026-07): earlier omicverse versions pinned anndata 0.10.x, conflicting with cell2location dependencies. **omicverse 2.2.4 resolves this conflict**; cell2location is directly usable in the `sc` env, **no separate c2l env required**. If your env still reports an anndata conflict, upgrade omicverse to ≥2.2.x.
 
 ## 1. Five-method main entry (`ov.space.Deconvolution`)
 
-Source-verified (omicverse 2.2.3): `deconvolution(method=...)` supports 5 values.
+Source-verified (omicverse 2.2.4): `deconvolution(method=...)` supports 5 values.
 
 | `method` | Algorithm | Best for | GPU | Installed in `sc` env? |
 |---|---|---|---|---|

@@ -1,4 +1,4 @@
-# Ambient RNA Removal (omicverse 2.2.3 — verified API)
+# Ambient RNA Removal (omicverse 2.2.4 — verified API)
 
 Ambient ("soup") RNA = cell-free mRNA from lysed cells that contaminates every droplet. Left uncorrected it inflates marker genes in cell types that never expressed them and biases DE, annotation, and trajectory inference. **For FFPE, nuclei, and any run with visible background, ambient removal is NOT optional** — skipping it is a silent landmine.
 
@@ -6,7 +6,7 @@ Ambient ("soup") RNA = cell-free mRNA from lysed cells that contaminates every d
 
 ## Unified API
 
-omicverse 2.2.3 unifies 6 backends under one dispatcher:
+omicverse 2.2.4 unifies 6 backends under one dispatcher:
 
 ```python
 ov.pp.ambient.remove_ambient(adata, method=..., raw=..., cluster_key=..., **kwargs)

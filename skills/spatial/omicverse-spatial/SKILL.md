@@ -69,13 +69,13 @@ ov.space.spatial_neighbors(adata, n_neighbors=6, method='knn')
 # outputs adata.obsp['spatial_connectivities'] / ['distances']
 ```
 
-> **API correction (v12.5)**: was previously written as `ov.pp.spatial_neighbors` — that does NOT exist. The correct location is **`ov.space.spatial_neighbors`** (verified omicverse 2.2.3). `ov.pp` only has `neighbors` (non-spatial).
+> **API correction (v12.5)**: was previously written as `ov.pp.spatial_neighbors` — that does NOT exist. The correct location is **`ov.space.spatial_neighbors`** (verified omicverse 2.2.4). `ov.pp` only has `neighbors` (non-spatial).
 
 All downstream SVG / spatial domain / communication methods depend on this graph.
 
 ## 4. Spatial domains / tissue regions
 
-> **Verified in omicverse 2.2.3** — ov.space wraps these domain methods: `pySTAGATE` / `pySTAligner` / `pySpaceFlow`. **BANKSY / BINARY / GraphST / MENDER / SpatialGlue are NOT wrapped in ov.space** — install each as a standalone package or use squidpy/BayesSpace equivalents.
+> **Verified in omicverse 2.2.4** — ov.space wraps these domain methods: `pySTAGATE` / `pySTAligner` / `pySpaceFlow` / `GASTON`. **BANKSY / BINARY / GraphST / MENDER / SpatialGlue are NOT wrapped in ov.space** — install each as a standalone package or use squidpy/BayesSpace equivalents.
 
 ```python
 # STAGATE (graph autoencoder, most common, robust to noise) — wrapped in ov.space
@@ -88,6 +88,19 @@ ov.space.pySTAligner(adata_list)   # for merging multiple Visium sections
 
 # SpaceFlow (spatial flow / continuity-aware embedding) — wrapped
 ov.space.pySpaceFlow(adata)
+
+# GASTON (Nat Methods 2024, isoform-aware spatial domains via piecewise-linear
+# depth model; NEW wrapper in omicverse 2.2.4) — wrapped
+gaston = ov.space.GASTON(adata)
+gaston.get_gaston_input(get_rgb=False, spot_umi_threshold=50)
+gaston.train(isodepth_arch=[20,20], expression_fn_arch=[20,20],
+             num_epochs=10000, num_restarts=30, out_dir='result/gaston')
+gaston.cal_iso_depth(num_domains=10)            # derive discrete domains
+gaston.plot_isodepth(show_streamlines=True)     # continuous isodepth map
+gaston.plot_clusters(domain_colors=...)         # discrete domain labels
+# Full API: bin_data / filter_genes / get_restricted_adata /
+#   get_top_pearson_residuals / load_rescale / pw_linear_fit / restrict_spot /
+#   plot_clusters_restrict / plot_gene_gastonrex / plot_gene_pwlinear / plot_gene_raw
 ```
 
 **NOT wrapped in ov.space (install standalone)**:
@@ -98,7 +111,7 @@ ov.space.pySpaceFlow(adata)
 - **SpatialGlue** (2024 Nat Methods, multi-omics): standalone
 - **BayesSpace** (R): standalone `BayesSpace` package (NOT wrapped in scop 0.8.0 — install directly)
 
-Decision: default STAGATE (wrapped); sharp boundaries → BANKSY (standalone); large samples → GraphST (standalone); cell-type-aware speed → MENDER (standalone); multi-omics → SpatialGlue (standalone).
+Decision: default STAGATE (wrapped); isoform-aware or continuous-depth domains → GASTON (wrapped, 2.2.4); sharp boundaries → BANKSY (standalone); large samples → GraphST (standalone); cell-type-aware speed → MENDER (standalone); multi-omics → SpatialGlue (standalone).
 
 > **2025 benchmark consensus** (Genome Biol / iMeta, 26 methods / 63 sections): no single SOTA; results vary by tissue/platform. **Run at least 2 methods for key domain conclusions**; commit only when directions agree.
 

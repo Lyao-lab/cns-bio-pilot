@@ -1,6 +1,6 @@
 """Visium HD bin → single-cell segmentation with bin2cell (canonical example).
 
-Reference: omicverse 2.2.3+ (wraps bin2cell) | bin2cell 1.x+ | cellpose 3.0+ | Verify API if version differs
+Reference: omicverse 2.2.4+ (wraps bin2cell) | bin2cell 1.x+ | cellpose 3.0+ | Verify API if version differs
 
 Install (NOT auto-installed in the sc/st envs):
   pip install bin2cell cellpose

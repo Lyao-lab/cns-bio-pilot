@@ -1,8 +1,8 @@
-# Multi-omics Integration (omicverse 2.2.3 — verified API)
+# Multi-omics Integration (omicverse 2.2.4 — verified API)
 
 > Companion to `SKILL.md` §9b. This file holds the full per-modality API code; SKILL.md keeps the modality-selection table (the decision logic) and a pointer here.
 
-All APIs below verified available in omicverse 2.2.3 (`sc` env). Pick by which modalities you have.
+All APIs below verified available in omicverse 2.2.4 (`sc` env). Pick by which modalities you have.
 
 ## MOFA+ — multi-omics factor analysis (RNA + ATAC + protein, joint factor model)
 

@@ -4,7 +4,7 @@ description: 单细胞全流程（ambient 去除→QC→doublet→降维聚类�
 ---
 
 ## When NOT to use this skill
-- cell2location spatial deconvolution → use `spatial/deconvolution` (not registered in omicverse)
+- cell2location spatial deconvolution → use `spatial/deconvolution` (handled by `ov.space.Deconvolution`, but routed there for the full deconvolution workflow + quality assessment)
 - R/Seurat environment, or scop-wrapped tools (CytoTRACE/Palantir/CellChat/Monocle3/SCVELO) → use `single-cell/scop`
 - Standalone tools NOT in scop or omicverse (Milo/SCENIC+/SecAct/RCTD/Giotto/BANKSY/EcoTyper/SmoothClust) → install standalone packages directly
 - Predict unmeasured perturbations (unseen gene/drug KO) → use `single-cell/perturbation-prediction`

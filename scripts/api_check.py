@@ -72,7 +72,7 @@ def extract_apis_from_skill(skill_dir, prefix="ov"):
     if prefix == "pt":
         modules = r"tl|pl|tools|data|datasets|io|utils"
     else:
-        modules = r"pp|pl|single|space|bulk|io|plot|read|utils|fm|style"
+        modules = r"pp|pl|single|space|bulk|io|plot|read|utils|fm|style|synbio|Agent"
     apis = set()
     # 二级 API: <prefix>.<module>.<name>
     two_level = rf"\b{re.escape(prefix)}\.(?:{modules})\.[a-zA-Z_][a-zA-Z_0-9]*"

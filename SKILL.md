@@ -13,6 +13,7 @@ Single-cell + spatial transcriptomics (with bulk / other omics) bioinformatics s
 2. **Never load multiple sub-skills at once** — context window gets consumed, both routing judgement and code quality degrade
 3. Sub-skill paths live in `skill-index.json` (compact index) or the routing tables below
 4. References/scripts inside a sub-skill are **read on demand**, not pre-loaded
+5. **Path resolution for `references/X.md` / `scripts/X.py`**: a sub-skill may cite shared repo-root files (`references/figure_aesthetics.md`, `scripts/postcheck.py`, etc.) using a bare relative path. **Resolve these against the repo root**, not the sub-skill's own directory. A sub-skill's OWN references (e.g. `skills/single-cell/scop/references/run_verbs_reference.md`) sit inside that sub-skill folder. When ambiguous, the citation says "top-level" or "(repo root)" explicitly; otherwise check both locations and use whichever exists.
 
 ## Quick Route — read this first (6 steps)
 
@@ -29,15 +30,21 @@ Single-cell + spatial transcriptomics (with bulk / other omics) bioinformatics s
 
 ### Environment prerequisites (conda env mapping)
 
-Different tasks live in different conda envs; wrong env → `ModuleNotFoundError`:
+Different tasks live in different conda envs; wrong env → `ModuleNotFoundError`. **Spatial work is split across two envs — read the package, not the task label** (squidpy-only analyses live in `st`; everything touching omicverse/tangram/spatialdata lives in `sc`):
 
-| Task type | conda env | Key packages | Activate |
+| Task / package | conda env | Verified contents (2026-07-25 audit) | Activate |
 |---|---|---|---|
-| Single-cell (omicverse primary) | `sc` | omicverse 2.2.4 + scanpy + scvelo | `conda activate sc` |
-| Spatial (squidpy) | `st` | squidpy 1.2.2 + scanpy | `conda activate st` |
-| R/scop | `scop_env` | scanpy + R/scop | `conda activate scop_env` |
+| Single-cell (omicverse) | `sc` | omicverse 2.2.4 · scanpy 1.11.5 · scvelo · anndata 0.11.4 · scvi 1.4.2 · tangram 1.0.4 · spatialdata 0.7.3 | `conda activate sc` |
+| Spatial — `ov.space.*` / Tangram / spatialdata / cell2location | `sc` | (same as above; **squidpy is NOT in sc**) | `conda activate sc` |
+| Spatial — squidpy-only (`sq.gr.*` / `sq.im.*` / `sq.pl.*`) | `st` | squidpy 1.2.2 · scanpy 1.9.6 · anndata 0.9.2 (**older** than sc) | `conda activate st` |
+| R / Seurat / scop | `scop_env` | ⚠️ **verify before use** — see R/scop note below | `conda activate scop_env` |
+| Packages NOT auto-installed in either env | per-analysis | `spatialdata-io` / `bin2cell` / `cellpose` / `scimap` — `pip install` into the env named by the example's header | — |
 
 > **2026-07 correction**: cell2location 0.1.5 + scvi 1.4.2 + omicverse 2.2.4 coexist in the `sc` env — **no separate c2l env needed** (the early anndata 0.10.x pin conflict is resolved). Deconvolution uses `ov.space.Deconvolution.deconvolution(method='cell2location')`.
+
+> **st env is squidpy-only and older** (scanpy 1.9.6 / anndata 0.9.2) — if a squidpy example also imports scanpy APIs newer than 1.9, prefer running squidpy inside `sc` after `pip install squidpy` there. The split exists for dependency isolation, not as a hard rule.
+
+> **R/scop status (2026-07-25 audit)**: on this machine `scop_env` has **no R installed** and the only Rscript (in `r-env`) fails to start (DLL missing, exit 0xC0000135); `scop` package itself is **not installed** in any R library. The R/Seurat/scop route is therefore **not runnable here** until R + Seurat + scop are installed into `scop_env`. Skill docs describe the intended setup; do not trust prior "scop_api_check.R green" results from this machine — the script could not actually execute.
 
 > postcheck.py must also run in an env **with anndata installed** (e.g. `sc`), otherwise "anndata not found".
 
@@ -81,6 +88,13 @@ Data has spatial coords / tissue image?
 | High-resolution platforms | — | `spatial/multiomics` (cellpose / SpatialData) | — |
 | Spatial proteomics (CODEX/IMC) | — | `spatial/proteomics` (scimap) | — |
 | Pathway / enrichment | — | — | `general-bio/omicverse-bulk` (GSEApy/decoupler) |
+
+> **Figure production pipeline (run in this order, not in parallel)**:
+> ① **`presentation/figure-architect`** — FIRST, after all analysis is done. Designs the main-figure narrative spine + panel logic + pre-build review → produces `outline.json`. Skipping this and jumping to ②/③ produces a "results listing", not a paper figure.
+> ② **`visualization/multi-panel-figures`** — assembles the architect's `outline.json` into a 6-panel A–F composite.
+> ③ **`visualization/omicverse-plotting`** — draws each individual panel (UMAP/volcano/heatmap/dot/violin) via `ov.pl.*`.
+> A single panel only → skip to ③ directly. A full main figure → ①→②→③.
+
 | Plotting (UMAP / volcano / heatmap / dot / violin) | `visualization/omicverse-plotting` (ov.pl.*) | same | same |
 | Multi-panel A–F assembly | `visualization/multi-panel-figures` | same | same |
 | **Main figure deep design** (summarize results → narrative spine → panel design → pre-build review → outline.json) | `presentation/figure-architect` | same | same |
@@ -127,8 +141,9 @@ Data has spatial coords / tissue image?
 
 ## Version & architecture
 
-- **Version**: 15.2.0 (omicverse 2.2.3→2.2.4 upgrade — verified all 109 ov.* + 12 pt.* APIs still present (0 breakage); `ov.space.GASTON` newly wrapped in 2.2.4, added to spatial-domain methods + decision table; `ov.synbio`/`ov.Agent` new modules noted but out of skill scope; all version refs 2.2.3→2.2.4 across 12 files; anndata pin 0.12.19→0.11.4 noted; BANKSY/BINARY/GraphST/COMMOT/cell2location/Hotspot/SpatialDE/CONCORD/scGPT/Geneformer/scFoundation/UCE confirmed still standalone)
+- **Version**: 16.0.0 (deep audit pass — 3-round review: main perspective + 2 parallel researcher subagents (code-runnability + doc-consistency) + cross-verification. **Fixed P0 code bugs**: `image_expression_integration.py` rewritten to squidpy `ImageContainer` API (was passing adata to `sq.im.process/segment` — type error); `deconvolve_spatial.py:42` numpy-indexing-list TypeError → `prop_df.idxmax`; `pertpy_analysis.py` decoupler `target='variable'` + `mat=de` long-table misuse → `dc.get_ora_df` with `target='genesymbol'`; redundant `model.fit()` before classmethod `compare_groups` removed. **Fixed env honesty**: top SKILL.md env table now reflects real package distribution (squidpy in `st` only; omicverse/tangram/spatialdata/scvi in `sc`); R/scop route flagged as not-runnable on this machine (scop_env has no R, r-env Rscript fails 0xC0000135, scop package not installed anywhere). **Fixed doc consistency**: cell2location "standalone" contradiction resolved across 3 files (standalone-install ≠ no-wrapper); main routing table now spells out figure production pipeline order (figure-architect → multi-panel-figures → omicverse-plotting); Loading Protocol adds path-resolution rule for `references/X.md`; `postcheck.py` qval-only DE tables no longer crash (StopIteration); `api_check.py` regex covers `synbio`/`Agent`; README directory tree completed (7 references + 3 scripts); figure_aesthetics reading rule aligned with SKILL.md.)
 
+<!-- v16.0: 2026-07-25, deep audit — 3-round review fixed 3 P0 code bugs + env honesty + doc consistency -->
 <!-- v15.2: 2026-07-24, omicverse 2.2.3→2.2.4 upgrade + GASTON wrapper added -->
 <!-- v15.1: 2026-07-21, narrative+API audit patch (scope: surface files + 3 surviving fabricated APIs + checker hardening) -->
 <!-- v15.0: 2026-07-21, capability honesty — scop 40-verb truth + pertpy 1.0 + postcheck D4/L2/C1 + compositional §9c + scop_api_check.R -->

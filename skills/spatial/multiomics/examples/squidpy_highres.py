@@ -1,6 +1,8 @@
 """High-resolution spatial analysis with Squidpy (canonical example).
 
-Reference: squidpy 1.2.2+ | scanpy 1.10+ | numpy 1.26+ | Verify API if version differs
+Env:        conda env `st` (squidpy 1.2.2 + scanpy 1.9.6 + anndata 0.9.2)
+            — OR `sc` if you `pip install squidpy` there (sc has newer scanpy 1.11).
+Reference:  squidpy 1.2.2 (verified) | scanpy 1.9+ | numpy 1.26+ | Verify API if version differs
 Data assumption: h5ad with obsm['spatial'] holding x/y coordinates (microns)
                  for Slide-seq / Stereo-seq / Visium HD / MERFISH.
 """

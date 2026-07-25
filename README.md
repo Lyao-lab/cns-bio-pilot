@@ -6,7 +6,7 @@
 >
 > **19 sub-skills** · router architecture · meta-methodology discipline · publication-grade aesthetics.
 
-[![version](https://img.shields.io/badge/version-15.2-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
+[![version](https://img.shields.io/badge/version-16.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
 
 ---
 
@@ -181,11 +181,16 @@ cns-bio-pilot/
 ├── SKILL.md                      # Router (read first; routes to one sub-skill)
 ├── skill-index.json              # Compact machine-readable index (19 skills)
 ├── scripts/
-│   └── postcheck.py              # Scientific rigor auto-check (run after analysis)
+│   ├── postcheck.py              # Scientific rigor auto-check (run after analysis)
+│   ├── api_check.py              # Verify ov.* / pt.* APIs in docs exist in env
+│   └── scop_api_check.R          # Verify scop Run* verbs against installed scop (R)
 ├── references/                   # Top-level references (loaded on demand)
 │   ├── workflow_routing.md       # Routing decision tree + Signal Patterns trap table
 │   ├── omicverse_guide.md        # OmicVerse API cheat-sheet (task → API)
+│   ├── figure_design.md          # Chart-type selection + info hierarchy + stats viz
 │   ├── figure_aesthetics.md      # CNS publication spec (palette / fonts / non-overlap)
+│   ├── figure_layout.md          # Multi-panel composition (5 omicverse signatures)
+│   ├── preoutput_checklist.md    # Shared 5-bullet core pre-output checklist (6+ skills)
 │   └── meta_methodology.md       # 6 meta-methodology principles + self-check
 └── skills/                       # 19 sub-skills (load only the matched one)
     ├── single-cell/   (6 skills)

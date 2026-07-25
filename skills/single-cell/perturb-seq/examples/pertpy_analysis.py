@@ -65,10 +65,11 @@ group_cols = ['target_gene', 'replicate'] if 'replicate' in adata.obs else ['tar
 n_cells = adata.obs.groupby(group_cols).size()
 pdata = pdata[pdata.obs_names.isin(n_cells[n_cells >= 30].index)].copy()
 
-#    4b. Fit DE model. design MUST be a formula string for compare_groups to work.
+#    4b. Pseudobulk DE via PyDESeq2. compare_groups is a @classmethod that builds
+#        and fits its own DeseqDataSet internally — so do NOT call model.fit()
+#        first (the fit would be discarded; compare_groups ignores self's state).
 model = pt.tl.PyDESeq2(pdata, design='~target_gene')   # or pt.tl.EdgeR / pt.tl.Statsmodels
-model.fit()
-de = model.compare_groups(                               # one-shot classmethod
+de = pt.tl.PyDESeq2.compare_groups(                    # one-shot classmethod
     pdata,
     column='target_gene',
     baseline='non-targeting',
@@ -127,7 +128,32 @@ if _targets:
 
 # ---------------------------------------------------------------------------
 # 8. Pathway enrichment (decoupler was removed from pertpy at 0.11.4 —
-#    import it separately, or use pt.tl.Enrichment)
+#    import it separately). For preranked GSEA use GSEApy instead (decoupler's
+#    run_gsea is designed for multi-sample matrices, not single contrasts).
 # ---------------------------------------------------------------------------
-import decoupler as dc   # pip install decoupler
-dc.run_ora(mat=de, net=dc.get_resource('MSigDB'), source='geneset', target='variable')
+import decoupler as dc   # pip install decoupler (into the `sc` env)
+
+# Build the gene-set network. MSigDB columns are genesymbol/geneset/collection;
+# filter to interpretable collections first (full MSigDB is 4M rows + slow).
+net = dc.get_resource('MSigDB')
+net = net[net['collection'].isin(['hallmark', 'reactome'])]
+
+# ORA input is a SET of significant genes, NOT the DE long table.
+# de = PyDESeq2 compare_groups long table (variable / log_fc / adj_p_value ...).
+sig_genes = de[
+    (de['adj_p_value'] < 0.05) & (de['log_fc'].abs() > 0.5)
+]['variable'].tolist()
+# NOTE: if de['variable'] holds Ensembl IDs, map to gene symbols before ORA —
+#       MSigDB target column is gene symbols.
+
+# get_ora_df is decoupler 1.x's dedicated "DE result -> ORA" entry.
+# Returns: Term / Set size / Overlap ratio / p-value / FDR p-value /
+#          Odds ratio / Combined score / Features
+ora = dc.get_ora_df(
+    sig_genes, net,
+    source='geneset',          # net column naming the gene set
+    target='genesymbol',       # net column naming the gene (NOT 'variable')
+    n_background=de['variable'].nunique(),   # DE-tested gene count = universe
+)
+ora_sig = ora[ora['FDR p-value'] < 0.05].sort_values('Combined score', ascending=False)
+print(f'Significant enriched gene sets: {len(ora_sig)}')

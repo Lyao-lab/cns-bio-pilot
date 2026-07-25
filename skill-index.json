@@ -1,7 +1,7 @@
 {
   "_meta": {
     "skill": "cns-bio-pilot",
-    "version": "15.2.0",
+    "version": "16.0.0",
     "purpose": "Compact index — read this to locate a sub-skill, then load the matched one. Never load multiple at once.",
     "engines": [
       "omicverse (Python default)",
@@ -133,7 +133,7 @@
     {
       "name": "spatial-deconvolution",
       "path": "skills/spatial/deconvolution/SKILL.md",
-      "engine": "cell2location (standalone)",
+      "engine": "omicverse (ov.space.Deconvolution)",
       "data_type": [
         "spatial"
       ],

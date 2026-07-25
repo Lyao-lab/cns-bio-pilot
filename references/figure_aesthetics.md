@@ -2,7 +2,11 @@
 
 > Based on Nature / Science / Cell / Journal of Cell Science official figure guidelines (2025). All figures (single-cell UMAP, spatial sections, volcano plots, heatmaps, PPT-embedded figures) must follow these rules.
 >
-> **Companion files**: `references/figure_layout.md` covers **multi-panel composition** (gridspec / shared legend / panel labels); `references/figure_design.md` covers **what chart type to pick, information hierarchy, statistics visualization** (the higher-level design wisdom). Read all three before any plotting: this file (technical spec) + figure_layout (assembly) + figure_design (what to plot + hierarchy).
+> **Companion files**: `references/figure_layout.md` covers **multi-panel composition** (gridspec / shared legend / panel labels); `references/figure_design.md` covers **what chart type to pick, information hierarchy, statistics visualization** (the higher-level design wisdom).
+>
+> **Reading rule** (consistent with top `SKILL.md` Index table):
+> - **Before ANY plotting** (single or multi-panel): read **this file** (aesthetics, technical spec) + `figure_design.md` (what to plot + hierarchy).
+> - **Only when assembling multi-panel composites**: also read `figure_layout.md` (gridspec / shared legend / panel labels). For a single panel it is not needed.
 
 ## 1. Size & Resolution
 

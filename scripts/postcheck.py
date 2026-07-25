@@ -149,7 +149,7 @@ def check_de(df_or_path, report):
 
     # D2: 阈值
     if has_padj:
-        padj_col = next(c for c in df.columns if "adj" in c.lower() or "fdr" in c.lower())
+        padj_col = next(c for c in df.columns if "adj" in c.lower() or "fdr" in c.lower() or "qval" in c.lower())
         logfc_col = next((c for c in df.columns if "log2fc" in c.lower() or "logfc" in c.lower() or "logfold" in c.lower()), None)
         if logfc_col:
             n_sig = ((df[padj_col] < 0.05) & (df[logfc_col].abs() > 1.0)).sum()

@@ -39,7 +39,9 @@ cell_types = adata_sc.obs['cell_type'].cat.categories.tolist()
 prop_df = pd.DataFrame(proportions, index=adata_sp.obs_names, columns=cell_types)
 prop_df.to_csv('cell_type_proportions.csv')
 
-adata_sp.obs['dominant_cell_type'] = cell_types[proportions.argmax(axis=1)]
+# dominant cell type per spot — use prop_df.idxmax (NOT cell_types[arr] which
+# raises TypeError: numpy array can't index a python list; verified 2026-07)
+adata_sp.obs['dominant_cell_type'] = prop_df.idxmax(axis=1).values
 adata_sp.write_h5ad('spatial_deconvolved.h5ad')
 
 print('\nDeconvolution complete')

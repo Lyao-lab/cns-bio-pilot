@@ -8,7 +8,7 @@ primary_tool: Pertpy
 ## When NOT to use this skill
 - Predict perturbation response for **unmeasured** experiments (in-silico KO of unseen genes/drugs) → `single-cell/perturbation-prediction` (GEARS/CPA/scGPT)
 - Only routine scRNA-seq preprocessing / clustering / annotation (no CRISPR guide) → `single-cell/omicverse-pipeline`
-- Only gene essentiality / functional-module simulation (no measured Perturb-seq data) → `single-cell/perturbation-prediction` Route B (scTenifoldKnk via standalone R package — NOT wrapped in scop 0.8.0)
+- Only gene essentiality / functional-module simulation (no measured Perturb-seq data) → `single-cell/perturbation-prediction` Route B (scTenifoldKnk — **now wrapped in scop 0.8.9** as `RunscTenifoldKnk`, or standalone R package)
 - bulk CRISPR screen (no single-cell readout) → out of scope (use bulk-screen tools such as MAGeCK)
 
 # Perturb-seq Analysis

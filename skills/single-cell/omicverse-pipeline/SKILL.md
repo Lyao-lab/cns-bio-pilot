@@ -5,8 +5,8 @@ description: 单细胞全流程（ambient 去除→QC→doublet→降维聚类�
 
 ## When NOT to use this skill
 - cell2location spatial deconvolution → use `spatial/deconvolution` (handled by `ov.space.Deconvolution`, but routed there for the full deconvolution workflow + quality assessment)
-- R/Seurat environment, or scop-wrapped tools (CytoTRACE/Palantir/CellChat/Monocle3/SCVELO) → use `single-cell/scop`
-- Standalone tools NOT in scop or omicverse (Milo/SCENIC+/SecAct/RCTD/Giotto/BANKSY/EcoTyper/SmoothClust) → install standalone packages directly
+- R/Seurat environment, or scop-wrapped tools → use `single-cell/scop` (since scop 0.8.9, this includes CytoTRACE/Palantir/CellChat/Monocle3/SCVELO **plus SCENIC+/Milo/RCTD/BANKSY/SecAct/Giotto/CARD/SCENIC and many more**)
+- Standalone tools NOT in scop or omicverse (moscot/CellOracle/SpatialGlue/MENDER/BINARY/GraphST/COMMOT/Baysor/bin2cell/cellpose) → install standalone packages directly
 - Predict unmeasured perturbations (unseen gene/drug KO) → use `single-cell/perturbation-prediction`
 - Downstream analysis of measured Perturb-seq (differential perturbation response, Mixscape) → use `single-cell/perturb-seq`
 
@@ -303,7 +303,7 @@ Verified available in omicverse 2.2.4 (`sc` env). Pick by which modalities you h
 | You have... | First choice | Notes |
 |---|---|---|
 | **scRNA + scATAC** (paired Multiome) | `ov.single.GLUE_pair` (regulatory) + SCENIC+ (`single-cell/perturbation-prediction` Route B) | GLUE for cross-modality GRN; SCENIC+ for enhancer-level eRegulons |
-| **scRNA + protein (CITE-seq)** | `ov.single.Annotation` (multimodal) + totalVI via `lazy_step_scvi` | WNN: Seurat-native `FindMultiModalNeighbors` (NOT in scop 0.8.0) |
+| **scRNA + protein (CITE-seq)** | `ov.single.Annotation` (multimodal) + totalVI via `lazy_step_scvi` | WNN: Seurat-native `FindMultiModalNeighbors` (now wrapped in scop 0.8.9 via `WNN_integrate`, or use Seurat directly) |
 | **scRNA + ATAC + protein (≥3 modalities)** | `ov.single.pyMOFA` (joint factor model) | MOFA+ gives shared + modality-specific factors |
 | **scRNA + metabolomics** | `ov.single.Metabolism` + `ov.single.MetaboliteCCC` | Metabolic flux + metabolite-based CCC |
 | **Bulk RNA + miRNA + methylation (TCGA-style)** | `ov.bulk.pyTCGA` + `ov.bulk.enrichment_multi_concat` | Pan-cancer multi-omics |

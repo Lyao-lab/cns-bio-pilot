@@ -42,48 +42,37 @@ if (!dir.exists(skill_dir)) {
 
 # ============================================================
 # 已知"故意不在 scop"的能力白名单（文档里诚实标注为 standalone 的）
+# NOTE 2026-07-26 (scop 0.8.9 upgrade): this list was drastically reduced.
+# 0.8.0→0.8.9 wrapped ~94 new Run* verbs; nearly all entries previously here
+# (RunMilo/RunSCENICPlus/RunRCTD/RunBANKSY/RunSecAct/RunCNV/RunGSVA/etc) are
+# now REAL scop exports and have been removed from this whitelist so they get
+# normally verified. Only true non-scop references remain.
 # ============================================================
 NEGATIVE_WHITELIST <- c(
-  "RunMilo", "RunscCODA", "RunPropeller",          # compositional DA — standalone miloR/scCODA/propeller
-  "RunSCENIC", "RunSCENICPlus", "RunGENIE3", "RunGRNBoost2",  # GRN — standalone scenicplus
-  "RunLIANA", "RunCellphoneDB", "RunNichenetr", "RunMultiNichenetr",  # CCC — standalone
-  "RunSecAct", "RunSecActCCC",                     # SecAct standalone
-  "RunCNV", "RunMetabolism", "RunscMalignantFinder", "RunscMalignantRegion",  # CNV/metabolism standalone
-  "RunscTenifoldKnk",                              # scTenifoldKnk standalone
-  "RunSpatialNeighborhood", "RunSpatialVariableFeatures", "RunBayesSpace", "RunBANKSY",  # spatial standalone
-  "RunRCTD", "RunSpatialDWLS", "RunCARD", "RunSPOTlight", "RunSTdeconvolve", "RunCytoSPACE",
-  "RunDeconvolution", "RunSmoothClust", "RunCSIDE", "RunSpaNorm",
-  "RunGiottoWorkflow", "RunGiottoCluster", "RunGiottoSpatialGenes",
-  "RunGiottoSpatialModules", "RunGiottoCellProximity",
-  "RunSpatialIntegration", "RunSpatialEcoTyper", "RunSpatialGradientFeatures",
-  "RunSemlaLocalG", "RunSemlaRadialDistance", "RunSemlaRegionNeighbors", "RunSemlaSpatialNetwork",
-  "RunMERINGUE", "RunSpotQC", "RunSpatialQM",
-  "RunGSVA", "RunDorothea", "RunAugur", "RunSciBet",
-  "RunLabelTransfer", "RunReferenceMapping", "TrainCellTypist",
-  "RunDimsEstimate", "RunHarmony",
-  "ConvertHomologs",
-  # 以下虽是 Seurat 原生但 skill 文档可能引用，跳过
+  # Seurat-native functions skill docs may cite (not scop, skip)
   "RunPCA", "RunUMAP", "NormalizeData", "FindVariableFeatures", "ScaleData",
   "FindNeighbors", "FindMarkers", "FindAllMarkers", "FoldChange",
-  "SCTransform", "Read10X", "CreateSeuratObject",
-  # scop 函数式辅助
-  "LISIPlot", "spe_to_srt", "srt_to_spe", "h5ad_to_srt", "srt_to_h5ad",
-  "loom_to_adata", "loom_to_srt", "LoadScopDataset", "ListScopDatasets",
-  # 非 scop 工具（在 skill 文档里作为依赖/对比被提到，正则会误命中）
-  "ComplexHeatmap", "PyComplexHeatmap",          # R/Python 热图包，不是 scop
-  "LDAPlot",                                       # Seurat 5 已移除，skill 里有警告说明
-  "RunSpatial", "RunX"                             # 占位符/模板词，非具体 API
+  "SCTransform", "Read10X", "CreateSeuratObject", "RunHarmony",
+  # Non-scop R/Python packages skill docs cite as deps/comparisons (regex false-positives)
+  "ComplexHeatmap", "PyComplexHeatmap",          # R/Python heatmap packages
+  "LDAPlot",                                       # removed in Seurat 5; skill has warning
+  "RunSpatial", "RunX",                            # placeholders/templates, not concrete APIs
+  "TrainCellTypist"                                # Python celltypist training, not scop
 )
 
 # ============================================================
-# 负向白名单：经审计确认"宣称不存在且 scop 0.8.0 里确实不存在"的 API
+# 负向白名单：经审计确认"在文档里出现但 scop 里确实不存在"的 API
 # 每个条目注明来源（哪次审计 + 日期）。未来 scop 升级若引入，会触发 WARN
 # 提醒"文档需要更新"，而不是阻断检查脚本。
+# NOTE 2026-07-26: 0.8.0-era entries (ClusterTreePlot/PseudotimeProjectionPlot/
+# WNN_integrate) are now REAL in 0.8.9 — removed from this list. The 2 known
+# 0.8.0→0.8.9 renames are handled as explicit "expected rename" notes below.
 # ============================================================
 NEGATIVE_WHITELIST_VERIFIED_ABSENT <- c(
-  "ClusterTreePlot",           # verified absent 2026-07 v15.1 audit; cluster tree: use Seurat::BuildClusterTree + plot
-  "PseudotimeProjectionPlot",  # verified absent 2026-07 v15.1 audit; use sc.pl.pseudotime or thisplot native
-  "WNN_integrate"              # verified absent 2026-07 v15.1 audit; WNN = Seurat-native FindMultiModalNeighbors
+  # Empty as of scop 0.8.9 — all previously-verified-absent APIs now exist.
+  # Add future cases here with a dated note when scop removes/renames something.
+  "RunDimReduction",   # 0.8.0 had this; 0.8.9 split into RunDimsReduction + RunDimsEstimate (doc updated to new names)
+  "CellChatPlot"       # 0.8.0 had this; 0.8.9 renamed to SpatialCellChatPlot (doc updated)
 )
 
 # ============================================================

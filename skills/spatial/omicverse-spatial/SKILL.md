@@ -109,7 +109,7 @@ gaston.plot_clusters(domain_colors=...)         # discrete domain labels
 - **GraphST** (large data): `pip install GraphST`
 - **MENDER** (2024 Nat Commun, cell-type-aware, fast): standalone
 - **SpatialGlue** (2024 Nat Methods, multi-omics): standalone
-- **BayesSpace** (R): standalone `BayesSpace` package (NOT wrapped in scop 0.8.0 — install directly)
+- **BayesSpace** (R): now wrapped in scop 0.8.9 as `RunBayesSpace`; or standalone `BayesSpace` package for low-level API
 
 Decision: default STAGATE (wrapped); isoform-aware or continuous-depth domains → GASTON (wrapped, 2.2.4); sharp boundaries → BANKSY (standalone); large samples → GraphST (standalone); cell-type-aware speed → MENDER (standalone); multi-omics → SpatialGlue (standalone).
 

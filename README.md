@@ -6,7 +6,7 @@
 >
 > **19 sub-skills** · router architecture · meta-methodology discipline · publication-grade aesthetics.
 
-[![version](https://img.shields.io/badge/version-16.0.1-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
+[![version](https://img.shields.io/badge/version-17.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
 
 ---
 
@@ -92,14 +92,20 @@ pip install squidpy scanpy
 #   squidpy 1.2.2 · scanpy 1.9.6
 ```
 
-### Env 3 — `scop_env` (R / Seurat / scop)
+### Env 3 — system R (R / Seurat / scop)
 
 ```r
-# In R (>= 4.4):
+# In system R (>= 4.3; this machine: R-4.3.3 at D:\Program Files (x86)\R-4.3.3\):
 if (!require("scop")) remotes::install_github("mengxu98/scop")
-# scop wraps Seurat/CellChat/CytoTRACE/Palantir/Monocle3/SCVELO under ~40 Run* verbs
-# (verified in scop 0.8.0); other tools (Milo, SCENIC+, Giotto, SecAct, etc.) via standalone R packages.
+# scop 0.8.9 wraps 133 Run* verbs covering nearly all common single-cell + spatial tools
+# (verified 2026-07-26): QC/DR/clustering/integration/annotation/DE/trajectory/velocity/
+# CCC/GRN/spatial domains/spatial deconvolution/compositional DA/CNV/pathway.
+# Remaining NOT-wrapped: moscot/CellOracle/SpatialGlue/MENDER/BINARY/GraphST/COMMOT/Baysor/bin2cell/cellpose.
+# Install gotcha: if install_github fails on deps, install Seurat from CRAN as binary first,
+# then install_github("mengxu98/scop", upgrade=FALSE).
 ```
+
+> The `scop_env` conda env on this machine has **no R installed** — use the system R directly via `"D:\Program Files (x86)\R-4.3.3\bin\Rscript.exe"`.
 
 ### Which env for which task?
 
@@ -109,9 +115,9 @@ if (!require("scop")) remotes::install_github("mengxu98/scop")
 | Batch integration (Harmony/scVI) | `sc` | omicverse (wraps scvi-tools) |
 | Spatial deconvolution (cell2location/Tangram/RCTD) | `sc` | `ov.space.Deconvolution` (5 methods unified) |
 | Spatial domains / SVG / spatial communication | `st` | squidpy, omicverse |
-| R/Seurat pipeline (CytoTRACE/Palantir/CellChat/Monocle3/SCVELO) | `scop_env` (system R) | scop (R); Milo/SCENIC+/Giotto/SecAct via standalone |
+| R/Seurat pipeline + most R-ecosystem tools (incl. SCENIC+/Milo/RCTD/BANKSY/SecAct/Giotto/CARD since scop 0.8.9) | system R (`R-4.3.3`) | scop 0.8.9 (R) |
 | Perturbation prediction (GEARS/CPA/scGPT) | `sc` | pertpy + GPU |
-| GRN-based virtual KO (CellOracle/SCENIC+) | `sc` | standalone `pip install celloracle scenicplus` |
+| GRN-based virtual KO (CellOracle — Python only; SCENIC+ also in scop) | `sc` | standalone `pip install celloracle` (SCENIC+ now in scop) |
 
 > **GPU**: scGPT/GEARS/CPA finetune need CUDA. Without GPU, fall back to linear baseline (perturbation) or scTenifoldKnk/CellOracle-base-GRN (virtual KO).
 
@@ -153,7 +159,7 @@ The router (`SKILL.md`) reads your request, picks **one** sub-skill, loads only 
 | # | Category | Sub-skill | What it does |
 |---|---|---|---|
 | 1 | single-cell | `omicverse-pipeline` | Full pipeline: ambient removal → QC → doublet → cluster → annotate → batch → comm → trajectory |
-| 2 | single-cell | `scop` | R/Seurat pipeline, ~40 verified Run* verbs (scop 0.8.0); CytoTRACE/Palantir/CellChat/Monocle3/SCVELO wrapped; SCENIC+/Milo/RCTD NOT wrapped (use standalone) |
+| 2 | single-cell | `scop` | R/Seurat pipeline, **133 verified Run\* verbs (scop 0.8.9)**; wraps CytoTRACE/Palantir/CellChat/Monocle3/SCVELO **+ SCENIC+/Milo/RCTD/BANKSY/SecAct/Giotto/CARD/SCENIC/CNV/GSVA/scTenifoldKnk and more since 0.8.9**; remaining gaps (moscot/CellOracle/SpatialGlue/MENDER/BINARY/GraphST/COMMOT/Baysor/bin2cell/cellpose) via standalone |
 | 3 | single-cell | `perturbation-prediction` | Two routes: (A) ML-based GEARS/CPA/scGPT (needs Perturb-seq); (B) GRN-based virtual KO CellOracle/SCENIC+/scTenifoldKnk (needs only WT scRNA) |
 | 4 | single-cell | `perturb-seq` | Analyze existing Perturb-seq/CROP-seq: Mixscape, pseudobulk DE (pertpy 1.0+ API), guide QC |
 | 5 | single-cell | `rna-velocity` | 5 engines (scvelo/dynamo/latentvelo/graphvelo/regvelo) + cell2fate/cellDancer/pyro-Velocity fallbacks + CellRank 2 |

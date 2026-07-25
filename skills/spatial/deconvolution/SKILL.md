@@ -37,7 +37,7 @@ Source-verified (omicverse 2.2.4): `deconvolution(method=...)` supports 5 values
 | `'Starfysh'` | Starfysh | needs anchor-gene priors | optional | ❌ `pip install starfysh` |
 | `'flashdeconv'` | flashdeconv | fast exploration | — | ✅ |
 
-> **Pre-flight check**: `python -c "import importlib.util as u; print({m: u.find_spec(m) is not None for m in ['cell2location','tangram','starfysh','flashdeconv']})"`. RCTD is R-only — verify the `scop_env` / system R has `spacexr`.
+> **Pre-flight check**: `python -c "import importlib.util as u; print({m: u.find_spec(m) is not None for m in ['cell2location','tangram','starfysh','flashdeconv']})"`. RCTD/SPOTlight/CARD are R — since scop 0.8.9 they are wrapped (`RunRCTD`/`RunSPOTlight`/`RunCARD`); verify the system R (R-4.3.3) has scop 0.8.9 installed.
 
 ```python
 import omicverse as ov
@@ -134,7 +134,7 @@ ref_sig = adata_ref.varm['means_per_cluster_mu_fg']
 
 ## 7. RCTD / SPOTlight (R path)
 
-If you prefer R/spacexr (RCTD's native env), install standalone `spacexr` / `SPOTlight` / `CARD` directly (scop 0.8.0 does NOT wrap these):
+If you prefer R/spacexr (RCTD's native env): **since scop 0.8.9, RCTD/SPOTlight/CARD/STdeconvolve/CytoSPACE/SpatialDWLS are all wrapped** as `RunRCTD` / `RunSPOTlight` / `RunCARD` / etc. Install standalone `spacexr` only if you need RCTD's low-level API directly:
 - RCTD (spacexr): doublet mode detects two cells per spot
 - SPOTlight: NMF-based, old but usable
 - CARD (2022+): R package with spatial prior

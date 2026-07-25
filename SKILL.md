@@ -37,14 +37,14 @@ Different tasks live in different conda envs; wrong env → `ModuleNotFoundError
 | Single-cell (omicverse) | `sc` | omicverse 2.2.4 · scanpy 1.11.5 · scvelo · anndata 0.11.4 · scvi 1.4.2 · tangram 1.0.4 · spatialdata 0.7.3 | `conda activate sc` |
 | Spatial — `ov.space.*` / Tangram / spatialdata / cell2location | `sc` | (same as above; **squidpy is NOT in sc**) | `conda activate sc` |
 | Spatial — squidpy-only (`sq.gr.*` / `sq.im.*` / `sq.pl.*`) | `st` | squidpy 1.2.2 · scanpy 1.9.6 · anndata 0.9.2 (**older** than sc) | `conda activate st` |
-| R / Seurat / scop | system R (not conda) | R 4.3.3 / R 4.5.1 at `D:\Program Files (x86)\R-*` — **scop 0.8.0 installed** (verified 2026-07-25: 126 exports / 40 Run\*); `scop_env` conda env exists but has no R, so use the system Rscript directly | `"D:\Program Files (x86)\R-4.3.3\bin\Rscript.exe"` |
+| R / Seurat / scop | system R (not conda) | R 4.3.3 / R 4.5.1 at `D:\Program Files (x86)\R-*` — **scop 0.8.9 installed** (verified 2026-07-26: 314 exports / 133 Run\*); `scop_env` conda env exists but has no R, so use the system Rscript directly | `"D:\Program Files (x86)\R-4.3.3\bin\Rscript.exe"` |
 | Packages NOT auto-installed in either env | per-analysis | `spatialdata-io` / `bin2cell` / `cellpose` / `scimap` — `pip install` into the env named by the example's header | — |
 
 > **2026-07 correction**: cell2location 0.1.5 + scvi 1.4.2 + omicverse 2.2.4 coexist in the `sc` env — **no separate c2l env needed** (the early anndata 0.10.x pin conflict is resolved). Deconvolution uses `ov.space.Deconvolution.deconvolution(method='cell2location')`.
 
 > **st env is squidpy-only and older** (scanpy 1.9.6 / anndata 0.9.2) — if a squidpy example also imports scanpy APIs newer than 1.9, prefer running squidpy inside `sc` after `pip install squidpy` there. The split exists for dependency isolation, not as a hard rule.
 
-> **R/scop runs via system R, not conda**: `scop_env` (conda) has no R installed; the working scop installation is in **system R** at `D:\Program Files (x86)\R-4.3.3\` and `R-4.5.1\` (scop 0.8.0 in both `library/` dirs). Invoke scop scripts with the full Rscript path, e.g. `"D:\Program Files (x86)\R-4.3.3\bin\Rscript.exe" scripts/scop_api_check.R`. Verified 2026-07-25: scop_api_check.R green (85 present + 13 standalone-whitelisted + 0 missing).
+> **R/scop runs via system R, not conda**: `scop_env` (conda) has no R installed; the working scop installation is in **system R** at `D:\Program Files (x86)\R-4.3.3\` and `R-4.5.1\` (scop 0.8.9 in R-4.3.3's library; R-4.5.1 may have an older/broken scop due to GenomeInfoDb incompatibility — prefer R-4.3.3). Invoke scop scripts with the full Rscript path, e.g. `"D:\Program Files (x86)\R-4.3.3\bin\Rscript.exe" scripts/scop_api_check.R`. Verified 2026-07-26: scop_api_check.R green on 0.8.9.
 
 > postcheck.py must also run in an env **with anndata installed** (e.g. `sc`), otherwise "anndata not found".
 
@@ -118,7 +118,7 @@ Data has spatial coords / tissue image?
 | Use engine | When |
 |---|---|
 | **OmicVerse** (Python default) | 90% of routine analyses; `ov.pp.*` / `ov.single.*` / `ov.bulk.*` / `ov.pl.*` cover QC → batch → annotation → DE → trajectory → comm → plotting |
-| **scop** (R/Seurat) | R ecosystem, or scop-wrapped tools (CytoTRACE / Palantir / CellChat / Monocle3 / SCVELO / WOT / Slingshot / PAGA). NOT wrapped: Milo / SCENIC+ / SecAct / EcoTyper / Giotto / SmoothClust / RCTD / BANKSY → standalone packages |
+| **scop** (R/Seurat) | R ecosystem. Since **0.8.9 scop wraps 133 Run\* verbs** covering nearly all common tools (CytoTRACE/Palantir/CellChat/Monocle3/SCVELO/WOT/Slingshot/PAGA, **plus newly-wrapped SCENIC+/Milo/scCODA/RCTD/BANKSY/SecAct/EcoTyper/Giotto/SmoothClust/CARD/SPOTlight/CNV/GSVA/Dorothea/Augur/scTenifoldKnk and more**). Remaining NOT-wrapped: moscot / CellOracle / SpatialGlue / MENDER / BINARY / GraphST / COMMOT / Baysor / bin2cell / cellpose → standalone |
 | **Perturbation models** | Predicting unseen perturbations via two routes — `single-cell/perturbation-prediction`: (A) ML-based GEARS/CPA/scGPT/scGen needs Perturb-seq training, **linear baseline mandatory**; (B) GRN-based virtual KO via CellOracle/SCENIC+/scTenifoldKnk needs only WT scRNA-seq, infers GRN then simulates KO. Pick by data availability |
 
 ## Core Principles (rationale flows through; ✅ = postcheck.py machine-checkable)
@@ -141,8 +141,9 @@ Data has spatial coords / tissue image?
 
 ## Version & architecture
 
-- **Version**: 16.0.1 (correction to v16.0 — the v16.0 R/scop env claim was **wrong** due to a search-method bug. R/scop IS available: system R 4.3.3 + 4.5.1 at `D:\Program Files (x86)\R-*\` both have scop 0.8.0 installed; re-ran `scripts/scop_api_check.R` via system Rscript → green (85 present + 13 standalone-whitelisted + 0 missing), confirming v15's 126-exports / 40-Run\* annotation is accurate. The earlier `find` missed these because bash mis-parsed the `(x86)` + space in the path. Updated env table to point at system R, not the empty `scop_env` conda env. All other v16.0 changes stand: 3 P0 code bugs fixed, env distribution mapped (squidpy in `st`, omicverse-stack in `sc`), doc consistency fixes — all verified by api_check green + py_compile clean.)
+- **Version**: 17.0.0 (scop 0.8.0 → 0.8.9 upgrade — **major API expansion**. 0.8.9 ships 314 exports / 133 Run\* (was 126 / 40). Nearly every capability previously documented as "NOT wrapped, use standalone" is **now wrapped**: SCENIC / SCENICPlus / CisTarget / GENIE3 / GRNBoost2 / scTenifoldKnk (GRN); Milo / scCODA / Propeller / LISI / MDIC3 / Statial / mcRigor (compositional DA); RCTD / cell2location / SPOTlight / STdeconvolve / CytoSPACE / CARD / SpatialDWLS / CSIDE (spatial deconvolution); BANKSY / BayesSpace / SmoothClust / MERINGUE / Giotto family / Semla family (spatial domains); SecAct ×5 / CellphoneDB / LIANA / Nichenetr / MultiNichenetr / MistyR / SpatialCellChat (CCC); CNV (copykat/fastCNV/scevan/infercnv); GSVA / Dorothea / Augur / ESTIMATE / Metabolism / scFEA (pathway); LabelTransfer / ReferenceMapping / SciBet / CellCycle / scMalignant×3 (annotation); CCA / WNN / RPCA / MultiMAP / Coralysis / GLUE integrations; h5ad/loom/SPE/spata2/giotto converters + ConvertHomologs. Renames: `RunDimReduction` → `RunDimsReduction` + `RunDimsEstimate`; `CellChatPlot` → `SpatialCellChatPlot`. Rewrote `skills/single-cell/scop/SKILL.md` + `references/run_verbs_reference.md` end-to-end; updated 7 cross-references (top SKILL.md env table + When-to-Use, README env table + sub-skills table, skill-index.json, omicverse-pipeline When-NOT + §9b WNN, perturb-seq When-NOT, rna-velocity GRN table, spatial/deconvolution RCTD note, spatial/omicverse-spatial BayesSpace note). Install gotcha surfaced: 0.8.9's heavy new deps (thisplot/thisutils/Signac) broke the first `install_github(dependencies=TRUE)` — recover by installing Seurat as CRAN binary first + `install_github(upgrade=FALSE)`. All v16.0/v16.0.1 changes stand.)
 
+<!-- v17.0: 2026-07-26, scop 0.8.0→0.8.9 — 133 Run* verbs, rewrote scop skill + 7 cross-refs -->
 <!-- v16.0.1: 2026-07-25, correct v16.0 R/scop search-method error — scop IS installed in system R -->
 <!-- v16.0: 2026-07-25, deep audit — 3-round review fixed 3 P0 code bugs + env honesty + doc consistency -->
 <!-- v15.2: 2026-07-24, omicverse 2.2.3→2.2.4 upgrade + GASTON wrapper added -->

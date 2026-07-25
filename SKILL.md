@@ -37,14 +37,14 @@ Different tasks live in different conda envs; wrong env → `ModuleNotFoundError
 | Single-cell (omicverse) | `sc` | omicverse 2.2.4 · scanpy 1.11.5 · scvelo · anndata 0.11.4 · scvi 1.4.2 · tangram 1.0.4 · spatialdata 0.7.3 | `conda activate sc` |
 | Spatial — `ov.space.*` / Tangram / spatialdata / cell2location | `sc` | (same as above; **squidpy is NOT in sc**) | `conda activate sc` |
 | Spatial — squidpy-only (`sq.gr.*` / `sq.im.*` / `sq.pl.*`) | `st` | squidpy 1.2.2 · scanpy 1.9.6 · anndata 0.9.2 (**older** than sc) | `conda activate st` |
-| R / Seurat / scop | `scop_env` | ⚠️ **verify before use** — see R/scop note below | `conda activate scop_env` |
+| R / Seurat / scop | system R (not conda) | R 4.3.3 / R 4.5.1 at `D:\Program Files (x86)\R-*` — **scop 0.8.0 installed** (verified 2026-07-25: 126 exports / 40 Run\*); `scop_env` conda env exists but has no R, so use the system Rscript directly | `"D:\Program Files (x86)\R-4.3.3\bin\Rscript.exe"` |
 | Packages NOT auto-installed in either env | per-analysis | `spatialdata-io` / `bin2cell` / `cellpose` / `scimap` — `pip install` into the env named by the example's header | — |
 
 > **2026-07 correction**: cell2location 0.1.5 + scvi 1.4.2 + omicverse 2.2.4 coexist in the `sc` env — **no separate c2l env needed** (the early anndata 0.10.x pin conflict is resolved). Deconvolution uses `ov.space.Deconvolution.deconvolution(method='cell2location')`.
 
 > **st env is squidpy-only and older** (scanpy 1.9.6 / anndata 0.9.2) — if a squidpy example also imports scanpy APIs newer than 1.9, prefer running squidpy inside `sc` after `pip install squidpy` there. The split exists for dependency isolation, not as a hard rule.
 
-> **R/scop status (2026-07-25 audit)**: on this machine `scop_env` has **no R installed** and the only Rscript (in `r-env`) fails to start (DLL missing, exit 0xC0000135); `scop` package itself is **not installed** in any R library. The R/Seurat/scop route is therefore **not runnable here** until R + Seurat + scop are installed into `scop_env`. Skill docs describe the intended setup; do not trust prior "scop_api_check.R green" results from this machine — the script could not actually execute.
+> **R/scop runs via system R, not conda**: `scop_env` (conda) has no R installed; the working scop installation is in **system R** at `D:\Program Files (x86)\R-4.3.3\` and `R-4.5.1\` (scop 0.8.0 in both `library/` dirs). Invoke scop scripts with the full Rscript path, e.g. `"D:\Program Files (x86)\R-4.3.3\bin\Rscript.exe" scripts/scop_api_check.R`. Verified 2026-07-25: scop_api_check.R green (85 present + 13 standalone-whitelisted + 0 missing).
 
 > postcheck.py must also run in an env **with anndata installed** (e.g. `sc`), otherwise "anndata not found".
 
@@ -141,8 +141,9 @@ Data has spatial coords / tissue image?
 
 ## Version & architecture
 
-- **Version**: 16.0.0 (deep audit pass — 3-round review: main perspective + 2 parallel researcher subagents (code-runnability + doc-consistency) + cross-verification. **Fixed P0 code bugs**: `image_expression_integration.py` rewritten to squidpy `ImageContainer` API (was passing adata to `sq.im.process/segment` — type error); `deconvolve_spatial.py:42` numpy-indexing-list TypeError → `prop_df.idxmax`; `pertpy_analysis.py` decoupler `target='variable'` + `mat=de` long-table misuse → `dc.get_ora_df` with `target='genesymbol'`; redundant `model.fit()` before classmethod `compare_groups` removed. **Fixed env honesty**: top SKILL.md env table now reflects real package distribution (squidpy in `st` only; omicverse/tangram/spatialdata/scvi in `sc`); R/scop route flagged as not-runnable on this machine (scop_env has no R, r-env Rscript fails 0xC0000135, scop package not installed anywhere). **Fixed doc consistency**: cell2location "standalone" contradiction resolved across 3 files (standalone-install ≠ no-wrapper); main routing table now spells out figure production pipeline order (figure-architect → multi-panel-figures → omicverse-plotting); Loading Protocol adds path-resolution rule for `references/X.md`; `postcheck.py` qval-only DE tables no longer crash (StopIteration); `api_check.py` regex covers `synbio`/`Agent`; README directory tree completed (7 references + 3 scripts); figure_aesthetics reading rule aligned with SKILL.md.)
+- **Version**: 16.0.1 (correction to v16.0 — the v16.0 R/scop env claim was **wrong** due to a search-method bug. R/scop IS available: system R 4.3.3 + 4.5.1 at `D:\Program Files (x86)\R-*\` both have scop 0.8.0 installed; re-ran `scripts/scop_api_check.R` via system Rscript → green (85 present + 13 standalone-whitelisted + 0 missing), confirming v15's 126-exports / 40-Run\* annotation is accurate. The earlier `find` missed these because bash mis-parsed the `(x86)` + space in the path. Updated env table to point at system R, not the empty `scop_env` conda env. All other v16.0 changes stand: 3 P0 code bugs fixed, env distribution mapped (squidpy in `st`, omicverse-stack in `sc`), doc consistency fixes — all verified by api_check green + py_compile clean.)
 
+<!-- v16.0.1: 2026-07-25, correct v16.0 R/scop search-method error — scop IS installed in system R -->
 <!-- v16.0: 2026-07-25, deep audit — 3-round review fixed 3 P0 code bugs + env honesty + doc consistency -->
 <!-- v15.2: 2026-07-24, omicverse 2.2.3→2.2.4 upgrade + GASTON wrapper added -->
 <!-- v15.1: 2026-07-21, narrative+API audit patch (scope: surface files + 3 surviving fabricated APIs + checker hardening) -->

@@ -17,7 +17,37 @@ description: 单细胞/空转文章主图（main figure）深度设计——从�
 
 这个 skill 在分析全部完成后、拼图前运行。输入是一堆分析结果（h5ad/DE 表/SVG 表/通讯表/figure 草图），输出是一份 `outline.json`（panel 设计规范），交给 `visualization/multi-panel-figures` 拼图 + `presentation/results-writer` 写 Results 文字。
 
-## 工作流：4 步深度思考（按顺序，不可跳）
+## 工作流：5 步深度思考（按顺序，不可跳）
+
+### Step 0 — 创建 manifest.yaml（锁定全论文视觉 DNA）
+
+**在画任何 Figure 之前**，先建 `manifest.yaml`——锁定 cell type 配色、condition 配色、cmap、字号体系。所有 Figure 脚本 import 它，保证跨 Figure 视觉一致。
+
+```yaml
+# manifest.yaml — 项目启动时创建，所有 Figure 脚本 import 它
+cell_type_colors:
+  Fibroblast: '#BF616A'      # warm = focus
+  Macrophage: '#5E81AC'      # cool = focus
+  T_cell: '#A3BE8C'
+  SMC: '#D08770'
+  B_cell: '#B48EAD'
+  Endothelial: '#88C0D0'
+  Epithelial: '#EBCB8B'
+  Mast: '#D8DEE9'
+
+condition_colors:
+  Normal: '#88C0D0'          # cool = quiet
+  Disease: '#BF616A'         # warm = active
+
+sequential_cmap: 'byr_morlandi'   # all heatmaps (see cns_style.py EXPR_CMAP)
+diverging_cmap: 'log2fc'          # all volcano/FC plots (see cns_style.py DIVERGING_CMAP)
+
+font_base: 8                      # modular scale base
+scale_ratio: 1.2                  # → sizes: 7/8/10/12/14
+panel_label_style: 'bold'         # A, B, C in 12pt bold
+```
+
+> **规则**：manifest 一旦锁定，**不许中途改色**——改了就要重画所有已完成的 Figure。在 Step 1 清点完所有 cell type 后再最终确认 manifest。
 
 ### Step 1 — 汇总所有分析结果（inventory）
 
@@ -98,6 +128,31 @@ narrative spine（论证链，每个 = 一个 panel）：
 - [ ] 有没有**循环论证**（节点5 依赖节点6，节点6 又依赖节点5）？
 - [ ] 有没有**未论证的跳跃**（从节点2 直接到节点5，中间机制缺失）？
 
+#### 2d. 多图叙事弧（Figure narrative arc — 跨 Figure 的组织）
+
+> 本节在**设计整篇文章的多张 Figure 时**使用（不是单张 Figure 内部）。单张 Figure 内部的 panel 顺序用 2b 的 narrative spine。
+
+CNS 论文的 Figure 序列有隐性惯例（审稿人期望看到）：
+
+| 位置 | 角色 | panel 数 | 复杂度 | 典型内容 |
+|---|---|---|---|---|
+| **Figure 1** | Atlas / overview | 2-3 | 低 | UMAP 全景 + 比例 + marker dotplot（"有哪些细胞"） |
+| **Figure 2 ~ N-1** | Mechanism（每张只讲一个机制） | 4-6 | 中高 | 亚群深入 + DE + 轨迹 + 通讯（"为什么变了"） |
+| **Last Figure** | Integration / validation / model | 2-3 | 低 | schematic + 空间验证 + 临床相关（"所以呢"） |
+
+**规则**：
+- Figure 1 **必须**是 atlas/overview（建立全局认知），panel ≤3
+- 每张中间 Figure **只论证一个机制**——两个机制塞一张 = 论证不聚焦
+- 最后一张 **回归简洁**（schematic + validation），不要在最末尾放最复杂的图
+- **密度节奏**：连续两张 panel≥5 的 Figure 之间，插一张 panel≤3 的"呼吸 Figure"（防审稿人视觉疲劳）
+
+```
+Figure 1 (2 panels): UMAP atlas + proportion bar     ← 建立全局
+Figure 2 (5 panels): Fibroblast rewiring mechanism   ← 机制1
+Figure 3 (4 panels): SMC bipolarization              ← 机制2
+Figure 4 (3 panels): Spatial validation + schematic  ← 整合收束
+```
+
 ### Step 3 — 设计每个 panel（spec → outline.json）
 
 为每个 panel 写规范，**包含审查维度**（在 Step 4 用）：
@@ -154,12 +209,20 @@ narrative spine（论证链，每个 = 一个 panel）：
 - [ ] **无循环论证 / 无未论证跳跃**
 - [ ] **背景 → 现象 → 机制 → 整合** 的层级递进成立
 
-#### 4b. 美观审查（aesthetics，参考 `references/figure_aesthetics.md` + `figure_layout.md`）
+#### 4b. 美观审查（aesthetics，参考 `references/figure_aesthetics.md` + `figure_aesthetics_advanced.md` + `figure_layout.md`）
 - [ ] **全图配色一致**（同一 cell type 在所有 panel 同色——建 cell_type → color 映射复用）
-- [ ] **字号层级统一**（参考 figure_layout.md 字号缩放表）
+- [ ] **色彩叙事**：焦点 cluster 高饱和（Morlandi 原色），非焦点 grey（`#C8CDD3`）——不是所有 cluster 同等响亮
+- [ ] **5+1 纪律**：一张图 ≤5 个"有名字"的颜色 + 1 强调色，其余 grey
+- [ ] **锚点 panel**：有且仅有一个视觉入口（通常 UMAP），占总面积 40-50%（`width_ratios=[1.8, 1, 1]`）
+- [ ] **面板视觉重量平衡**：scatter + violin 同排时 violin 高度 ×1.2 补偿；所有 panel 的 x-axis baseline 水平对齐
+- [ ] **留白呼吸感**：主 panel 四周留白 > 辅助 panel；圆形数据（UMAP）expand 15%（optical margin）
+- [ ] **字号 modular scale**：只用 7/8/10/12/14（1.2x 递进），不允许 9pt/11pt
+- [ ] **轴美化**：L-frame（只留 left+bottom spine）+ outward ticks + alpha=0.15 极淡参考线（`polish_axes()`）
+- [ ] **UMAP 去轴**：Nature sc 惯例，UMAP/tSNE 去掉所有 ticks，只留 "UMAP1/2" 文字（`clean_umap_axes()`）
 - [ ] **无 chartjunk**（Tufte：去冗余边框/网格/3D）
-- [ ] **panel label A/B/C** 加上（omicverse 无 API，inline `ax.text`）
-- [ ] **共享 legend/colorbar 合并**（同 scale 不重复）
+- [ ] **panel label A/B/C** 加上（`add_panel_label()` 或 inline `ax.text`，12pt bold）
+- [ ] **共享 legend/colorbar 合并**（同 scale 不重复；colorbar 用 `add_elegant_colorbar()`：slim + 无 border + ≤5 ticks）
+- [ ] **跨 Figure 一致性**：对照 `manifest.yaml` 检查 cell_type_colors / condition_colors / cmap 是否全论文统一
 
 #### 4c. 统计严谨审查（rigor，参考 `references/figure_design.md` §3 + `references/preoutput_checklist.md`）
 - [ ] **每个定量 panel 标 N**（bio replicate vs cell 数，区分）

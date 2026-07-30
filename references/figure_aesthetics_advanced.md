@@ -333,25 +333,112 @@ plt.rcParams['axes.prop_cycle'] = plt.cycler(color=list(style['cell_type_colors'
 
 ---
 
-## 7. The One-Shot Style Function
+## 7. Style Architecture (composable, declarative, journal-targeted)
 
-All of the above is codified in `scripts/cns_style.py`. Usage:
+> Design philosophy absorbed from [SciencePlots](https://github.com/garrettj403/SciencePlots) (9k★, declarative `.mplstyle` files) + [Rougier's Scientific Visualization Book](https://github.com/rougier/scientific-visualization-book) (11k★, figure anatomy as a system). Transformed into our Morlandi palette + bio-specific context.
+
+### The three layers
+
+```
+Layer 1 — Base aesthetics (set_cns_style / set_cns_style_journal)
+           Font system + color system + spine/tick system + save settings
+           Call ONCE at script top.
+
+Layer 2 — Per-panel finishing (polish_axes / clean_umap_axes / add_elegant_colorbar)
+           Applied to each axes object after plotting.
+
+Layer 3 — Declarative export (save_cns_mplstyle)
+           Exports Layers 1+2 as a .mplstyle file for plt.style.use().
+           Composable: plt.style.use(['cns_nature.mplstyle', 'other_style.mplstyle'])
+```
+
+### Journal quick-start
+
 ```python
 import sys; sys.path.insert(0, 'scripts/')
-from cns_style import set_cns_style, polish_axes, add_elegant_colorbar, safe_scanpy_plot
+from cns_style import set_cns_style_journal, figure_for_journal, polish_axes, \
+                      clean_umap_axes, add_elegant_colorbar, safe_scanpy_plot, \
+                      add_panel_label, optical_margin, apply_5plus1_palette, cns_style
 
-set_cns_style()  # call ONCE at the top of every plotting script
-
-# Then for each panel:
-fig, ax = plt.subplots(figsize=(5, 5))
-safe_scanpy_plot(sc.pl.umap, adata, color='celltype', ax=ax, show=False)
-clean_umap_axes(ax)  # or polish_axes(ax) for non-UMAP panels
-
-# Colorbar:
-add_elegant_colorbar(mappable, ax, label='log2 Expression')
-
+# === Option A: function-based (recommended for bio workflows) ===
+set_cns_style_journal('nature')   # Nature single-column (88mm, 7pt, 600dpi)
+fig, axes = figure_for_journal('nature', ncols=3, nrows=2)
+# ... plot into axes[row][col] ...
+for ax in axes.flat:
+    polish_axes(ax)               # or clean_umap_axes(ax) for UMAP panels
 plt.savefig('figure1.pdf')
+
+# === Option B: declarative .mplstyle (for sharing / reproducibility) ===
+from cns_style import save_cns_mplstyle
+save_cns_mplstyle('cns_nature.mplstyle', journal='nature')
+# Then in any script:
+plt.style.use('cns_nature.mplstyle')
+
+# === Option C: context manager (temporary, auto-restores) ===
+with cns_style('cell'):
+    fig, ax = plt.subplots()
+    # ... plot with Cell dimensions ...
+    plt.savefig('fig_cell.pdf')
+# rcParams restored here
 ```
+
+### Available journal presets
+
+| Preset | Column width | Font | DPI | Use when |
+|---|---|---|---|---|
+| `'nature'` | 88mm (3.46") | 7pt base | 600 | Nature single-column |
+| `'nature_double'` | 180mm (7.09") | 7pt base | 600 | Nature full-width |
+| `'science'` | 85mm (3.35") | 7pt base | 300 | Science |
+| `'cell'` | 85mm (3.35") | 7pt base | 300 | Cell |
+| `'generic'` | 5" | 8pt base | 300 | Notebook / internal report / PPT |
+
+### Seaborn integration
+
+When using seaborn for proportion plots / box plots / heatmaps:
+```python
+from cns_style import set_cns_style_journal, cns_seaborn_context
+import seaborn as sns
+
+set_cns_style_journal('nature')
+cns_seaborn_context('nature')    # sets sns context='paper' + Morlandi palette
+
+# Now seaborn plots use our font sizes + colors:
+sns.boxplot(data=df, x='condition', y='proportion', hue='celltype')
+```
+
+> **Order matters**: `set_cns_style_journal()` first (sets rcParams), then `cns_seaborn_context()` (overrides seaborn's context to match). Reversing the order lets seaborn stomp on our settings.
+
+---
+
+## 8. The One-Shot Style Function
+
+All of the above is codified in `scripts/cns_style.py`. Full function list:
+
+| Function | Role | When to call |
+|---|---|---|
+| `set_cns_style(base_fontsize, palette)` | Base aesthetics (generic) | Script top |
+| `set_cns_style_journal(journal, palette)` | Base + journal dimensions | Script top (targeting journal) |
+| `polish_axes(ax)` | L-frame + outward ticks + subtle grid | Every panel after plotting |
+| `clean_umap_axes(ax)` | Remove all axes for UMAP/tSNE | UMAP panels |
+| `add_elegant_colorbar(mappable, ax, label)` | Slim colorbar, no border | Any colorbar |
+| `safe_scanpy_plot(func, *args)` | Wrap sc.pl.* (prevent rcParams corruption) | Every sc.pl.* call |
+| `apply_5plus1_palette(categories, focus)` | Saturation hierarchy palette | Before plotting multi-cluster |
+| `optical_margin(ax, pad_fraction)` | Expand limits for circular data | UMAP/tSNE panels |
+| `add_panel_label(ax, label)` | Bold A/B/C letter | Every panel |
+| `figure_for_journal(journal, ncols, nrows)` | Sized figure + axes grid | Figure creation |
+| `save_cns_mplstyle(path, journal)` | Export as .mplstyle file | Share/reproduce style |
+| `cns_style(journal)` | Context manager (temporary) | One-off figures |
+| `cns_seaborn_context(journal)` | Seaborn integration | When using seaborn |
+
+### Further reading (external references)
+
+| Resource | What to learn | Link |
+|---|---|---|
+| **Rougier, Scientific Visualization: Python + Matplotlib** (2021, 11k★) | Figure anatomy as a system; typography; color spaces; layout; decorative elements | [github.com/rougier/scientific-visualization-book](https://github.com/rougier/scientific-visualization-book) |
+| **SciencePlots** (9k★) | Declarative `.mplstyle` approach; journal-specific presets; composable styles | [github.com/garrettj403/SciencePlots](https://github.com/garrettj403/SciencePlots) |
+| **LovelyPlots** (926★) | Additional style sheets for scientific papers | [github.com/killiansheriff/LovelyPlots](https://github.com/killiansheriff/LovelyPlots) |
+| **Wilke, Fundamentals of Data Visualization** (2019, free online) | Color theory; proportional ink; visual encoding theory | [clauswilke.com/dataviz](https://clauswilke.com/dataviz/) |
+| **Rougier et al. 2014, Ten Simple Rules for Better Figures** | The 6 rules in figure_design.md §2 come from here | PLOS Comp Biol 10(9):e1003833 |
 
 ---
 

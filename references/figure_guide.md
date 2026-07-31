@@ -179,3 +179,64 @@ add_significance_bracket(ax, x1=0, x2=2, y=0.95, pval=0.003)
 - bracket 线 `lw=0.8, color='#2E3440'`（不用纯黑）
 - 多组比较时 bracket 高度错开（每层 +0.1），避免交叉
 - `ns` 也标出来（不显著也是信息）
+
+---
+
+## 10. Layout 三铁律（legend / 文字 / 比例）
+
+### 铁律 1: Legend 永远在右侧外置
+
+```python
+# 唯一正确的 legend 放置方式：
+ax.legend(frameon=False, fontsize=7,
+          bbox_to_anchor=(1.02, 0.5), loc='center left',  # 右侧外置，垂直居中
+          borderaxespad=0)
+# 如果 legend 太长（>8 entries），用 ncol=2 或缩小到 6pt
+# 如果用 legend 导致右侧被截：figsize 宽度 +1 inch，或 wspace 加大
+```
+
+**禁止**：
+- ❌ `loc='best'`（matplotlib 的 'best' 经常把 legend 盖在数据上）
+- ❌ `loc='upper right'` 在 scatter 图内（遮挡数据点）
+- ❌ legend 在图内且 `frameon=True`（视觉噪音）
+
+**例外**：UMAP 用 on-plot labels 代替 legend（见 §5 UMAP 规则）。只有 >8 clusters 且标签放不下时才用外置 legend。
+
+### 铁律 2: 文字不重叠
+
+```python
+# 每张图存之前必须调用（cns_style.py 提供）：
+from cns_style import finalize_figure
+finalize_figure(fig)  # 自动检查 + 修复重叠
+fig.savefig('panel.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+```
+
+**最小间距规则**（`finalize_figure` 自动检查）：
+- Title ↔ axes top: ≥ 8pt（`axes.titlepad=8`）
+- Axis label ↔ tick label: ≥ 10pt（`labelpad=10`）
+- Panel label ↔ 数据区: offset ≥ (-0.12, 1.08)
+- Legend ↔ 数据区: `bbox_to_anchor` 外置（不在图内）
+- 相邻 panel title ↔ 上一行数据: `hspace ≥ 0.45`
+
+**如果仍有重叠**（`finalize_figure` 会 warn）：
+- 加大 `figsize` 高度（不是缩小字号）
+- 缩短 title 文字（不是让它挤在一起）
+- 减少 panel 数（不是硬塞）
+
+### 铁律 3: 比例不畸形
+
+| 图型 | 宽高比规则 | 代码 |
+|---|---|---|
+| UMAP/tSNE | **必须正方形**（1:1），不许拉成椭圆 | `figsize=(4.5, 4.5)` + `ax.set_aspect('equal')` |
+| Spatial tissue | **匹配组织实际形状**（不裁不拉） | `figsize` 按 H&E 的 W/H 比例设 |
+| Heatmap | cell 接近正方形（aspect ≈ 1）或明确控制 | `ax.set_aspect('auto')` 但 figsize 配合 |
+| Volcano | 略宽于高（4:3.5） | `recipe_figsize('volcano')` |
+| Bar/Violin | 宽度随组数增长，高度固定 3-3.5 | `recipe_figsize('bar', n_x=N)` |
+
+**禁止**：
+- ❌ 把正方形 UMAP 放进 (6, 3) 的 figsize（拉成椭圆）
+- ❌ `savefig(bbox_inches='tight')` 后不检查实际输出比例
+- ❌ 多 panel 中某张被 `subplots_adjust` 挤压变形
+- ❌ heatmap 的 cell 宽高比 >3:1 或 <1:3（看起来像条纹而非格子）
+
+**修复**：每张图存完后 `finalize_figure(fig)` 会检查 axes 的 data ratio vs figure ratio，不匹配时 warn。

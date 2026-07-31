@@ -46,7 +46,7 @@ Phase 3: ASSEMBLE  → 把已验证的 PDF/PNG 拼成 composite
 import sys; sys.path.insert(0, 'scripts/')
 from cns_style import (set_cns_style_journal, polish_axes, clean_umap_axes,
     add_elegant_colorbar, safe_scanpy_plot, optical_margin, add_panel_label,
-    point_size_for_n, apply_5plus1_palette, recipe_figsize)
+    point_size_for_n, apply_5plus1_palette, recipe_figsize, finalize_figure)
 
 set_cns_style_journal('nature')  # 一次性设好全局参数
 
@@ -58,6 +58,7 @@ safe_scanpy_plot(sc.pl.umap, adata, color='celltype',
     legend_loc=None, ax=ax, show=False)
 clean_umap_axes(ax)
 optical_margin(ax, 0.12)
+finalize_figure(fig)  # ← 必须！检查 legend 位置/文字重叠/比例畸形
 fig.savefig('panels/A_umap.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.close(fig)  # ← 必须 close
 

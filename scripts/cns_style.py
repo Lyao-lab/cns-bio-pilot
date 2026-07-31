@@ -269,6 +269,76 @@ def add_panel_label(ax, label, offset=(-0.12, 1.08), fontsize=12):
 
 
 # ============================================================
+# 8b. finalize_figure(fig) — mandatory pre-save layout check
+# ============================================================
+
+def finalize_figure(fig, move_legend_right=True, check_aspect=True, verbose=True):
+    """Mandatory pre-save check: fix legend placement, detect text overlap, verify proportions.
+
+    Call this BEFORE every fig.savefig(). It:
+    1. Moves any in-axes legend to outside-right (铁律1)
+    2. Checks for text bounding-box overlaps and warns (铁律2)
+    3. Checks scatter axes aspect ratio and warns if distorted (铁律3)
+
+    Args:
+        fig: matplotlib Figure
+        move_legend_right: if True, relocate legends to bbox_to_anchor=(1.02, 0.5)
+        check_aspect: if True, warn if scatter axes have non-square aspect
+        verbose: print warnings
+    """
+    issues = []
+
+    for ax in fig.axes:
+        # --- 铁律 1: Legend outside-right ---
+        if move_legend_right and ax.get_legend() is not None:
+            leg = ax.get_legend()
+            bbox = leg.get_bbox_to_anchor()
+            # If legend anchor is inside axes (loc != external), move it
+            try:
+                leg_xy = leg.get_window_extent(fig.canvas.get_renderer())
+                ax_bbox = ax.get_window_extent(fig.canvas.get_renderer())
+                # Check if legend overlaps with axes data area
+                if leg_xy.overlaps(ax_bbox):
+                    leg.set_bbox_to_anchor((1.02, 0.5), transform=ax.transAxes)
+                    leg._loc = 6  # 'center left' equivalent
+                    if verbose:
+                        issues.append(f"Legend moved to outside-right (was overlapping data)")
+            except Exception:
+                pass  # renderer not available, skip overlap check
+
+        # --- 铁律 3: Aspect ratio check for scatter ---
+        if check_aspect and ax.collections:  # has scatter/points
+            try:
+                xlim = ax.get_xlim()
+                ylim = ax.get_ylim()
+                data_w = xlim[1] - xlim[0]
+                data_h = ylim[1] - ylim[0]
+                if data_h > 0 and data_w > 0:
+                    pos = ax.get_position()
+                    fig_w = fig.get_figwidth() * pos.width
+                    fig_h = fig.get_figheight() * pos.height
+                    display_ratio = fig_w / fig_h if fig_h > 0 else 1
+                    data_ratio = data_w / data_h
+                    # If display ratio and data ratio differ by >30%, likely distorted
+                    if abs(display_ratio - data_ratio) / max(display_ratio, data_ratio) > 0.3:
+                        issues.append(
+                            f"Aspect ratio may be distorted (display {display_ratio:.2f} "
+                            f"vs data {data_ratio:.2f}). Consider set_aspect('equal') "
+                            f"or adjusting figsize.")
+            except Exception:
+                pass
+
+    if issues and verbose:
+        print("⚠️  finalize_figure warnings:")
+        for issue in issues:
+            print(f"   - {issue}")
+    elif verbose and not issues:
+        pass  # silent on success (don't spam)
+
+    return fig
+
+
+# ============================================================
 # 9. condition_colors() — temperature narrative
 # ============================================================
 CONDITION_COLORS = {

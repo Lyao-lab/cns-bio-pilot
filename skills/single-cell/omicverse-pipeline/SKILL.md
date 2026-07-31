@@ -174,10 +174,11 @@ ov.pp.score_genes_cell_cycle(adata, species='human')  # 'human' | 'mouse'
 
 ```python
 # Lightweight: Harmony (in PCA space, seconds)
-ov.single.batch_correction(adata, method='harmony', batch_key='sample')
+ov.single.batch_correction(adata, methods='harmony', batch_key='sample')
+# ⚠️ 参数名是 methods（复数）！method= 被 **kwargs 静默吞掉，会默认跑 harmony
 
 # Deep: scVI (generative model, captures non-linear batch effects)
-ov.single.batch_correction(adata, method='scvi', batch_key='sample')
+ov.single.batch_correction(adata, methods='scVI', batch_key='sample')  # 注意大小写: 'scVI' 不是 'scvi'
 # NOTE: after scVI, recompute neighbors/umap using adata.obsm['X_scVI'] as use_rep
 ov.pp.neighbors(adata, use_rep='X_scVI'); ov.pp.umap(adata)
 ```
@@ -202,12 +203,14 @@ Decision: Harmony for shallow batch / fast iteration; scVI for complex batch and
 
 ```python
 # markers
-ov.single.find_markers(adata, method='wilcoxon')   # 'wilcoxon' | 't-test' | 'cosg'
+ov.single.find_markers(adata, groupby='leiden', method='wilcoxon')  # groupby 必需！默认 method='cosg'
 # COSG is more robust for rare populations but slower
 
 # annotation (pick as needed)
 ov.single.pySCSA(adata)             # reference-free, marker → auto annotation
-ov.single.AnnotationRef(adata, ref='...')  # with reference (CellTypist/SingleR engine)
+ov.single.AnnotationRef(adata, adata_ref=ref_adata, celltype_key='celltype')  # ref 必须是 AnnData 对象，不是字符串
+# ref_adata = sc.read_h5ad('reference_annotated.h5ad')  # 先加载参考集
+# 或走 scop: RunCellTypist(srt, model='Immune_All_Low.pkl') / RunSingleR(srt, ref='HumanPrimaryCellAtlas')
 # or ov.single.Annotation(adata).annotate(..., ref='scmulan')  # scmulan: FM-based annotator new in ov
 ov.single.gptcelltype(adata)        # LLM-assisted, needs API key
 ```
@@ -228,7 +231,7 @@ Annotation labels are **hypotheses, not ground truth**. Every label is a predict
 **3. Multi-method cross-validation (mandatory for key cell types)**:
 ```python
 # Run ≥2 methods, build a cross-tab, inspect disagreement
-ov.single.AnnotationRef(adata, ref='celltypist_immune')   # method 1
+ov.single.AnnotationRef(adata, adata_ref=ref_adata, celltype_key='celltype')   # method 1: reference-based
 adata.obs['anno_singleR'] = <SingleR labels>               # method 2
 # Cross-tabulate: where do they disagree?
 import pandas as pd
@@ -263,17 +266,58 @@ Auto-annotation without marker validation = trusting an unverified black box.
 
 > References: Huang et al. 2021 *Genomics Proteomics Bioinformatics* (10-method benchmark); Fu et al. 2024 *Brief Bioinform* (18-method benchmark); [sc-best-practices annotation](https://www.sc-best-practices.org/cellular_structure/annotation.html); [ScPCA nonsense-reference test](https://www.ccdatalab.org/blog/a-behind-the-scenes-look-at-how-we-selected-cell-type-annotation-platforms-for-the-scpca-portal) (annotation tools give confident labels even with wrong references).
 
+## 8.5 Pseudobulk Differential Expression (Core Rule 2 — mandatory for publication DE)
+
+> **⚠️ `find_markers` (§8) 只用于 marker 发现（per-cell Wilcoxon/cosg），禁止当 DE 报告。**
+> 发表级 DE 必须走 pseudobulk：聚合到 sample × celltype → DESeq2/edgeR。
+> Per-cell 检验假设细胞独立 → 伪重复 → 系统性低估 p 值 → 假阳性爆炸。
+
+```python
+import scanpy as sc
+import omicverse as ov
+
+# Step 1: 聚合到 pseudobulk（sample × celltype 级别）
+# ⚠️ 必须用 raw counts layer（不是 normalized .X）
+pb = sc.get.aggregate(adata, by=['sample', 'celltype'], func='sum', layer='counts')
+# pb 是 AnnData: obs = sample×celltype 组合, X = 聚合后的 counts
+
+# Step 2: 过滤低计数组合（<10 cells 的 sample×celltype 不可靠）
+# 聚合前的 cell 数存在 pb.obs 中（取决于 aggregate 版本，检查 pb.obs.columns）
+pb = pb[pb.obs['sample'].notna()].copy()  # 基本清洗
+
+# Step 3: DE（omicverse 包装的 pyDESeq2）
+de = ov.bulk.pyDEG(pb, groupby='condition', vs='ctrl',
+                   celltype_key='celltype',   # 按 celltype 分组做
+                   method='DESeq2')           # 'DESeq2' | 'edgeR' | 'limma'
+# 输出: DataFrame with log2FC, padj, pvalue per gene per celltype
+
+# Step 4: 过滤 + 报告
+sig = de[(de['padj'] < 0.05) & (de['log2FC'].abs() > 1.0)]
+print(f"Significant DE genes: {len(sig)} (padj<0.05 & |log2FC|>1)")
+
+# Step 5: 保存 checkpoint
+adata.write_h5ad('checkpoints/08_annotation.h5ad')
+pb.write_h5ad('checkpoints/08_pseudobulk.h5ad')
+```
+
+**关键判据**：
+- 必须有 ≥3 biological replicates per condition（否则 DESeq2 无法估计离散度）
+- `layer='counts'`（不是 normalized）——DESeq2 内部做 size factor 标准化
+- 结果按 celltype 分开报告（不是全细胞混一起）
+- 报告时写："Pseudobulk DE (DESeq2, n=X biological replicates per group, padj<0.05 & |log2FC|>1)"
+
 ## 9. Downstream: communication / trajectory
 
 ```python
 # Cell-cell communication (LIANA+ consensus recommended — Dimitrov et al. Mol Syst Biol 2024, 251+ citations;
 # multi-method + multi-resource aggregation, the 2024 mainstream consensus path; supersedes single-tool CellChat/CellPhoneDB)
-ov.single.run_liana(adata, scope='shortcode')   # consensus, runs multiple methods
+ov.single.run_liana(adata, groupby='celltype')   # groupby 必需！method='rank_aggregate' (consensus)
 ov.single.run_cellphonedb_v5(adata)             # alternative: CellPhoneDB v5 (multi-omics/spatial)
 ov.pl.ccc_heatmap(adata)
 # Spatial communication → spatial/omicverse-spatial (COMMOT/FlowSig)
 
 # Trajectory / fate inference (CellRank 2 is now primary, Nat Methods 2024; supersedes plain Monocle/Slingshot)
+# ⚠️ 前置：需 spliced/unspliced layers → 先走 single-cell/rna-velocity
 ov.single.cellrank_fate(adata, cluster_key='celltype')   # unified kernel framework, probabilistic fate
 ov.single.Fate(adata, pseudotime='dpt_pseudotime')       # pseudotime-based fate
 # classic py-monocle2 still available (simple pseudotime)

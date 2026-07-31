@@ -136,7 +136,7 @@ ov.pl.dotplot(adata, var_names=...)    # gene-condition dot plot
 - **Counts expression matrix** → sample × gene integer count matrix (FASTQ→STAR/HISAT alignment + featureCounts, or downloaded from GEO)
 - **`AnnData`: `adata.X` = counts, `adata.obs['condition']` group column, `adata.obs['batch']` batch column**
 - **`adata.layers['counts']`** must be saved before normalization (DE/batch covariate uses raw integer counts)
-- If data comes from single-cell → first run `single-cell/omicverse-pipeline` for pseudobulk aggregation (`sc.pp.aggregate_and_filter`), then feed to this skill
+- If data comes from single-cell → first run `single-cell/omicverse-pipeline` §8.5 for pseudobulk aggregation (`sc.get.aggregate(adata, by=['sample','celltype'], func='sum', layer='counts')`), then feed to this skill
 
 ## When to leave this skill (where to go)
 

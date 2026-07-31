@@ -28,9 +28,9 @@ adata = ov.read('data.h5ad')
 | Clustering | `ov.pp.leiden(adata, resolution='auto')` (auto picks resolution) | scanpy.tl.leiden |
 | Auto resolution | `ov.single.auto_resolution(adata)` | — |
 | Cell cycle | `ov.pp.score_genes_cell_cycle(adata, species='human')` | scanpy.tl.score_genes_cell_cycle |
-| Batch correction Harmony | `ov.single.batch_correction(adata, method='harmony')` | harmonypy |
-| Batch correction scVI | `ov.single.batch_correction(adata, method='scvi')` | scvi-tools |
-| Marker genes | `ov.single.find_markers(adata, method='wilcoxon'\|'t-test'\|'cosg')` | scanpy.tl.rank_genes_groups |
+| Batch correction Harmony | `ov.single.batch_correction(adata, batch_key='sample', methods='harmony')` — **`methods` 复数！** | harmonypy |
+| Batch correction scVI | `ov.single.batch_correction(adata, batch_key='sample', methods='scVI')` — 注意大小写 'scVI' | scvi-tools |
+| Marker genes | `ov.single.find_markers(adata, groupby='leiden', method='wilcoxon')` — **groupby 必需** | scanpy.tl.rank_genes_groups |
 | Annotation (no reference) | `ov.single.pySCSA(adata)` / `MetaTiME` | SCSA |
 | Annotation (with reference) | `ov.single.AnnotationRef(adata)` / `TOSICA` / `weighted_knn_transfer` | CellTypist |
 | GPT annotation | `ov.single.gptcelltype(adata)` | GPTCelltype |

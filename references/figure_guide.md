@@ -91,10 +91,58 @@ optical_margin(ax, 0.12)  # 圆形数据多留 12% 呼吸空间
 - `edge_color='#2E3440', edge_lw=0.3`
 - 统一 vmin/vmax across genes
 
-### Violin/Box
-- Fill α=0.3 (Morlandi color), edge lw=0.8
+### Violin/Box (gene expression per cluster)
+- Fill α=0.3 (Morlandi color per cluster), edge lw=0.8, same color
 - Box: widths=0.15, median color=#BF616A lw=1.2
-- Individual points: s=2, α=0.5, color=#2E3440, jitter
+- Individual points: s=2, α=0.5, color=#2E3440, jitter（n<30 时必须显示）
+- Y 轴: log-normalized expression（scanpy 默认）或 log1p(counts)
+- X 轴: cluster names（≤12 个 rotation=0；>12 个 rotation=45）
+- 多基因: 每基因一行 subplot（共享 x 轴），figsize=(n_clusters×0.5+1, n_genes×2.5)
+- **不用 seaborn 默认紫色**——用 manifest 的 cell_type_colors
+
+```python
+# 方式 A: scanpy 快速版（适合探索）
+fig = sc.pl.violin(adata, keys=['CD3D','MS4A1','LYZ','CD68'],
+                   groupby='leiden', palette=ct_colors,
+                   jitter=0.4, size=2, alpha=0.5,
+                   show=False, figsize=(12, 3*4))  # n_genes × 3
+# scanpy violin 不自动应用 polish_axes，需手动：
+for ax in fig.axes:
+    polish_axes(ax)
+finalize_figure(fig)
+
+# 方式 B: matplotlib 精细版（适合发表，完全控制）
+genes = ['CD3D', 'MS4A1', 'LYZ']
+clusters = adata.obs['leiden'].cat.categories
+fig, axes = plt.subplots(len(genes), 1,
+    figsize=(len(clusters)*0.5+1, len(genes)*2.5), sharex=True)
+for row, gene in enumerate(genes):
+    ax = axes[row] if len(genes) > 1 else axes
+    data_per_cl = [adata[adata.obs['leiden']==cl, gene].X.toarray().ravel()
+                   if hasattr(adata.X,'toarray')
+                   else adata[adata.obs['leiden']==cl, gene].X.ravel()
+                   for cl in clusters]
+    parts = ax.violinplot(data_per_cl, positions=range(len(clusters)),
+                          showmeans=False, showmedians=False, showextrema=False)
+    for i, pc in enumerate(parts['bodies']):
+        c = ct_colors.get(clusters[i], MORLANDI[i % len(MORLANDI)])
+        pc.set_facecolor(c); pc.set_alpha(0.3)
+        pc.set_edgecolor(c); pc.set_linewidth(0.8)
+    # Box overlay
+    bp = ax.boxplot(data_per_cl, positions=range(len(clusters)), widths=0.15,
+                    patch_artist=True, showfliers=False,
+                    boxprops=dict(facecolor='white', edgecolor=NEAR_BLACK, lw=0.8),
+                    medianprops=dict(color='#BF616A', lw=1.2),
+                    whiskerprops=dict(color=NEAR_BLACK, lw=0.6),
+                    capprops=dict(color=NEAR_BLACK, lw=0.6))
+    ax.set_ylabel(gene, fontstyle='italic', fontsize=10, labelpad=10)
+    polish_axes(ax)
+axes[-1].set_xticks(range(len(clusters)))
+axes[-1].set_xticklabels(clusters, fontsize=7, rotation=45 if len(clusters)>12 else 0)
+finalize_figure(fig)
+fig.savefig('panels/violin_markers.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+plt.close(fig)
+```
 
 ### Spatial
 - Tissue `alpha_img=1.0`（不透明）; spots `alpha=0.85`, s=1.5 (Visium) / s=0.3 (high-res)

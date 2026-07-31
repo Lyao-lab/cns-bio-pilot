@@ -90,10 +90,10 @@ Data has spatial coords / tissue image?
 | Pathway / enrichment | — | — | `general-bio/omicverse-bulk` (GSEApy/decoupler) |
 
 > **Figure production pipeline (run in this order, not in parallel)**:
-> ① **`presentation/figure-architect`** — FIRST, after all analysis is done. Designs the main-figure narrative spine + panel logic + pre-build review → produces `outline.json`. Skipping this and jumping to ②/③ produces a "results listing", not a paper figure.
-> ② **`visualization/multi-panel-figures`** — assembles the architect's `outline.json` into a 6-panel A–F composite.
-> ③ **`visualization/omicverse-plotting`** — draws each individual panel (UMAP/volcano/heatmap/dot/violin) via `ov.pl.*`.
-> A single panel only → skip to ③ directly. A full main figure → ①→②→③.
+> ① **`presentation/figure-architect`** — FIRST, after all analysis is done. Designs the narrative spine + panel logic + pre-build review → produces `outline.json`.
+> ② **`visualization/omicverse-plotting`** — renders EACH panel **independently** (one `plt.figure()` per panel → `savefig` → `plt.close()`). Each panel verified for aesthetics/proportions **before** assembly. If a panel looks wrong, re-render THAT panel (not the whole figure).
+> ③ **`visualization/multi-panel-figures`** — assembles the **pre-rendered, pre-verified** panel files (PDF/PNG) into a 6-panel A–F composite. Assembly is a layout operation on finished images — it does NOT draw or modify panel content.
+> A single panel only → ② directly (skip ①③). A full main figure → ①→②→③. **Never skip ②'s independent verification** — "draw-and-assemble simultaneously" locks bad proportions into the composite.
 
 | Plotting (UMAP / volcano / heatmap / dot / violin) | `visualization/omicverse-plotting` (ov.pl.*) | same | same |
 | Multi-panel A–F assembly | `visualization/multi-panel-figures` | same | same |

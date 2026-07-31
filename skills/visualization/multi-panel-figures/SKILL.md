@@ -6,6 +6,7 @@ author: AIPOCH
 ---
 
 ## When NOT to use this skill
+- **Sub-figures not yet individually rendered and verified** → go back to `visualization/omicverse-plotting` + `figure-architect` Step 5 (each panel must be independently saved as PDF/PNG and verified for aesthetics BEFORE assembly; do NOT draw-and-assemble simultaneously)
 - Sub-figures not yet generated; need to plot from data (UMAP/volcano/heatmap) → use `visualization/omicverse-plotting` (ov.pl.*) to generate sub-figures first
 - Need mechanism/flowchart diagrams (non-data figures) → use `visualization/scientific-schematics`
 - Need a paper graphical abstract (single summary-figure layout + AI prompts) → use `visualization/scientific-schematics` (graphical-abstract mode)

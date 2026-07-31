@@ -256,16 +256,84 @@ Panel 数: 6 (A-F)
 判定: <全部 PASS → 可交付 multi-panel-figures；任一 FAIL → 列出修复项>
 ```
 
+### Step 5 — 逐张独立出图 + 验证（mandatory gate，拼图前必须通过）
+
+> **核心原则：拼图是对已完成图片的排版操作，不是对 live axes 的绘图操作。**
+> 每张 panel 必须先独立渲染、独立确认美观/比例、独立存文件，然后才能送去拼图。
+> "一边画一边拼"= 单张比例没调好就被锁死在 composite 里，返工成本极高。
+
+#### 5a. 逐张独立渲染
+
+按 outline.json 的 panel spec，**每张图独立画、独立存**：
+
+```python
+# 每张 panel 独立画、独立存（不在 composite 里画）
+from cns_style import set_cns_style_journal, polish_axes, clean_umap_axes, \
+                      add_elegant_colorbar, safe_scanpy_plot, optical_margin, add_panel_label
+
+set_cns_style_journal('nature')  # 或目标期刊
+
+# Panel A: UMAP（独立 figure，独立存）
+fig_a, ax_a = plt.subplots(figsize=(4, 4))
+safe_scanpy_plot(sc.pl.umap, adata, color='celltype', ax=ax_a, show=False, legend_loc=None)
+clean_umap_axes(ax_a)
+optical_margin(ax_a)
+# 在图上直接标 cluster 名（不用外部 legend）
+fig_a.savefig('panels/A_umap_celltype.pdf', dpi=300, bbox_inches='tight')
+plt.close(fig_a)  # ← 必须 close！释放内存，确保下一张独立
+
+# Panel B: 比例柱状图（独立 figure，独立存）
+fig_b, ax_b = plt.subplots(figsize=(3.5, 3))
+# ... plot ...
+polish_axes(ax_b)
+fig_b.savefig('panels/B_proportion.pdf', dpi=300, bbox_inches='tight')
+plt.close(fig_b)
+
+# ... C/D/E/F 同理，每张独立 figure + 独立 savefig + close
+```
+
+**规则**：
+- 每张 panel 用**独立的 `plt.figure()`**——绝不在同一个 figure 里画多张
+- 每张存为**独立 PDF/PNG**（`panels/A_xxx.pdf`, `panels/B_xxx.pdf`, ...）
+- 每张存完**必须 `plt.close()`**——防止 matplotlib 状态泄漏到下一张
+- 用 `set_cns_style_journal()` 设好全局参数后，每张图只需 `polish_axes()` 或 `clean_umap_axes()` 收尾
+
+#### 5b. 逐张验证（每张存完后立即检查）
+
+对**每张独立存好的 PDF/PNG** 检查：
+
+- [ ] **比例正确**：宽高比符合 panel 角色（UMAP ≈ 1:1 方形；bar/violin ≈ 4:3 或 3:2 宽扁；heatmap 按基因数定）
+- [ ] **独立看美观**：`polish_axes()` 已应用（L-frame + outward ticks + subtle grid）；UMAP 已去轴
+- [ ] **字号在独立尺寸下可读**：不是"拼完缩小后"的字号，是**当前独立尺寸下**的字号 ≥6pt
+- [ ] **配色符合 manifest.yaml**：cell type 颜色一致、condition 色温正确
+- [ ] **无 overlap**：legend/colorbar/annotation 不遮挡数据
+- [ ] **留白充足**：`bbox_inches='tight'` + `pad_inches=0.1` 后四周有呼吸空间
+
+**任何一张不通过 → 重画那一张（不是重画全部）。** 这是独立出图的核心价值：返工粒度 = 单张，不是全图。
+
+#### 5c. 比例协调确认（全部独立出完后）
+
+把所有 panel 文件**放在一起目视对比**：
+- [ ] 各 panel 的**视觉重量**是否平衡（UMAP 不能比 bar chart 大 3 倍）
+- [ ] **字号体感**是否一致（不能 A 用 10pt、D 用 6pt——虽然 modular scale 允许不同 size，但同一 Figure 内相邻 panel 的 tick label 应同 size）
+- [ ] **colorbar 宽度/高度**是否统一（多张有 colorbar 的 panel 应一致）
+- [ ] 需要调整某张的 figsize → **回去重画那一张**（不在拼图时硬缩放）
+
+> **禁止在拼图阶段调单图比例**——如果拼图时发现某张太大/太小，说明 Step 5b 没做好。回去调那张的 `figsize`，重新 `savefig`，再来拼。
+
+---
+
 ## 交付物
 
-审查全 PASS 后，产出 `outline.json`（如 Step 3 格式），交给：
-- **`visualization/multi-panel-figures`**：**人类/LLM 阅读规范**（outline.json 不是 CLI 输入）——按 outline 的 panel_order 把 6 张 PNG (A-F) 传给 `multi-panel-figures/scripts/main.py --input A.png B.png C.png D.png E.png F.png`；几何 QA 由 multi-panel-figures 负责
+**Step 5 全部 PASS 后**（每张 panel 已独立存为 PDF/PNG + 逐张验证通过 + 比例协调确认），交给下游：
+
+- **`visualization/multi-panel-figures`**：输入是**已独立渲染、已验证美观的** 6 张 PNG/PDF 文件（不是 live axes）。按 `multi-panel-figures/scripts/main.py --input panels/A.png panels/B.png ... panels/F.png` 拼图。拼图只负责排版（label 位置、间距、输出 DPI），**不修改 panel 内容**。
 - **`presentation/results-writer`**：按 narrative_spine 写 Results 文字（每段对应一个 panel）
 - **`presentation/figure-legend-writer`**：按 panel spec 写自洽图注
 
-> **outline.json 的契约**：它是**设计规格**（panel_order / chart_type / data_source / title），消费者是组装面板时的 LLM/人，不是 multi-panel-figures 的机器输入。multi-panel-figures 的 main.py 只接受 6 张图片文件路径（按 A-F 字母序拼图），不解析 outline.json。
+> **outline.json 的契约**：它是**设计规格**（panel_order / chart_type / data_source / title），消费者是 Step 5 渲染时的 LLM/人。multi-panel-figures 的 main.py 只接受 6 张**已完成**图片文件路径（按 A-F 字母序拼图），不解析 outline.json，不画图。
 >
-> **不要自己拼图**——本 skill 只设计，拼图走 multi-panel-figures（它有几何 QA）。
+> **不要自己拼图，不要在拼图时改单图**——本 skill 只设计 + 监督逐张出图；拼图走 multi-panel-figures（它有几何 QA）；单图有问题回去重画那张单图。
 
 ## Prerequisites (where it comes from)
 

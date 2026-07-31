@@ -68,87 +68,119 @@ optical_margin(ax, 0.12)  # 圆形数据多留 12% 呼吸空间
 
 ## 5. 图型速查（每种图的精确参数）
 
-### UMAP/tSNE
-- `size`: <10k→8, 10-50k→3, 50-200k→1, >200k→0.3
+### UMAP/tSNE — omicverse 风格
+- **优先用 `ov.pl.embedding()`**（自动应用 omicverse 5 签名：`frameon='small'` / grid off / `legend_fontweight='bold'` / mini colorbar / cluster names on plot）
+- omicverse 默认：`legend_loc='right margin'`, `na_color='lightgray'`, `edges=False`
+- 手动 sc.pl.umap 时：`size`: <10k→8, 10-50k→3, 50-200k→1, >200k→0.3
 - `alpha=0.7, edgecolor='none'`
-- On-plot labels（adjustText），不用外部 legend
-- `clean_umap_axes()` + `optical_margin(ax, 0.12)`
+- On-plot labels: `add_cluster_labels()`（白色光晕，median 定位）或 scanpy `legend_loc='on data'`
+- 轴风格二选一：`frameon='small'`（omicverse L 型小轴）或 `clean_umap_axes()`（Nature 无轴）
+- `optical_margin(ax, 0.12)`
 
-### Volcano
-- Up=#BF616A (s=4), Down=#5E81AC (s=4), NS=#D8DEE9 (s=2, α=0.4)
+### Volcano — omicverse 风格
+- **优先用 `ov.pl.volcano()`**（自动配色 + top-10 标注 + legend 下方）
+- 手动时对齐 omicverse 默认色：Up=`#e25d5d`, Down=`#7388c1`, NS=`#d7d7d7`
+- figsize: **(4, 4) 正方形**（omicverse 默认）
 - 阈值线: `ls='--', lw=0.5, alpha=0.3`
-- Top-5 labels: italic, arrowprops `rad=0.1, lw=0.5`
+- Gene labels: **top 10**（不是 5），fontsize=10，italic
+- Legend: **图下方**（`bbox_to_anchor=(0.8, -0.2), ncol=2, fontsize=12`）
+- Title: weight='normal'（不 bold），size=14
 - `polish_axes(ax)`
 
-### Heatmap
+### Heatmap — omicverse/scanpy 风格
+- omicverse 无独立 heatmap 函数——用 `sc.pl.heatmap()` 或 `seaborn.clustermap()`
 - Z-score per row, `vmin=-2, vmax=2`
-- cmap=EXPR_CMAP; row-clustered, column-fixed by biology
-- 白线分隔 groups: `linewidths=0, ax.vlines(bounds, color='white', lw=1.5)`
-- Gene names italic; `add_elegant_colorbar(label='z-score')`
+- cmap=EXPR_CMAP 或 'RdBu_r'; row-clustered, **column-fixed by biology**（omicverse dotplot 也是 `dendrogram=False`）
+- 白线分隔 groups: `linewidths=0.5, linecolor='white'`
+- Gene names italic; `add_elegant_colorbar(label='Scaled expression')`
+- 2024 顶刊趋势：**不画列 dendrogram**（列按生物学排序），行注释色条
 
-### Dotplot
-- `size_min=15, size_max=150`; cmap=EXPR_CMAP
-- `edge_color='#2E3440', edge_lw=0.3`
+### Dotplot — omicverse 风格
+- **优先用 `ov.pl.dotplot()`**（自动标准：colorbar_title='Mean expression in group', size_title='Fraction of cells in group (%)'）
+- `num_categories=7`（>7 类时 omicverse 自动分组）
+- `standard_scale='var'`（行标准化）；cmap=EXPR_CMAP 或 'Reds'
+- `edge_color='#2E3440', edge_lw=0.3`；`dendrogram=False`
 - 统一 vmin/vmax across genes
 
-### Violin/Box (gene expression per cluster)
-- Fill α=0.3 (Morlandi color per cluster), edge lw=0.8, same color
-- Box: widths=0.15, median color=#BF616A lw=1.2
-- Individual points: s=2, α=0.5, color=#2E3440, jitter（n<30 时必须显示）
-- Y 轴: log-normalized expression（scanpy 默认）或 log1p(counts)
-- X 轴: cluster names（≤12 个 rotation=0；>12 个 rotation=45）
-- 多基因: 每基因一行 subplot（共享 x 轴），figsize=(n_clusters×0.5+1, n_genes×2.5)
-- **不用 seaborn 默认紫色**——用 manifest 的 cell_type_colors
+### Violin/Box (gene expression per cluster) — omicverse 风格
+- **交替背景色带**（omicverse 标志性特征）：white + group_color 淡化 80%（`_lighten_color(color, 0.8)`）
+- Violin fill **α=0.8**（较不透明，omicverse 默认），edge 同色 lw=1
+- Spine 颜色: **#b4aea9**（暖灰，不是纯黑）
+- **水平 grid lines: True**（`alpha=0.3, lw=0.5`，帮助读数）
+- Box overlay: **默认不加**（omicverse `show_boxplot=False`）；需要时 widths=0.15
+- Individual points: **s=1**, α=0.4, jitter（omicverse 默认极小点）
+- 统计检验: 内置（`statistical_tests='wilcox'`）或手动 `add_significance_bracket()`
+- Y 轴: log-normalized expression
+- X 轴: cluster names（≤12 rotation=0；>12 rotation=45）
+- 多基因: 每基因一行 subplot（共享 x 轴），figsize=(n_clusters×0.6+1, n_genes×2.8)
 
 ```python
-# 方式 A: scanpy 快速版（适合探索）
-fig = sc.pl.violin(adata, keys=['CD3D','MS4A1','LYZ','CD68'],
-                   groupby='leiden', palette=ct_colors,
-                   jitter=0.4, size=2, alpha=0.5,
-                   show=False, figsize=(12, 3*4))  # n_genes × 3
-# scanpy violin 不自动应用 polish_axes，需手动：
-for ax in fig.axes:
-    polish_axes(ax)
-finalize_figure(fig)
+# 方式 A: 直接用 ov.pl.violin（推荐——自动应用 omicverse 全部样式）
+ov.pl.violin(adata, keys=['CD3D','MS4A1','LYZ','CD68'], groupby='leiden',
+             stripplot=True, jitter=True, size=1, jitter_alpha=0.4,
+             violin_alpha=0.8, alternating_background=True,
+             spine_color='#b4aea9', grid_lines=True,
+             statistical_tests='wilcox',  # 自动加星号
+             show=False, save='panels/violin_markers.pdf')
 
-# 方式 B: matplotlib 精细版（适合发表，完全控制）
+# 方式 B: matplotlib 精细版（完全控制，模拟 omicverse 风格）
+from cns_style import MORLANDI, GREY, finalize_figure
+import matplotlib.patheffects as pe
+
+def _lighten_color(hex_color, amount=0.8):
+    """Lighten a color towards white (omicverse's background band logic)."""
+    import matplotlib.colors as mcolors
+    r, g, b = mcolors.to_rgb(hex_color)
+    return (r + (1-r)*amount, g + (1-g)*amount, b + (1-b)*amount)
+
 genes = ['CD3D', 'MS4A1', 'LYZ']
 clusters = adata.obs['leiden'].cat.categories
+ct_colors = {cl: MORLANDI[i % len(MORLANDI)] for i, cl in enumerate(clusters)}
+
 fig, axes = plt.subplots(len(genes), 1,
-    figsize=(len(clusters)*0.5+1, len(genes)*2.5), sharex=True)
+    figsize=(len(clusters)*0.6+1, len(genes)*2.8), sharex=True)
 for row, gene in enumerate(genes):
     ax = axes[row] if len(genes) > 1 else axes
     data_per_cl = [adata[adata.obs['leiden']==cl, gene].X.toarray().ravel()
                    if hasattr(adata.X,'toarray')
                    else adata[adata.obs['leiden']==cl, gene].X.ravel()
                    for cl in clusters]
+    # 交替背景色带（omicverse 标志性）
+    for i, cl in enumerate(clusters):
+        bg_color = _lighten_color(ct_colors[cl], 0.85)
+        ax.axvspan(i-0.5, i+0.5, color=bg_color, alpha=0.5, zorder=0)
+    # Violin (alpha=0.8, omicverse default)
     parts = ax.violinplot(data_per_cl, positions=range(len(clusters)),
                           showmeans=False, showmedians=False, showextrema=False)
     for i, pc in enumerate(parts['bodies']):
-        c = ct_colors.get(clusters[i], MORLANDI[i % len(MORLANDI)])
-        pc.set_facecolor(c); pc.set_alpha(0.3)
-        pc.set_edgecolor(c); pc.set_linewidth(0.8)
-    # Box overlay
-    bp = ax.boxplot(data_per_cl, positions=range(len(clusters)), widths=0.15,
-                    patch_artist=True, showfliers=False,
-                    boxprops=dict(facecolor='white', edgecolor=NEAR_BLACK, lw=0.8),
-                    medianprops=dict(color='#BF616A', lw=1.2),
-                    whiskerprops=dict(color=NEAR_BLACK, lw=0.6),
-                    capprops=dict(color=NEAR_BLACK, lw=0.6))
+        c = ct_colors[clusters[i]]
+        pc.set_facecolor(c); pc.set_alpha(0.8)
+        pc.set_edgecolor(c); pc.set_linewidth(1)
+    # Strip plot (s=1, alpha=0.4, omicverse default)
+    for i, d in enumerate(data_per_cl):
+        jit = np.random.uniform(-0.15, 0.15, len(d))
+        ax.scatter(np.full(len(d), i)+jit, d, s=1, alpha=0.4,
+                   color=ct_colors[clusters[i]], edgecolor='none', rasterized=True, zorder=3)
+    # Grid + spine (omicverse style)
+    ax.yaxis.grid(True, alpha=0.3, lw=0.5, color='#b4aea9', zorder=0)
+    ax.set_axisbelow(True)
+    for spine in ax.spines.values():
+        spine.set_color('#b4aea9'); spine.set_linewidth(0.8)
     ax.set_ylabel(gene, fontstyle='italic', fontsize=10, labelpad=10)
-    polish_axes(ax)
 axes[-1].set_xticks(range(len(clusters)))
 axes[-1].set_xticklabels(clusters, fontsize=7, rotation=45 if len(clusters)>12 else 0)
-finalize_figure(fig)
+finalize_figure(fig, move_legend_right=False)
 fig.savefig('panels/violin_markers.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.close(fig)
 ```
 
-### Spatial
-- Tissue `alpha_img=1.0`（不透明）; spots `alpha=0.85`, s=1.5 (Visium) / s=0.3 (high-res)
-- **Scale bar 必须有**（缺它审稿人立刻扣分）; colorbar 横置于图下方
+### Spatial — omicverse 风格
+- **优先用 `ov.pl.plot_spatial()`**（自动处理 tissue + spots + colorbar）
+- 手动时：Tissue `alpha_img=1.0`（不透明）; spots `alpha=0.85`, s=1.5 (Visium) / s=0.3 (high-res)
+- **Scale bar 必须有**（缺它审稿人立刻扣分）; colorbar 横置于图下方（`orientation='horizontal'`）
 - 一基因一 panel; shared vmin/vmax (99th percentile clip)
 - `add_elegant_colorbar(label=gene_name)`
+- omicverse spatial 默认：`frameon='small'`, `colorbar_loc='right'`
 
 ### Bar (proportions)
 - 95% CI error bars (capsize=3, lw=1)

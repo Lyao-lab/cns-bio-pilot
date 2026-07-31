@@ -129,9 +129,13 @@ def set_cns_style(base_fontsize=8, scale=1.2, palette='morlandi'):
         'ps.fonttype': 42,
         'svg.fonttype': 'none',
 
-        # --- Legend ---
+        # --- Legend (compact, omicverse-style) ---
         'legend.frameon': False,
         'legend.borderaxespad': 0.3,
+        'legend.numpoints': 1,
+        'legend.scatterpoints': 1,
+        'legend.handlelength': 0.5,
+        'legend.handletextpad': 0.4,
 
         # --- Title ---
         'axes.titlepad': 8,
@@ -516,7 +520,7 @@ def point_size_for_n(n_obs):
 
 
 def volcano_colors():
-    """Return color dict for volcano plot (temperature narrative).
+    """Return color dict for volcano plot (aligned with ov.pl.volcano defaults).
 
     Usage:
         colors = volcano_colors()
@@ -525,10 +529,10 @@ def volcano_colors():
         ax.scatter(..., color=colors['ns'])    # not significant
     """
     return {
-        'up': '#BF616A',     # warm red = active/upregulated
-        'down': '#5E81AC',   # cool blue = suppressed/downregulated
-        'ns': '#D8DEE9',     # grey = not significant
-        'ns_alpha': 0.4,     # non-sig points are faint
+        'up': '#e25d5d',     # omicverse up_color (soft coral red)
+        'down': '#7388c1',   # omicverse down_color (soft periwinkle blue)
+        'ns': '#d7d7d7',     # omicverse normal_color (light grey)
+        'ns_alpha': 0.6,     # slightly more visible than before
         'threshold': '#4C566A',  # threshold line color
     }
 

@@ -4,6 +4,7 @@
 > - `figure_aesthetics.md` — technical spec (DPI / fonts / color / non-overlap)
 > - `figure_layout.md` — multi-panel composition (gridspec / shared legend / panel labels)
 > - `figure_aesthetics_advanced.md` — positive design (color narrative / saturation hierarchy / anchor panels / whitespace philosophy)
+> - `figure_recipes.md` — exact visual specs + runnable code for each figure type (UMAP / volcano / heatmap / dotplot / violin / spatial / bar / chord / trajectory)
 > - **this file** — what chart type, how to organize information, how to show statistics
 
 Sources: Rougier et al. 2014 PLOS Comp Biol (Ten Simple Rules for Better Figures), Weissgerber et al. 2015 PLOS Biol (Beyond bar graphs), Krzywinski & Altman 2013 Nat Methods (Error bars), Heumos et al. 2023 Nat Rev Genet (sc-best-practices), Wilke 2019 (Fundamentals of Data Visualization), Tufte (Visual Display), Cell Press / Nature figure guidelines.

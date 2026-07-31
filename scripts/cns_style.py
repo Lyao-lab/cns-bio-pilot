@@ -278,6 +278,101 @@ CONDITION_COLORS = {
 
 
 # ============================================================
+# 9b. Recipe helpers (figure_recipes.md — high-frequency decisions)
+# ============================================================
+
+def point_size_for_n(n_obs):
+    """Return scatter point size appropriate for cell count (prevents blob/faint).
+
+    Usage: sc.pl.umap(adata, size=point_size_for_n(adata.n_obs), ...)
+    """
+    if n_obs < 10_000:
+        return 8
+    elif n_obs < 50_000:
+        return 3
+    elif n_obs < 200_000:
+        return 1
+    else:
+        return 0.3
+
+
+def volcano_colors():
+    """Return color dict for volcano plot (temperature narrative).
+
+    Usage:
+        colors = volcano_colors()
+        ax.scatter(..., color=colors['up'])    # significant upregulated
+        ax.scatter(..., color=colors['down'])  # significant downregulated
+        ax.scatter(..., color=colors['ns'])    # not significant
+    """
+    return {
+        'up': '#BF616A',     # warm red = active/upregulated
+        'down': '#5E81AC',   # cool blue = suppressed/downregulated
+        'ns': '#D8DEE9',     # grey = not significant
+        'ns_alpha': 0.4,     # non-sig points are faint
+        'threshold': '#4C566A',  # threshold line color
+    }
+
+
+def gene_annotation_kwargs(fontsize=7):
+    """Return annotation styling kwargs for gene labels (HGNC: italic).
+
+    Usage: ax.annotate('CXCL12', ..., **gene_annotation_kwargs())
+    """
+    return {
+        'fontsize': fontsize,
+        'fontstyle': 'italic',   # gene names = italic (HGNC)
+        'color': NEAR_BLACK,
+        'arrowprops': dict(
+            arrowstyle='-', lw=0.5, color=GREY,
+            connectionstyle='arc3,rad=0.1'  # slight curve = elegant
+        ),
+    }
+
+
+def recipe_figsize(chart_type, n_x=None, n_y=None, journal='generic'):
+    """Compute figsize for common chart types (proportional to content).
+
+    Args:
+        chart_type: 'umap' | 'volcano' | 'heatmap' | 'dotplot' | 'violin' | 'bar' | 'spatial'
+        n_x: number of x-axis categories (genes for heatmap, groups for violin/bar)
+        n_y: number of y-axis categories (cell types for heatmap/dotplot)
+        journal: scales down for 'nature'/'science' (smaller column width)
+
+    Returns:
+        (width, height) tuple in inches
+    """
+    scale = 0.8 if journal in ('nature', 'science', 'cell') else 1.0
+
+    recipes = {
+        'umap': (4.5, 4.0),
+        'volcano': (4.0, 3.5),
+        'feature': (3.0, 3.0),      # per-gene panel in a grid
+        'spatial': (5.0, 4.5),
+        'chord': (5.0, 5.0),
+        'paga': (3.5, 3.0),
+    }
+
+    if chart_type in recipes:
+        w, h = recipes[chart_type]
+        return (w * scale, h * scale)
+    elif chart_type == 'heatmap' and n_x and n_y:
+        w = n_x * 0.18 + 2.0   # +2 for dendrogram + colorbar
+        h = n_y * 0.35
+        return (w * scale, h * scale)
+    elif chart_type == 'dotplot' and n_x and n_y:
+        w = n_x * 0.3 + 2.0
+        h = n_y * 0.3 + 1.0
+        return (w * scale, h * scale)
+    elif chart_type in ('violin', 'bar') and n_x:
+        w = n_x * 0.7 + 1.0
+        h = 3.5
+        return (w * scale, h * scale)
+    else:
+        return (5.0 * scale, 4.0 * scale)  # safe default
+
+
+# ============================================================
 # 10. JOURNAL_PRESETS — journal-specific figure dimensions
 # ============================================================
 # Absorbed from SciencePlots' approach: declarative, journal-targeted presets.

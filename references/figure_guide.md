@@ -5,6 +5,34 @@
 
 ---
 
+## 0. Quick Reference Card（速查：画图前先看这里）
+
+```python
+# 每个绘图脚本的固定开头（3 行）：
+import sys; sys.path.insert(0, 'scripts/')
+from cns_style import *  # 或按需 import
+set_cns_style_journal('nature')  # 'nature'|'science'|'cell'|'generic'
+```
+
+| 要画什么 | 首选（一行搞定） | 必须调的 cns_style 函数 | 最关键参数 |
+|---|---|---|---|
+| UMAP/tSNE | `ov.pl.embedding(adata, color='ct', frameon='small')` | `add_cluster_labels()` + `finalize_figure()` | size=point_size_for_n(n) |
+| Volcano | `ov.pl.volcano(de_df, pval_name='padj', fc_name='log2FC')` | `volcano_colors()` + `polish_axes()` + `finalize_figure()` | figsize=(4,4) 正方形 |
+| Dotplot | `ov.pl.dotplot(adata, var_names=genes, groupby='ct')` | `finalize_figure()` | standard_scale='var' |
+| Violin | `ov.pl.violin(adata, keys=genes, groupby='ct', alternating_background=True)` | `finalize_figure()` | violin_alpha=0.8, spine=#b4aea9 |
+| Heatmap | `sc.pl.heatmap(adata, var_names=genes, groupby='ct')` | `add_elegant_colorbar()` + `finalize_figure()` | vmin=-2, vmax=2, cmap=EXPR_CMAP |
+| Spatial | `ov.pl.plot_spatial(adata, color=gene)` | `add_scale_bar()` + `finalize_figure()` | alpha_img=1.0, scale bar 必须 |
+| Bar (比例) | 手动 matplotlib | `polish_axes()` + `add_significance_bracket()` + `finalize_figure()` | y 从 0 开始, 95% CI |
+| 富集条形图 | 手动 matplotlib | `polish_axes()` + `finalize_figure()` | 水平, -log10(FDR) 降序 |
+| L-R Bubble | 手动 matplotlib | `add_elegant_colorbar()` + `polish_axes()` | size=-log10(p), color=mean |
+| Feature 矩阵 | `ov.pl.embedding(adata, color=[g1,g2,...], ncols=3)` | `clean_umap_axes()` + `finalize_figure()` | 共享 vmin/vmax |
+
+**铁律**：每张图 `savefig` 前必须调 `finalize_figure(fig)`。
+**原则**：优先 `ov.pl.*`（自动 omicverse 风格）；`ov.pl` 不支持的才手动 matplotlib。
+**拼图**：逐张独立出图 → 验证 → `scripts/main.py --input A.pdf B.pdf ... --output fig.pdf`
+
+---
+
 ## 1. 全局设定（每个绘图脚本第一行）
 
 ```python

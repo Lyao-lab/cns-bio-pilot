@@ -61,14 +61,56 @@ optical_margin(ax, 0.12)
 fig.savefig('panels/A_umap.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.close(fig)  # ← 必须 close
 
-# --- Panel B: Volcano ---
+# --- Panel B: Volcano (from DE results DataFrame) ---
+from cns_style import volcano_colors, gene_annotation_kwargs
 fig, ax = plt.subplots(figsize=recipe_figsize('volcano'))
-# ... scatter with volcano_colors() ...
+vc = volcano_colors()
+sig_up = (de['padj'] < 0.05) & (de['log2FC'] > 1)
+sig_down = (de['padj'] < 0.05) & (de['log2FC'] < -1)
+ns = ~sig_up & ~sig_down
+ax.scatter(de.loc[ns,'log2FC'], -np.log10(de.loc[ns,'padj'].clip(1e-300)),
+           s=2, alpha=vc['ns_alpha'], color=vc['ns'], edgecolor='none', rasterized=True)
+ax.scatter(de.loc[sig_down,'log2FC'], -np.log10(de.loc[sig_down,'padj'].clip(1e-300)),
+           s=4, alpha=0.8, color=vc['down'], edgecolor='none')
+ax.scatter(de.loc[sig_up,'log2FC'], -np.log10(de.loc[sig_up,'padj'].clip(1e-300)),
+           s=4, alpha=0.8, color=vc['up'], edgecolor='none')
+ax.axhline(-np.log10(0.05), ls='--', lw=0.5, alpha=0.3, color=vc['threshold'])
+ax.axvline([-1, 1], ls='--', lw=0.5, alpha=0.3, color=vc['threshold'])
+# Top-5 gene labels
+top5 = de.assign(score=-np.log10(de['padj'].clip(1e-300))*de['log2FC'].abs()).nlargest(5,'score')
+for _, r in top5.iterrows():
+    ax.annotate(r['gene'], xy=(r['log2FC'], -np.log10(max(r['padj'],1e-300))),
+                xytext=(r['log2FC']+0.3, -np.log10(max(r['padj'],1e-300))+0.5),
+                **gene_annotation_kwargs())
+ax.set_xlabel(r'log$_2$(Fold Change)', labelpad=10)
+ax.set_ylabel(r'$-$log$_{10}$(adjusted P)', labelpad=10)
 polish_axes(ax)
 fig.savefig('panels/B_volcano.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.close(fig)
 
-# ... 每张同理 ...
+# --- Panel C: Marker Dotplot ---
+fig, ax = plt.subplots(figsize=recipe_figsize('dotplot', n_x=len(markers), n_y=n_celltypes))
+dp = sc.pl.dotplot(adata, var_names=markers, groupby='celltype',
+                   standard_scale='var', dot_max=0.999, smallest_dot=15,
+                   color_map=EXPR_CMAP, ax=ax, show=False, return_fig=True)
+dp.style(color_map=EXPR_CMAP, edge_color='#2E3440', edge_lw=0.3,
+         x_label_rotation=45, grid_line_width=0.8)
+dp.savefig('panels/C_dotplot.pdf', dpi=300, bbox_inches='tight')
+plt.close('all')
+
+# --- Panel D: Proportion Bar (per-sample) ---
+from cns_style import MORLANDI
+prop = adata.obs.groupby(['sample','condition','celltype']).size().unstack(fill_value=0)
+prop_frac = prop.div(prop.sum(axis=1), axis=0)  # fractions
+fig, ax = plt.subplots(figsize=recipe_figsize('bar', n_x=len(prop_frac)))
+prop_frac.plot.bar(stacked=True, ax=ax, color=MORLANDI[:prop_frac.shape[1]],
+                   edgecolor='white', linewidth=0.5, width=0.7)
+ax.set_ylabel('Fraction of cells', labelpad=10)
+ax.set_ylim(0, 1)  # proportions start at 0
+ax.legend(frameon=False, fontsize=7, bbox_to_anchor=(1.02, 1), loc='upper left')
+polish_axes(ax)
+fig.savefig('panels/D_proportion.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+plt.close(fig)
 ```
 
 **逐张验证**（每张存完后）：

@@ -76,11 +76,23 @@ deconv.cell2location_inference(sample_kwargs={'num_samples': 1000})
 Deconvolution results vary; **unvalidated abundance maps mislead downstream**. For each cell_type, compute marker-proportion correlation:
 
 ```python
+import numpy as np
+
+# 从 deconvolution 输出提取 proportions（cell2location 的 key）
+prop_key = 'q05_cell_abundance_w_sf'  # cell2location output key
+proportions = np.asarray(adata_sp.obsm[prop_key])  # shape: (n_spots, n_celltypes)
+cell_types = list(adata_sp.uns[f'{prop_key}_names']) if f'{prop_key}_names' in adata_sp.uns \
+             else [c.replace('q05_cell_abundance_w_sf_','') for c in adata_sp.obsm[prop_key].columns
+                   if hasattr(adata_sp.obsm[prop_key], 'columns')]
+
+# Marker-proportion correlation (r>0.3 = trustworthy)
 marker_genes = {'T_cell': ['CD3D','CD3E'], 'Macrophage': ['CD68','CD14']}
 for ct, markers in marker_genes.items():
+    if ct not in cell_types:
+        continue
     available = [m for m in markers if m in adata_sp.var_names]
     if available:
-        marker_expr = adata_sp[:, available].X.mean(axis=1).flatten()
+        marker_expr = np.asarray(adata_sp[:, available].X.mean(axis=1)).ravel()
         ct_prop = proportions[:, cell_types.index(ct)]
         corr = np.corrcoef(marker_expr, ct_prop)[0,1]
         print(f'{ct}: r={corr:.3f}')   # r>0.3 considered trustworthy

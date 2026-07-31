@@ -146,3 +146,36 @@ optical_margin(ax, 0.12)  # 圆形数据多留 12% 呼吸空间
 | 默认 fat colorbar with border | slim, no border, 3 ticks |
 | 字号随意 (9pt, 11pt) | Modular scale 7/8/10/12/14 |
 | 一边画一边拼 | 逐张独立出图验证后再拼 |
+
+---
+
+## 9. 统计标注（p-value bracket / star）
+
+```python
+# 手动 bracket（不依赖 statannotations 包）
+def add_significance_bracket(ax, x1, x2, y, pval, height=0.05):
+    """Add bracket + star annotation between two groups."""
+    if pval < 0.0001: star = '****'
+    elif pval < 0.001: star = '***'
+    elif pval < 0.01:  star = '**'
+    elif pval < 0.05:  star = '*'
+    else:              star = 'ns'
+    # Bracket lines
+    ax.plot([x1, x1, x2, x2], [y, y+height, y+height, y],
+            lw=0.8, color='#2E3440', clip_on=False)
+    # Star text
+    ax.text((x1+x2)/2, y+height, star, ha='center', va='bottom',
+            fontsize=8, fontweight='bold', color='#2E3440')
+
+# Usage (after bar/violin plot):
+add_significance_bracket(ax, x1=0, x2=1, y=0.85, pval=3.2e-5)
+# Multiple brackets: stagger y heights to avoid overlap
+add_significance_bracket(ax, x1=0, x2=2, y=0.95, pval=0.003)
+```
+
+**规则**：
+- Star 定义写在 legend：`*P<0.05, **P<0.01, ***P<0.001, ****P<0.0001`
+- 优先报 exact P（`P=3.2×10⁻⁵`），star 是辅助
+- bracket 线 `lw=0.8, color='#2E3440'`（不用纯黑）
+- 多组比较时 bracket 高度错开（每层 +0.1），避免交叉
+- `ns` 也标出来（不显著也是信息）

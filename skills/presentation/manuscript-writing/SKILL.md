@@ -20,7 +20,7 @@ description: 论文写作（Methods / Results / Figure Legends 三种模式）�
 2. **引用支撑**：每个结论标注来源（哪张图/哪个统计/哪篇文献）
 3. **关联 ≠ 因果**："associated with"，"regulates/causes" 需实验证据
 4. **精确数字**：N、fold change、padj 写具体值，不写"显著增加"
-5. **版本可追溯**：工具 + 版本号必须出现（"omicverse 2.3.1"、"R 4.3.3 / scop 0.8.9"）
+5. **版本可追溯**：工具 + 版本号必须出现。**版本号必须来自实际来源**（`compat.yaml` / `pip freeze` / `sessionInfo()` 输出），禁止凭记忆填写。拿不到 → `[AUTHOR TO SPECIFY: version]`
 
 ---
 

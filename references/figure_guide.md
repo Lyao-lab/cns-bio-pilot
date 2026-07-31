@@ -46,6 +46,7 @@ MORLANDI = ['#88C0D0','#BF616A','#A3BE8C','#D08770','#B48EAD','#EBCB8B','#5E81AC
 | Legend | 7-8pt | #2E3440 | frameon=False |
 
 - 只用 7/8/10/12/14（1.2x modular scale），不许 9pt/11pt
+- **优先级**：`set_cns_style_journal('nature')` 的期刊字号（6/7/8）**覆盖** modular scale。Modular scale 仅在 `generic` 模式下生效。投稿时以期刊 preset 为准。
 - 多行 title: linespacing=1.4
 - 不用纯黑 #000000，用 #2E3440
 

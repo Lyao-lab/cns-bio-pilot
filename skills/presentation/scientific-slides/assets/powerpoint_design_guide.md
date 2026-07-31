@@ -1,6 +1,6 @@
 # PowerPoint Design Guide (PPT-specific only)
 
-> Covers **only what is unique to PowerPoint**: the PptxGenJS API, template-script workflow, slide masters, animation discipline, speaker notes, and PPT-specific units/dimensions. For general typography/color palettes/contrast/layout/composition, see `references/figure_guide.md` + `figure_guide.md` + `figure_guide.md`.
+> Covers **only what is unique to PowerPoint**: slide masters, animation discipline, speaker notes, PPT-specific units/dimensions. Default implementation: **python-pptx** (`scripts/build_deck.py`); PptxGenJS (JS) is an alternative path. For general typography/color/layout, see `references/figure_guide.md`.
 
 ## Two creation paths via the pptx skill
 

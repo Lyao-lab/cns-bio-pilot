@@ -1,6 +1,6 @@
 # LaTeX Beamer Guide (Beamer-specific only)
 
-> Beamer = LaTeX document class for presentations. This file covers **only what is unique to Beamer**: theme/color selection, Chinese support (xelatex + ctex), compile commands, common errors, and template variables. For general design/color/layout/aesthetics, see `references/figure_design.md` + `figure_aesthetics.md` + `figure_layout.md`. Assumes you know basic LaTeX.
+> Beamer = LaTeX document class for presentations. This file covers **only what is unique to Beamer**: theme/color selection, Chinese support (xelatex + ctex), compile commands, common errors, and template variables. For general design/color/layout/aesthetics, see `references/figure_guide.md` + `figure_guide.md` + `figure_guide.md`. Assumes you know basic LaTeX.
 
 ## When to use Beamer
 - Heavy math/equations, code listings, algorithm pseudocode
@@ -30,7 +30,7 @@
 \setbeamertemplate{footline}[frame number] % page number only
 \setbeamertemplate{itemize items}[circle]
 \setbeamertemplate{blocks}[rounded][shadow=false]
-% bind structure color to your palette (see figure_aesthetics.md for hex choices)
+% bind structure color to your palette (see figure_guide.md for hex choices)
 \definecolor{accent}{RGB}{0,115,178}
 \setbeamercolor{structure}{fg=accent}
 \setbeamercolor{frametitle}{fg=accent,bg=white}

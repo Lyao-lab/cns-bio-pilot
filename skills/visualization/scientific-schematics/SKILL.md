@@ -6,8 +6,8 @@ author: AIPOCH
 ---
 
 ## When NOT to use this skill
-- Data-driven plots (UMAP/volcano/heatmap/dotplot) → use `visualization/omicverse-plotting` (ov.pl.*)
-- 6-panel composite publication figure (already have sub-figures to assemble) → use `visualization/multi-panel-figures`
+- Data-driven plots (UMAP/volcano/heatmap/dotplot) → use `visualization/figure-production` (ov.pl.*)
+- 6-panel composite publication figure (already have sub-figures to assemble) → use `visualization/figure-production`
 - Need Nano Banana Pro to generate slide visuals with research context → use `presentation/scientific-slides`
 
 # Scientific Schematics Skill
@@ -96,31 +96,31 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
 
 ## Prerequisites (where inputs come from)
 
-- **Natural-language description** → text describing the mechanism/flow/architecture (from `presentation/results-writer` method narrative, or directly from the user)
+- **Natural-language description** → text describing the mechanism/flow/architecture (from `presentation/manuscript-writing` method narrative, or directly from the user)
 - **Optional reference figure** → existing sketch/schematic (to assist generation)
 - **Environment**: `OPENROUTER_API_KEY` (required); Python 3.10+, deps `pillow`/`matplotlib`/`requests`
 - Reference docs: `references/best_practices.md`, `references/diagram_types.md`
 - Script entry `scripts/generate_schematic.py`
 
-## Pre-Output Checklist (core 5 in **top-level** `references/preoutput_checklist.md` + skill-specific)
+## Pre-Output Checklist (core 5 in **top-level** `references/meta_methodology.md` + skill-specific)
 
-- [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see **top-level** `references/preoutput_checklist.md`)
+- [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see **top-level** `references/meta_methodology.md`)
 - [ ] No fake/placeholder data in schematic (pure mechanism, no bars/plots)
 - [ ] OPENROUTER_API_KEY set; quality score ≥8.5/10
 
 ## When to leave this skill (where to go)
 
-- Assemble the generated schematic into a publication figure → `visualization/multi-panel-figures`
-- Write the schematic legend → `presentation/figure-legend-writer`
+- Assemble the generated schematic into a publication figure → `visualization/figure-production`
+- Write the schematic legend → `presentation/manuscript-writing`
 - Embed into a slide → `presentation/scientific-slides` (`--attach figures/output.png`)
-- Note: this skill outputs mechanism/schematic/graphical-abstract figures; data-driven plots (UMAP/volcano/heatmap) go to `visualization/omicverse-plotting`
+- Note: this skill outputs mechanism/schematic/graphical-abstract figures; data-driven plots (UMAP/volcano/heatmap) go to `visualization/figure-production`
 
 ## Mode: Graphical Abstract (merged from former graphical-abstract skill)
 
 When the task is **generating a Graphical Abstract / TOC figure for a paper**, follow the 4-step workflow in `references/graphical_abstract_layout.md`:
 
 1. **Parse the abstract** → extract topic / methods / findings / implications
-2. **Map visual elements** → for each concept choose a symbol + palette + position (palette follows **top-level** `references/figure_aesthetics.md` dual-track)
+2. **Map visual elements** → for each concept choose a symbol + palette + position (palette follows **top-level** `references/figure_guide.md` dual-track)
 3. **Recommend a layout grid** → choose by the abstract's narrative structure (three-column horizontal / vertical flow / left-right comparison / central radial)
 4. **Generate AI prompts** → produce both Midjourney-style and DALL-E-style versions
 
@@ -140,5 +140,5 @@ For detailed layout rules, grid templates, and AI prompt templates, see `referen
 - **Quality threshold 8.5/10**: the refine loop regenerates repeatedly if the threshold isn't met — set max_iter to avoid infinite loops
 - **AI-generated figures ≠ accurate figures**: the model may draw biological facts incorrectly (e.g., labeling a T-cell marker as a B-cell) — **manually verify the mechanism/labels**; don't blindly trust AI output
 - **graphical-abstract mode only produces prompts**: the former graphical-abstract skill's abstract→layout capability has been merged in, but Midjourney/DALL-E still need external image-generation tools
-- **scientific-schematics is for non-data figures**: pure mechanism/flow; data-driven plots (UMAP/volcano) go to `visualization/omicverse-plotting`
+- **scientific-schematics is for non-data figures**: pure mechanism/flow; data-driven plots (UMAP/volcano) go to `visualization/figure-production`
 - **AI "fake data" risk**: the model sometimes draws placeholder elements that look like bar charts — during review confirm there is no quantitative data, purely schematic

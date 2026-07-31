@@ -102,8 +102,8 @@ sq.gr.spatial_autocorr(adata, mode='moran', genes=adata.var_names[:500])
 
 - Once high-resolution data is segmented into single cells → go to `single-cell/omicverse-pipeline` (analyze as single-cell)
 - Estimate spot/cell type composition → `spatial/deconvolution`
-- Write Methods → `presentation/methods-writer`
-- Multi-panel high-resolution section figures → `visualization/multi-panel-figures`
+- Write Methods → `presentation/manuscript-writing`
+- Multi-panel high-resolution section figures → `visualization/figure-production`
 
 ## Key pitfalls
 

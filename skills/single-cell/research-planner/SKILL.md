@@ -9,8 +9,8 @@ author: AIPOCH
 - After getting the plan, want to **actually run** single-cell analysis → `single-cell/omicverse-pipeline` (Python) or `single-cell/scop` (R/Seurat)
 - The project is spatial transcriptomics → `spatial/omicverse-spatial` (design + analysis combined); pure design may reference this skill but route to spatial
 - The project is bulk RNA-seq → `general-bio/omicverse-bulk`
-- A perturbation project that must predict unmeasured experiments → `single-cell/perturbation-prediction` (this skill does not do predictive modeling)
-- Writing Methods/Results manuscript text → `presentation/methods-writer` / `presentation/results-writer` (this skill produces a plan, not a manuscript)
+- A perturbation project that must predict unmeasured experiments → `single-cell/perturbation` (this skill does not do predictive modeling)
+- Writing Methods/Results manuscript text → `presentation/manuscript-writing` / `presentation/manuscript-writing` (this skill produces a plan, not a manuscript)
 
 # Single-Cell Research Planner
 
@@ -348,9 +348,9 @@ A good output from this skill should:
 - Start actual data processing after getting the plan → `single-cell/omicverse-pipeline` (Python) or `single-cell/scop` (R/Seurat)
 - Spatial-transcriptomics project → `spatial/omicverse-spatial`
 - bulk project → `general-bio/omicverse-bulk`
-- Perturbation-related project → `single-cell/perturbation-prediction` (prediction) or `single-cell/perturb-seq` (measured-data analysis)
-- Plotting → `visualization/omicverse-plotting` → `visualization/multi-panel-figures`
-- Manuscript writing → `presentation/methods-writer` / `presentation/results-writer` / `presentation/figure-legend-writer`
+- Perturbation-related project → `single-cell/perturbation` (prediction) or `single-cell/perturbation` (measured-data analysis)
+- Plotting → `visualization/figure-production` → `visualization/figure-production`
+- Manuscript writing → `presentation/manuscript-writing` / `presentation/manuscript-writing` / `presentation/manuscript-writing`
 - Presentations → `presentation/scientific-slides` (formal talk / lab-meeting dual mode)
 
 ## Key pitfalls

@@ -141,7 +141,7 @@ ov.space.create_communication_anndata(adata)   # helper to format communication 
 
 > **Spatial CCC ranking (2024-2026)**: **COMMOT** (OT-based) and **LIANA+ spatial mode** (Mol Syst Biol 2024, 251+ citations, unified framework that internally runs multiple methods) are the SOTA for spatially-aware communication. **CellChat spatial / CellPhoneDB v5 are NOT spatial-native** — they were built for dissociated scRNA-seq; using them on spatial data is fallback only. **DeepTalk** (Nat Commun 2024, 93+ citations) is a newer option for single-cell-resolution spatial CCC. The first systematic spatial-CCC benchmark (bioRxiv 2026.05.19.724475) confirmed no single winner — run ≥2 methods and report consensus.
 
-## 7. Visualization (see visualization/omicverse-plotting)
+## 7. Visualization (see visualization/figure-production)
 
 ```python
 ov.pl.plot_spatial(adata, color='leiden')           # tissue section clusters

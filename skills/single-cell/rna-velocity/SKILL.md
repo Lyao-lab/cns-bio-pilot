@@ -7,7 +7,7 @@ description: RNA velocity 全家桶。基于 OmicVerse V2 的 ov.single.Velo（�
 - Only need pseudotime / trajectory (no spliced/unspliced required) → `single-cell/omicverse-pipeline` (`ov.single.Monocle` / PAGA)
 - No S/U layers and you cannot re-run velocyto/kb_python → RNA velocity is not possible; use pseudotime instead
 - R/Seurat environment and no deep velocity tool → `single-cell/scop` (`RunSCVELO`)
-- Assemble a publication-grade velocity figure → finish the plot first, then `visualization/multi-panel-figures`
+- Assemble a publication-grade velocity figure → finish the plot first, then `visualization/figure-production`
 
 # OmicVerse RNA Velocity
 
@@ -184,7 +184,7 @@ scv.tl.rank_velocity_genes(adata, groupby='leiden', min_corr=0.3)
 
 ---
 
-## 7. Visualization (see `visualization/omicverse-plotting`)
+## 7. Visualization (see `visualization/figure-production`)
 
 ```python
 ov.pl.embedding(adata, basis='X_umap', color='leiden',
@@ -226,9 +226,9 @@ v.velocity_streamplot(basis='umap', velocity_key='velocity_S_umap')  # streamlin
 | Need | Go to |
 |---|---|
 | Pseudotime (no S/U needed) | `single-cell/omicverse-pipeline` → `ov.single.Monocle` |
-| TF-target GRN construction (a regvelo prerequisite) | standalone pySCENIC / CellOracle / GRNBoost2 (SCENIC/GRNBoost2 now wrapped in scop 0.8.9 as `RunSCENIC`/`RunGRNBoost2`; CellOracle still standalone); or `single-cell/perturbation-prediction` Route B |
-| Assemble a velocity figure for publication | `visualization/multi-panel-figures` |
-| Use RegVelo perturbation simulation for prediction | `single-cell/perturbation-prediction` (if no GRN prior needed) |
+| TF-target GRN construction (a regvelo prerequisite) | standalone pySCENIC / CellOracle / GRNBoost2 (SCENIC/GRNBoost2 now wrapped in scop 0.8.9 as `RunSCENIC`/`RunGRNBoost2`; CellOracle still standalone); or `single-cell/perturbation` Route B |
+| Assemble a velocity figure for publication | `visualization/figure-production` |
+| Use RegVelo perturbation simulation for prediction | `single-cell/perturbation` (if no GRN prior needed) |
 
 ## Prerequisites (where data comes from)
 

@@ -14,9 +14,8 @@ Usage:
     safe_scanpy_plot(sc.pl.umap, adata, color='ct', ax=ax, show=False)
 
 Philosophy:
-    figure_aesthetics.md = compliance (avoid errors)
-    figure_aesthetics_advanced.md = positive design (create beauty)
-    THIS file = the code that implements both.
+    figure_guide.md = visual specs (the only figure reference needed)
+    THIS file = the code that implements those specs.
 
 All colors follow the Morlandi Nord palette (low-saturation, refined).
 All font sizes follow a 1.2x modular scale from 7pt base.
@@ -63,17 +62,21 @@ def set_cns_style(base_fontsize=8, scale=1.2, palette='morlandi'):
     F = base_fontsize
     S = scale
 
+    # Snap to modular scale [7, 8, 10, 12, 14] — never 9pt or 11pt
+    _STEPS = [7, 8, 10, 12, 14]
+    def _snap(v): return min(_STEPS, key=lambda x: abs(x - v))
+
     plt.rcParams.update({
-        # --- Font (modular scale) ---
+        # --- Font (modular scale, snapped to 7/8/10/12/14) ---
         'font.family': 'sans-serif',
         'font.sans-serif': ['Arial', 'Helvetica', 'DejaVu Sans'],
         'font.size': F,                              # 8pt (tick labels)
-        'axes.titlesize': int(F * S**2),             # 10pt → 12pt
-        'axes.labelsize': int(F * S**2),             # 10pt
+        'axes.titlesize': _snap(F * S**2),           # → 12
+        'axes.labelsize': _snap(F * S**2),           # → 10
         'xtick.labelsize': F,                        # 8pt
         'ytick.labelsize': F,                        # 8pt
-        'legend.fontsize': int(F * S),               # 9.6 → 10pt
-        'figure.titlesize': int(F * S**3),           # 14pt
+        'legend.fontsize': _snap(F * S),             # → 10
+        'figure.titlesize': _snap(F * S**3),         # → 14
 
         # --- Color (Morlandi near-black, not pure #000) ---
         'axes.prop_cycle': plt.cycler(color=colors),
@@ -278,7 +281,7 @@ CONDITION_COLORS = {
 
 
 # ============================================================
-# 9b. Recipe helpers (figure_recipes.md — high-frequency decisions)
+# 9b. Recipe helpers (figure_guide.md — high-frequency decisions)
 # ============================================================
 
 def point_size_for_n(n_obs):

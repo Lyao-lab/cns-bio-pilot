@@ -28,7 +28,7 @@ Extract four categories of information from the abstract text:
 
 For each concept choose a visual symbol + palette + position:
 
-| Element type | Visual symbol examples | Palette (per figure_aesthetics.md dual-track) |
+| Element type | Visual symbol examples | Palette (per figure_guide.md dual-track) |
 |---|---|---|
 | Biological concept | 🧬 DNA / 🦠 cell / 🧠 neuron | Morandi discrete colors |
 | Method/algorithm | ⚙️ gear / 🤖 AI / 📊 chart | Morandi discrete colors |
@@ -120,4 +120,4 @@ Modern, minimalist academic style suitable for a Nature or Science journal cover
 - **Avoid speculation**: unverified mechanisms labeled "proposed", not drawn as confirmed
 - **Correlation ≠ causation**: use "associated with"; regulates/causes requires experimental evidence
 - **Citation support**: the core conclusions underlying the summary have corresponding main-text figures/statistics
-- **Palette**: follow `references/figure_aesthetics.md` dual-track palette (Morandi discrete + blue-white-red continuous)
+- **Palette**: follow `references/figure_guide.md` dual-track palette (Morandi discrete + blue-white-red continuous)

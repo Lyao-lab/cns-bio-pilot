@@ -88,7 +88,7 @@ for ct, markers in marker_genes.items():
 
 > After finishing, run `scripts/postcheck.py --type deconv <result.h5ad>` (repo root): checks each cell type has a quality-assessment column and whether r is too low.
 
-## 4. Visualization (see `visualization/omicverse-plotting`)
+## 4. Visualization (see `visualization/figure-production`)
 
 ```python
 # one spatial section per cell type
@@ -155,10 +155,10 @@ If you prefer R/spacexr (RCTD's native env): **since scop 0.8.9, RCTD/SPOTlight/
 
 ## When to leave this skill (where to go)
 
-- Deconvolution result visualization → `spatial/omicverse-spatial` (`ov.pl.plot_spatial`) or `visualization/omicverse-plotting`
-- Compose publication-grade figure → `visualization/multi-panel-figures`
+- Deconvolution result visualization → `spatial/omicverse-spatial` (`ov.pl.plot_spatial`) or `visualization/figure-production`
+- Compose publication-grade figure → `visualization/figure-production`
 - Cross-sample cell-type proportion comparison → standalone `miloR` / `scCODA` / `propeller` (compositional DA — scop `RunProportionTest` is basic; Milo/scCODA/propeller are NOT in scop, install standalone)
-- Write Methods describing the deconvolution workflow → `presentation/methods-writer`
+- Write Methods describing the deconvolution workflow → `presentation/manuscript-writing`
 - **After finishing, run `scripts/postcheck.py --type deconv <result.h5ad>` (repo root) to verify the quality-assessment column**
 
 ## Key pitfalls

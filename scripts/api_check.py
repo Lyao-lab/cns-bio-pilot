@@ -35,7 +35,7 @@ import argparse, os, re, sys, importlib, inspect
 # 每项格式：(api_pattern, reason)
 # ============================================================
 NEGATIVE_RESULT_WHITELIST = {
-    "ov.pl.add_labels": "documented as non-existent (figure_layout.md: use ax.text instead)",
+    "ov.pl.add_labels": "documented as non-existent (figure_guide.md: use ax.text instead)",
     "ov.pl.get_cmap_seg": "documented as non-existent (use 'Reds' or ov.pl.Forbidden_Cmap)",
     "ov.pl.stacking_vol": "documented as non-existent (use manual gridspec + ov.pl.volcano)",
     "ov.pl.space": "documented as non-existent (use ov.pl.plot_spatial)",
@@ -47,7 +47,7 @@ NEGATIVE_RESULT_WHITELIST = {
     "ov.space.GraphST": "documented as standalone (not wrapped in ov.space)",
     "ov.space.COMMOT": "documented as no public method (use COMMOT standalone)",
     "ov.single.MetabolityCCC": "documented as misspelling (real: MetaboliteCCC)",
-    # pertpy 0.7 → 1.0 breaking changes (documented as removed in perturb-seq/SKILL.md)
+    # pertpy 0.7 → 1.0 breaking changes (documented as removed in perturbation/SKILL.md)
     "pt.tl.PseudobulkDE": "documented as removed in pertpy 1.0 (use PseudobulkSpace + PyDESeq2)",
     "pt.tl.PerturbationSignature": "documented as removed in pertpy 1.0 (use Mixscape.perturbation_signature)",
     "pt.tl.perturbation_embedding": "documented as removed in pertpy 1.0 (use CentroidSpace.compute + sc.tl.leiden)",

@@ -53,7 +53,7 @@ set_cns_style_journal('nature')  # 一次性设好全局参数
 # --- Panel A: UMAP ---
 fig, ax = plt.subplots(figsize=recipe_figsize('umap'))
 safe_scanpy_plot(sc.pl.umap, adata, color='celltype',
-    palette=apply_5plus1_palette(cats, focus=['Fibro','Macro']),
+    palette=apply_5plus1_palette(cats, focus_list=['Fibro','Macro']),
     size=point_size_for_n(adata.n_obs), alpha=0.7, edgecolor='none',
     legend_loc=None, ax=ax, show=False)
 clean_umap_axes(ax)
@@ -92,9 +92,9 @@ plt.close(fig)
 输入 = Phase 2 产出的**已验证 PDF/PNG 文件**。拼图只做排版，不改内容。
 
 ```bash
-python skills/visualization/figure-production/scripts/assemble.py \
+python skills/visualization/figure-production/scripts/main.py \
   --input panels/A_umap.pdf panels/B_volcano.pdf panels/C_spatial.pdf ... \
-  --output figure1.pdf --layout 2x3 --dpi 300 --label-size 12 --label-bold
+  --output figure1.pdf --layout 2x3 --dpi 300 --label-size 12
 ```
 
 **拼图规则**：

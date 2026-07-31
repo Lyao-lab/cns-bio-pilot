@@ -6,8 +6,8 @@ description: 用 scop R 包做单细胞/空转全流程（基于 Seurat，133 ve
 ## When NOT to use this skill
 - Pure Python/AnnData-native large-scale analysis (>1M cells, AnnDataOOM backend) → `single-cell/omicverse-pipeline`
 - Python-only spatial deconvolution via omicverse unified wrapper → `spatial/deconvolution` (but scop ALSO wraps RCTD/cell2location/SPOTlight/etc since 0.8.9)
-- Predict unmeasured perturbation experiments → `single-cell/perturbation-prediction`
-- Downstream analysis of measured Perturb-seq data → `single-cell/perturb-seq`
+- Predict unmeasured perturbation experiments → `single-cell/perturbation`
+- Downstream analysis of measured Perturb-seq data → `single-cell/perturbation`
 - moscot / CellOracle / SpatialGlue / MENDER / BINARY / GraphST / COMMOT / Baysor / bin2cell / cellpose — **NOT wrapped in scop 0.8.9**, use standalone packages (see `references/run_verbs_reference.md` Capability gaps table)
 
 # scop — Single-Cell Omics Analysis Pipeline (R)
@@ -108,10 +108,10 @@ srt <- standard_scop(
 - Python/AnnData-native large-scale analysis (>1M cells) → `single-cell/omicverse-pipeline` (AnnDataOOM backend)
 - Python-native spatial workflows (Visium HD bin2cell, cellpose segmentation, STAGATE/SpaceFlow/GASTON) → `spatial/multiomics` / `spatial/omicverse-spatial` (scop wraps BANKSY/BayesSpace/Giotto in R, but Python-native platforms need omicverse)
 - Spatial proteomics (CODEX/IMC) → `spatial/proteomics`
-- Perturbation prediction (unmeasured experiments; GRN-based virtual KO) → `single-cell/perturbation-prediction`; measured-perturbation analysis → `single-cell/perturb-seq`
-- Move Seurat results back to Python for plotting → `srt_to_adata`, then `visualization/omicverse-plotting`
-- Assemble publication-grade multi-panel figures → `visualization/multi-panel-figures`
-- Write Methods / figure legends → `presentation/methods-writer` / `presentation/figure-legend-writer`
+- Perturbation prediction (unmeasured experiments; GRN-based virtual KO) → `single-cell/perturbation`; measured-perturbation analysis → `single-cell/perturbation`
+- Move Seurat results back to Python for plotting → `srt_to_adata`, then `visualization/figure-production`
+- Assemble publication-grade multi-panel figures → `visualization/figure-production`
+- Write Methods / figure legends → `presentation/manuscript-writing` / `presentation/manuscript-writing`
 
 ## Key pitfalls
 

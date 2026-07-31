@@ -27,7 +27,7 @@ SKILL.md (router, 65 lines)
 │   ├── figure_guide.md (the ONLY figure reference — specs + recipes)
 │   ├── meta_methodology.md (6 self-check rules)
 │   ├── omicverse_guide.md (ov.* API cheat-sheet)
-│   └── workflow_routing.md (decision tree for ambiguous routing)
+│   └── (3 references — figure_guide / meta_methodology / omicverse_guide)
 ├── scripts/
 │   ├── cns_style.py (one-shot aesthetics: set_cns_style_journal/polish_axes/...)
 │   ├── api_check.py (API verification + --diff mode)

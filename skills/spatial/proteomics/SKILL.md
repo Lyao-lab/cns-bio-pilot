@@ -130,8 +130,8 @@ sq.gr.spatial_neighbors(adata_rna)
 
 ## When to leave this skill (where to go)
 
-- Write Methods describing protein gating/phenotyping → `presentation/methods-writer`
-- Multi-panel protein-expression spatial figures → `visualization/multi-panel-figures`
+- Write Methods describing protein gating/phenotyping → `presentation/manuscript-writing`
+- Multi-panel protein-expression spatial figures → `visualization/figure-production`
 - Paired spatial transcriptomics integration → `spatial/multiomics`
 
 ## Key pitfalls

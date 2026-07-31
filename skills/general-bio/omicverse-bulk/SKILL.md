@@ -103,7 +103,7 @@ net = ov.bulk.pyPPI(genes=hub_genes, species='human', score_thresh=400)
 
 Replaces R: STRINGdb::map + get_interactions. Visualize with ov.pl network plots or export to Cytoscape.
 
-## 7. Visualization (see visualization/omicverse-plotting)
+## 7. Visualization (see visualization/figure-production)
 
 ```python
 ov.pl.volcano(deg)                     # volcano plot
@@ -140,9 +140,9 @@ ov.pl.dotplot(adata, var_names=...)    # gene-condition dot plot
 
 ## When to leave this skill (where to go)
 
-- DEG/enrichment result visualization → `visualization/omicverse-plotting` (`ov.pl.volcano` / `ov.pl.complexheatmap` / `ov.pl.dotplot`)
-- Compose publication-grade figure → `visualization/multi-panel-figures`
-- Write Methods describing the bulk workflow → `presentation/methods-writer`
-- Write Results narrative → `presentation/results-writer`
-- Write figure legends → `presentation/figure-legend-writer`
+- DEG/enrichment result visualization → `visualization/figure-production` (`ov.pl.volcano` / `ov.pl.complexheatmap` / `ov.pl.dotplot`)
+- Compose publication-grade figure → `visualization/figure-production`
+- Write Methods describing the bulk workflow → `presentation/manuscript-writing`
+- Write Results narrative → `presentation/manuscript-writing`
+- Write figure legends → `presentation/manuscript-writing`
 - Build talk slides → `presentation/scientific-slides` (DEG volcano/heatmap via `--attach` embedded into results slide)

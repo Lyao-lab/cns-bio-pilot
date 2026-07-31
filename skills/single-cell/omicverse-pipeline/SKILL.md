@@ -7,12 +7,12 @@ description: 单细胞全流程（ambient 去除→QC→doublet→降维聚类�
 - cell2location spatial deconvolution → use `spatial/deconvolution` (handled by `ov.space.Deconvolution`, but routed there for the full deconvolution workflow + quality assessment)
 - R/Seurat environment, or scop-wrapped tools → use `single-cell/scop` (since scop 0.8.9, this includes CytoTRACE/Palantir/CellChat/Monocle3/SCVELO **plus SCENIC+/Milo/RCTD/BANKSY/SecAct/Giotto/CARD/SCENIC and many more**)
 - Standalone tools NOT in scop or omicverse (moscot/CellOracle/SpatialGlue/MENDER/BINARY/GraphST/COMMOT/Baysor/bin2cell/cellpose) → install standalone packages directly
-- Predict unmeasured perturbations (unseen gene/drug KO) → use `single-cell/perturbation-prediction`
-- Downstream analysis of measured Perturb-seq (differential perturbation response, Mixscape) → use `single-cell/perturb-seq`
+- Predict unmeasured perturbations (unseen gene/drug KO) → use `single-cell/perturbation`
+- Downstream analysis of measured Perturb-seq (differential perturbation response, Mixscape) → use `single-cell/perturbation`
 
 # OmicVerse Single-Cell Pipeline
 
-**Merged from prior skills:** the original preprocessing / doublet-detection / clustering / cell-annotation / batch-integration / cell-communication / trajectory-inference / scanpy / scvi-tools skills (these standalone skills no longer exist; functionality is unified in OmicVerse V2). This skill is the canonical entry point for all of them. RNA velocity lives in `single-cell/rna-velocity`; Perturb-seq in `single-cell/perturb-seq`.
+**Merged from prior skills:** the original preprocessing / doublet-detection / clustering / cell-annotation / batch-integration / cell-communication / trajectory-inference / scanpy / scvi-tools skills (these standalone skills no longer exist; functionality is unified in OmicVerse V2). This skill is the canonical entry point for all of them. RNA velocity lives in `single-cell/rna-velocity`; Perturb-seq in `single-cell/perturbation`.
 
 `pip install omicverse` (V2 released). Examples below use the real `ov` API, flagging key parameters and pitfalls.
 
@@ -302,7 +302,7 @@ Verified available in omicverse (`sc` env; version in `compat.yaml`). Pick by wh
 
 | You have... | First choice | Notes |
 |---|---|---|
-| **scRNA + scATAC** (paired Multiome) | `ov.single.GLUE_pair` (regulatory) + SCENIC+ (`single-cell/perturbation-prediction` Route B) | GLUE for cross-modality GRN; SCENIC+ for enhancer-level eRegulons |
+| **scRNA + scATAC** (paired Multiome) | `ov.single.GLUE_pair` (regulatory) + SCENIC+ (`single-cell/perturbation` Route B) | GLUE for cross-modality GRN; SCENIC+ for enhancer-level eRegulons |
 | **scRNA + protein (CITE-seq)** | `ov.single.Annotation` (multimodal) + totalVI via `lazy_step_scvi` | WNN: Seurat-native `FindMultiModalNeighbors` (now wrapped in scop 0.8.9 via `WNN_integrate`, or use Seurat directly) |
 | **scRNA + ATAC + protein (≥3 modalities)** | `ov.single.pyMOFA` (joint factor model) | MOFA+ gives shared + modality-specific factors |
 | **scRNA + metabolomics** | `ov.single.Metabolism` + `ov.single.MetaboliteCCC` | Metabolic flux + metabolite-based CCC |
@@ -326,7 +326,7 @@ Verified available in omicverse (`sc` env; version in `compat.yaml`). Pick by wh
 
 > R-side `scop::RunProportionTest` is a basic proportion test — use it only for quick looks, not publication. For CNS-grade composition claims, **always** use Milo / scCODA / propeller. (Meta-methodology principle ③ — "who is my N"; enforced in `scripts/postcheck.py` C1 check.)
 
-## 10. Visualization (see visualization/omicverse-plotting)
+## 10. Visualization (see visualization/figure-production)
 
 ```python
 ov.pl.embedding(adata, basis='X_umap', color='celltype')
@@ -345,8 +345,8 @@ ov.pl.violin(adata, keys=['CD3D'], groupby='celltype')
 | Need | Go to |
 |---|---|
 | RNA velocity | `single-cell/rna-velocity` |
-| Perturb-seq / CRISPR | `single-cell/perturb-seq` |
-| Predict unseen perturbations (in silico) | `single-cell/perturbation-prediction` (linear baseline mandatory) |
+| Perturb-seq / CRISPR | `single-cell/perturbation` |
+| Predict unseen perturbations (in silico) | `single-cell/perturbation` (linear baseline mandatory) |
 | R/Seurat pipeline, or scop-wrapped tools (CytoTRACE/Palantir/CellChat/Monocle3/SCVELO) | `single-cell/scop` |
 | Bulk RNA-seq DE / enrichment | `general-bio/omicverse-bulk` |
 | Study methodology design | `single-cell/research-planner` |
@@ -365,4 +365,4 @@ ov.pl.violin(adata, keys=['CD3D'], groupby='celltype')
 ## Resources
 - `references/ambient_removal.md` — 6-backend ambient RNA removal (soupx/fastcar/decontx/sccdc/cellbender/scar) + diagnostics + when NOT to run
 - `references/multiomics_integration.md` — per-modality multi-omics API (MOFA+/GLUE/SIMBA/CITE-seq/Metabolism/CEFCON/TCGA bulk)
-- Repo-level: `scripts/api_check.py` (repo root, post-install API self-check), `scripts/postcheck.py` (repo root, scientific-rigor auto-check), `references/preoutput_checklist.md` (repo root)
+- Repo-level: `scripts/api_check.py` (repo root, post-install API self-check), `scripts/postcheck.py` (repo root, scientific-rigor auto-check), `references/meta_methodology.md` (repo root)

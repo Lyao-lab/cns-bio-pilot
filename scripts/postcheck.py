@@ -235,7 +235,7 @@ def check_language(text, report):
 
 # 虚构信号（原则 1：基于事实，不猜测不虚构）
 FABRICATION_RE = re.compile(
-    r'\b(GSE\d{5}|GSM\d{6,})\b'  # accession 格式
+    r'\b(GSE\d{5,}|GSM\d{6,})\b'  # accession 格式 (GSE 5+ digits, GSM 6+)
     r'|(e\.g\.|例如|比如|假设|example data|demo dataset|test_data|mock_data|placeholder)',
     re.IGNORECASE,
 )

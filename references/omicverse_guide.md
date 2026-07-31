@@ -17,8 +17,8 @@ adata = ov.read('data.h5ad')
 
 | Task | omicverse API | Standalone tool it replaces |
 |---|---|---|
-| QC (mito/UMI/gene count) | `ov.pp.qc(adata, thresh={'mito_perc':20,'nUMIs':500,'detected_genes':250}, doublets_method='scrublet', batch_key='sample', filter_doublets=True)` | scanpy.pp.calculate_qc_metrics |
-| Doublet detection | same `doublets_method='scrublet'\|'scdblfinder'\|'doubletfinder'` | scrublet/scDblFinder/DoubletFinder |
+| QC (mito/UMI/gene count) | `ov.pp.qc(adata, tresh={'mito_perc':0.15,'nUMIs':500,'detected_genes':250}, doublets_method='scdblfinder', batch_key='sample', filter_doublets=True)` — **param is `tresh` (not thresh); mito_perc is fraction (0.15=15%)** | scanpy.pp.calculate_qc_metrics |
+| Doublet detection | same `doublets_method='scdblfinder'\|'scrublet'\|'doubletfinder'` (default: scdblfinder) | scDblFinder/scrublet/DoubletFinder |
 | Normalization | `ov.pp.preprocess(adata, mode='shiftlog'\|'pearson', n_HVGs=2000)` | scanpy normalize_total/log1p, scTransform |
 | Recover raw counts | `ov.pp.recover_counts(adata)` | — |
 | Scale (does not mutate X) | `ov.pp.scale(adata)` → stored in `layers['scaled']` | scanpy.pp.scale |
@@ -93,7 +93,7 @@ adata = ov.read('data.h5ad')
 > **MuData**: omicverse does not expose `muon`/`MuData` at top level. `pyMOFA` builds MuData internally; for direct MuData manipulation `pip install muon`.
 > **Spatial multi-omics** (Stereo-seq/Visium HD multi-modality) → `spatial/multiomics` (cellpose + SpatialData), not this table.
 
-## Plotting Task Mapping (see skills/visualization/omicverse-plotting)
+## Plotting Task Mapping (see skills/visualization/figure-production)
 
 ```python
 ov.plot_set()  # init (required)
@@ -143,7 +143,7 @@ ov.plot_set()  # init (required)
 | Capability | Kept skill / tool |
 |---|---|
 | cell2location spatial deconvolution | `spatial/deconvolution` |
-| Perturb-seq | `single-cell/perturb-seq` (pertpy) |
+| Perturb-seq | `single-cell/perturbation` (pertpy) |
 | scVelo deep tuning | `single-cell/rna-velocity` (fallback hint) |
 | High-res spatial (Stereo-seq/Visium HD) | `spatial/multiomics` |
 | Spatial proteomics (CODEX/IMC/MIBI) | `spatial/proteomics` (scimap) |

@@ -21,6 +21,8 @@ Read this file → pick ONE sub-skill → read that sub-skill's SKILL.md → exe
 | High-res spatial (Visium HD/Slide-seq/MERFISH; segmentation/binning) | `spatial/multiomics` | squidpy + spatialdata |
 | Spatial proteomics (CODEX/IMC/MIBI) | `spatial/proteomics` | scimap |
 | Bulk RNA-seq / pathway / enrichment | `general-bio/omicverse-bulk` | omicverse ov.bulk |
+| Cell-type proportion / differential abundance (Milo/scCODA/propeller) | `single-cell/omicverse-pipeline` §9c (or scop RunMilo/RunscCODA) | omicverse / scop |
+| CNV inference / inferCNV / copykat | `single-cell/omicverse-pipeline` (or scop RunCNV) | omicverse / scop |
 | **Figures** (design → render → assemble; any plot type) | `visualization/figure-production` | cns_style.py + ov.pl |
 | Schematics / mechanism diagrams / graphical abstract | `visualization/scientific-schematics` | AI + matplotlib |
 | **Manuscript writing** (Methods / Results / Figure Legends) | `presentation/manuscript-writing` | LLM |

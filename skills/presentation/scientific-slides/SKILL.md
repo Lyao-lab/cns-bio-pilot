@@ -8,8 +8,8 @@ license: MIT
 # Scientific Slides
 
 ## When NOT to use this skill
-- Writing paper Methods / Results / figure legend text → use `presentation/methods-writer` / `presentation/results-writer` / `presentation/figure-legend-writer`
-- Standalone publication-grade figure (not a slide) → use `visualization/multi-panel-figures`
+- Writing paper Methods / Results / figure legend text → use `presentation/manuscript-writing` / `presentation/manuscript-writing` / `presentation/manuscript-writing`
+- Standalone publication-grade figure (not a slide) → use `visualization/figure-production`
 - Drawing mechanism / flow / architecture diagrams (not slides) → use `visualization/scientific-schematics`
 
 ## Overview
@@ -27,7 +27,7 @@ This skill generates research presentation slides with **python-pptx** (default)
 ## When to Use This Skill
 
 - Conference talk (5-20 min) / seminar (45-60 min) / defense / grant pitch / journal club
-- Need to embed real analysis figures (PNGs from `visualization/omicverse-plotting` or `multi-panel-figures`)
+- Need to embed real analysis figures (PNGs from `visualization/figure-production`)
 - Need an editable .pptx (peers/advisor will edit text) or a compiled PDF (Beamer)
 
 ## Workflow: outline.json source-first (python-pptx)
@@ -135,8 +135,8 @@ xelatex beamer_template_conference.tex   # Chinese-safe compile
 | Content/Design/Timing pitfalls + 10 principles | `references/pitfalls.md` |
 | Full LaTeX Beamer document | `references/beamer_guide.md` |
 | **Lab meeting mode** (group meeting / progress / PI update — 9 steps + A-I output + Hard Rules + 7 rule modules) | `references/lab_meeting/lab_meeting_workflow.md` + `references/lab_meeting/rules/*.md` |
-| Figure aesthetics (color / font / non-overlap) | top-level `references/figure_aesthetics.md` |
-| Multi-panel composition (layout / shared legend / panel labels) | top-level `references/figure_layout.md` |
+| Figure aesthetics (color / font / non-overlap) | top-level `references/figure_guide.md` |
+| Multi-panel composition (layout / shared legend / panel labels) | top-level `references/figure_guide.md` |
 
 > Removed in v12.1 (redundant with top-level figure refs): talk_types_guide, presentation_structure, slide_design_principles, data_visualization_slides, visual_review_workflow, core_capabilities, development_workflow. The 7-step Quick Route + Pre-Output Checklist + Key pitfalls in this SKILL.md already cover slide structure/design/review essentials.
 
@@ -145,7 +145,7 @@ xelatex beamer_template_conference.tex   # Chinese-safe compile
 - `assets/powerpoint_design_guide.md` / `assets/timing_guidelines.md`
 
 ## Prerequisites (where inputs come from)
-- **Real analysis figures** → PNGs from `visualization/omicverse-plotting` (ov.pl.embedding/volcano) or `visualization/multi-panel-figures` (6-panel composites)
+- **Real analysis figures** → PNGs from `visualization/figure-production` (ov.pl.embedding/volcano) or `visualization/figure-production` (6-panel composites)
 - **Spatial section images** → `sq.pl.spatial_scatter` output from `spatial/omicverse-spatial`
 - **Result data** → analyzed h5ad / DE tables / SVG tables (feed into the results-table variant)
 - **Citations** → 3-5 references in intro, 3-5 in discussion (research-lookup)
@@ -163,7 +163,7 @@ xelatex beamer_template_conference.tex   # Chinese-safe compile
 
 ## When to leave this skill (where to go)
 - Writing paper Methods / Results / figure legends → the corresponding writer skill
-- Standalone publication-grade figure → `visualization/multi-panel-figures`
+- Standalone publication-grade figure → `visualization/figure-production`
 - Mechanism / flow diagrams → `visualization/scientific-schematics`
 - After completion, run `python scripts/qa_deck.py presentation.pptx` to verify
 

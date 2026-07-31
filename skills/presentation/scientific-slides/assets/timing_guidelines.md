@@ -1,6 +1,6 @@
 # Presentation Timing Guidelines (quick-reference tables)
 
-> Planning how many slides and how much time per section. This file is the lookup tables; for slide design see `references/figure_design.md` + `figure_aesthetics.md` + `figure_layout.md`.
+> Planning how many slides and how much time per section. This file is the lookup tables; for slide design see `references/figure_guide.md` + `figure_guide.md` + `figure_guide.md`.
 
 ## Core rule
 **~1 slide per minute** baseline. Adjust: complex/data slides 2–3 min; title/dividers 15–30 s; key-result slides 2–4 min. Animation build-steps count as extra slides. **Spend 40–50% of time on results. Never skip conclusions.**

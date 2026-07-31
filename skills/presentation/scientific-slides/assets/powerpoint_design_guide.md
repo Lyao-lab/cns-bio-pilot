@@ -1,6 +1,6 @@
 # PowerPoint Design Guide (PPT-specific only)
 
-> Covers **only what is unique to PowerPoint**: the PptxGenJS API, template-script workflow, slide masters, animation discipline, speaker notes, and PPT-specific units/dimensions. For general typography/color palettes/contrast/layout/composition, see `references/figure_design.md` + `figure_aesthetics.md` + `figure_layout.md`.
+> Covers **only what is unique to PowerPoint**: the PptxGenJS API, template-script workflow, slide masters, animation discipline, speaker notes, and PPT-specific units/dimensions. For general typography/color palettes/contrast/layout/composition, see `references/figure_guide.md` + `figure_guide.md` + `figure_guide.md`.
 
 ## Two creation paths via the pptx skill
 
@@ -48,7 +48,7 @@ pptx.writeFile({ fileName:"presentation.pptx" });
 
 ## Slide master discipline
 
-Define **4–5 master layouts** once, reuse everywhere: title, content (bullets), two-column, full-figure, closing. Set default fonts/colors/spacing + placeholders for logo/footer on the master so every slide inherits them. Avoid ad-hoc per-slide formatting — it breaks consistency. (Palette/contrast values live in `figure_aesthetics.md`.)
+Define **4–5 master layouts** once, reuse everywhere: title, content (bullets), two-column, full-figure, closing. Set default fonts/colors/spacing + placeholders for logo/footer on the master so every slide inherits them. Avoid ad-hoc per-slide formatting — it breaks consistency. (Palette/contrast values live in `figure_guide.md`.)
 
 ## Animation rules (PPT-specific)
 

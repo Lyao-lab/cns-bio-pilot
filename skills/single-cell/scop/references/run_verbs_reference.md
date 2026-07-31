@@ -382,7 +382,7 @@ ccc_to_adata(ccc); ccc_to_liana(ccc)   # CCC result conversion
 | Capability | Use instead |
 |---|---|
 | **moscot** (optimal transport trajectory) | `moscot` Python package — not wrapped in scop or omicverse; feeds CellRank's RealTimeKernel |
-| **CellOracle** (GRN virtual KO, Python) | `celloracle` Python package — for perturbation-prediction Route B with only WT scRNA-seq |
+| **CellOracle** (GRN virtual KO, Python) | `celloracle` Python package — for perturbation Path B with only WT scRNA-seq |
 | **SpatialGlue / MENDER / BINARY / GraphST** (spatial domain, Python) | standalone Python packages — scop wraps BANKSY/BayesSpace/Giotto but not these Python-native methods; or `ov.space` wrappers |
 | **STAGATE / SpaceFlow / STAligner / GASTON** (spatial domain, omicverse) | `ov.space.pySTAGATE` / `pySpaceFlow` / `pySTAligner` / `GASTON` in omicverse — scop does not wrap these |
 | **COMMOT** (spatial CCC) | `COMMOT` Python package — scop's spatial CCC is via `RunSpatialCellChat`/`RunSecActCCC`, not COMMOT |

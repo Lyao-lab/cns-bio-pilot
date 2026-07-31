@@ -29,7 +29,10 @@ description: 扰动分析全流程——两条路径：(A) 实测 Perturb-seq �
 ```python
 import pertpy as pt
 # Pseudobulk + DE
-pdata = pt.tl.PseudobulkSpace().compute(adata, mode="sum", min_cells=10)
+pdata = pt.tl.PseudobulkSpace().compute(adata, target_col='target_gene', mode="sum")
+# Filter tiny pseudobulks AFTER compute (no min_cells arg in pertpy 1.0):
+pdata = pdata[pdata.obs_names.isin(
+    adata.obs.groupby('target_gene').size()[lambda s: s >= 30].index)].copy()
 de = pt.tl.PyDESeq2.compare_groups(pdata, column='target_gene',
     baseline='non-targeting', groups_to_compare=[...])
 # Mixscape signature

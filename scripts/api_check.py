@@ -201,32 +201,208 @@ def check_apis(skill_dir, package="omicverse"):
         return 0
 
 
+def diff_mode(skill_dir, package="omicverse"):
+    """--diff mode: compare installed version vs compat.yaml verified version.
+
+    Reports exactly what changed so you only update what's needed.
+    """
+    import yaml as _yaml
+
+    compat_path = os.path.join(skill_dir, "compat.yaml")
+    if not os.path.isfile(compat_path):
+        print("❌ compat.yaml not found — create it first (version declaration)")
+        return 1
+
+    with open(compat_path, encoding="utf-8") as f:
+        compat = _yaml.safe_load(f)
+
+    if package not in compat:
+        print(f"❌ '{package}' not in compat.yaml")
+        return 1
+
+    verified = compat[package]["verified_against"]
+    compat_range = compat[package].get("compatible_range", "?")
+    last_date = compat[package].get("last_verified", "?")
+
+    # Get installed version
+    info = PACKAGE_MAP.get(package)
+    if not info:
+        print(f"❌ '{package}' not in PACKAGE_MAP")
+        return 1
+    try:
+        mod = importlib.import_module(info["import"])
+    except ImportError:
+        print(f"❌ {package} not installed")
+        return 1
+    installed = getattr(mod, "__version__", "?")
+
+    print(f"{'='*60}")
+    print(f"  {package} version diff check")
+    print(f"{'='*60}")
+    print(f"  Installed:        {installed}")
+    print(f"  Skill verified:   {verified}  (last: {last_date})")
+    print(f"  Compatible range: {compat_range}")
+    print()
+
+    if installed == verified:
+        print("✅ Versions match — no diff needed. Skill docs are current.")
+        return 0
+
+    print(f"⚠️  VERSION MISMATCH: installed {installed} ≠ verified {verified}")
+    print(f"    Scanning for API surface differences...\n")
+
+    # 1. Get all documented APIs from skill
+    prefix = info["prefix"]
+    doc_apis = set(extract_apis_from_skill(skill_dir, prefix))
+
+    # 2. Get all actual APIs from installed package (3-level deep scan)
+    actual_apis = set()
+    for attr in dir(mod):
+        if attr.startswith("_"):
+            continue
+        actual_apis.add(f"{prefix}.{attr}")
+        submod = getattr(mod, attr, None)
+        if submod is None:
+            continue
+        # 2nd level
+        try:
+            for sub_attr in dir(submod):
+                if sub_attr.startswith("_"):
+                    continue
+                full2 = f"{prefix}.{attr}.{sub_attr}"
+                actual_apis.add(full2)
+                # 3rd level (for sub-packages like ov.pp.ambient.* and classes like ov.space.Deconvolution.*)
+                try:
+                    sub2 = getattr(submod, sub_attr, None)
+                    if sub2 is not None and not callable(sub2):
+                        for sub2_attr in dir(sub2):
+                            if sub2_attr.startswith("_"):
+                                continue
+                            actual_apis.add(f"{full2}.{sub2_attr}")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    # 3. Compare — use hasattr resolution for "removed" (robust against lazy-load/classes)
+    # APIs in skill docs but NOT resolvable in installed (removed/renamed)
+    removed = []
+    for api in sorted(doc_apis):
+        # Skip whitelist entries
+        if api in NEGATIVE_RESULT_WHITELIST:
+            continue
+        if any(api.startswith(w) for w in NEGATIVE_RESULT_WHITELIST):
+            continue
+        # Resolve via hasattr chain (same as check_apis does)
+        resolved, err = resolve_api(mod, api, prefix)
+        if resolved is None:
+            removed.append(api)
+
+    # APIs in installed but NOT in skill docs (new — potential additions)
+    # Only report 2-level APIs (prefix.module.name) that look like public functions
+    new_candidates = sorted([a for a in actual_apis - doc_apis
+                            if a.count(".") >= 2 and not a.split(".")[-1].startswith("_")])
+
+    # 4. Find files still referencing old version string
+    old_version_refs = []
+    for root, _, files in os.walk(skill_dir):
+        if ".git" in root:
+            continue
+        for fn in files:
+            if not fn.endswith((".md", ".py", ".R", ".json")):
+                continue
+            fp = os.path.join(root, fn)
+            try:
+                with open(fp, encoding="utf-8") as f:
+                    if verified in f.read():
+                        rel = os.path.relpath(fp, skill_dir)
+                        old_version_refs.append(rel)
+            except Exception:
+                pass
+
+    # 5. Report
+    print(f"{'─'*60}")
+    if removed:
+        print(f"\n❌ REMOVED/RENAMED (in skill docs but NOT in {package} {installed}): {len(removed)}")
+        for api in removed[:20]:
+            print(f"   {api}")
+        if len(removed) > 20:
+            print(f"   ... and {len(removed)-20} more")
+    else:
+        print(f"\n✅ No removed APIs — all documented APIs still exist in {installed}")
+
+    if new_candidates:
+        print(f"\n🆕 NEW in {installed} (not yet in skill docs): {len(new_candidates)} candidates")
+        for api in new_candidates[:30]:
+            print(f"   {api}")
+        if len(new_candidates) > 30:
+            print(f"   ... and {len(new_candidates)-30} more")
+    else:
+        print(f"\n✅ No significant new APIs detected")
+
+    if old_version_refs:
+        print(f"\n📁 Files still referencing '{verified}' ({len(old_version_refs)} files):")
+        for ref in old_version_refs:
+            print(f"   {ref}")
+    else:
+        print(f"\n✅ No files reference old version '{verified}'")
+
+    # 6. Verdict
+    print(f"\n{'='*60}")
+    needs_update = bool(removed) or bool(old_version_refs)
+    if needs_update:
+        n_files = len(set(
+            [os.path.relpath(os.path.join(skill_dir, r), skill_dir) for r in old_version_refs]
+        ))
+        print(f"  VERDICT: {len(removed)} APIs removed + {n_files} files need version update")
+        print(f"  ACTION:  update compat.yaml verified_against to {installed},")
+        print(f"           fix removed APIs in docs, optionally document new APIs.")
+    else:
+        print(f"  VERDICT: Only new APIs (no breaking changes). Update compat.yaml")
+        print(f"           verified_against to {installed} and optionally document new APIs.")
+    print(f"{'='*60}")
+
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(
-        description="cns-bio-pilot API 实存性自检（装/更包后跑一遍）",
+        description="cns-bio-pilot API 实存性自检 + 版本差异检测",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
   python scripts/api_check.py                       # 默认检查全部已配置包（omicverse + pertpy）
   python scripts/api_check.py --package omicverse   # 只检查 omicverse
   python scripts/api_check.py --package pertpy      # 只检查 pertpy
+  python scripts/api_check.py --diff                # 版本差异检测（installed vs compat.yaml）
+  python scripts/api_check.py --diff --package pertpy
   python scripts/api_check.py --skill-dir ~/.agents/skills/cns-bio-pilot
 
-退出码: 0 = 全部通过; 1 = 有缺失 API
+退出码: 0 = 全部通过; 1 = 有缺失 API / 版本不匹配需更新
         """,
     )
-    # 默认 skill 目录：脚本上两级（scripts/ -> skill 根）
     default_skill_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    ap.add_argument("--skill-dir", default=default_skill_dir, help="cns-bio-pilot skill 根目录（默认: 脚本上两级）")
+    ap.add_argument("--skill-dir", default=default_skill_dir, help="cns-bio-pilot skill 根目录")
     ap.add_argument("--package", default=None, choices=list(PACKAGE_MAP) + [None],
                     help=f"要检查的包（默认: 全部 = {list(PACKAGE_MAP)}）")
+    ap.add_argument("--diff", action="store_true",
+                    help="版本差异检测模式：对比 installed vs compat.yaml，报告精确变化")
     a = ap.parse_args()
 
     if not os.path.isdir(a.skill_dir):
         print(f"❌ skill 目录不存在: {a.skill_dir}")
         return 1
 
-    # 默认跑全部已配置包；任一失败则返回 1
+    if a.diff:
+        targets = [a.package] if a.package else ["omicverse"]
+        final_rc = 0
+        for pkg in targets:
+            rc = diff_mode(a.skill_dir, pkg)
+            if rc != 0:
+                final_rc = 1
+        return final_rc
+
+    # Default: full API existence check
     targets = [a.package] if a.package else list(PACKAGE_MAP)
     final_rc = 0
     for pkg in targets:

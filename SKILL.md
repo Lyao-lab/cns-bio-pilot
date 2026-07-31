@@ -34,13 +34,13 @@ Different tasks live in different conda envs; wrong env → `ModuleNotFoundError
 
 | Task / package | conda env | Verified contents (2026-07-25 audit) | Activate |
 |---|---|---|---|
-| Single-cell (omicverse) | `sc` | omicverse 2.2.4 · scanpy 1.11.5 · scvelo · anndata 0.11.4 · scvi 1.4.2 · tangram 1.0.4 · spatialdata 0.7.3 | `conda activate sc` |
+| Single-cell (omicverse) | `sc` | omicverse (version: `compat.yaml`) · scanpy · scvelo · anndata · scvi · tangram · spatialdata | `conda activate sc` |
 | Spatial — `ov.space.*` / Tangram / spatialdata / cell2location | `sc` | (same as above; **squidpy is NOT in sc**) | `conda activate sc` |
 | Spatial — squidpy-only (`sq.gr.*` / `sq.im.*` / `sq.pl.*`) | `st` | squidpy 1.2.2 · scanpy 1.9.6 · anndata 0.9.2 (**older** than sc) | `conda activate st` |
 | R / Seurat / scop | system R (not conda) | R 4.3.3 / R 4.5.1 at `D:\Program Files (x86)\R-*` — **scop 0.8.9 installed** (verified 2026-07-26: 314 exports / 133 Run\*); `scop_env` conda env exists but has no R, so use the system Rscript directly | `"D:\Program Files (x86)\R-4.3.3\bin\Rscript.exe"` |
 | Packages NOT auto-installed in either env | per-analysis | `spatialdata-io` / `bin2cell` / `cellpose` / `scimap` — `pip install` into the env named by the example's header | — |
 
-> **2026-07 correction**: cell2location 0.1.5 + scvi 1.4.2 + omicverse 2.2.4 coexist in the `sc` env — **no separate c2l env needed** (the early anndata 0.10.x pin conflict is resolved). Deconvolution uses `ov.space.Deconvolution.deconvolution(method='cell2location')`.
+> **2026-07 correction**: cell2location + scvi + omicverse coexist in the `sc` env — **no separate c2l env needed** (the early anndata 0.10.x pin conflict is resolved since omicverse ≥2.2). Deconvolution uses `ov.space.Deconvolution.deconvolution(method='cell2location')`.
 
 > **st env is squidpy-only and older** (scanpy 1.9.6 / anndata 0.9.2) — if a squidpy example also imports scanpy APIs newer than 1.9, prefer running squidpy inside `sc` after `pip install squidpy` there. The split exists for dependency isolation, not as a hard rule.
 
@@ -111,7 +111,7 @@ Data has spatial coords / tissue image?
 - **cell2location deconvolution** → `spatial/deconvolution` (`ov.space.Deconvolution.deconvolution(method='cell2location')` — 5 methods unified; no separate env needed since 2026-07)
 - **After batch correction** → embedding (`X_scVI` / `X_harmony`) is for visualization / clustering only — it removes real biological signal, using it for DE / enrichment also strips disease signal
 - **RNA velocity** → requires spliced/unspliced layers; missing → run velocyto first; without splice kinetics you can only do pseudotime
-- **Foundation models (scGPT/Geneformer/UCE)** → not yet wrapped in omicverse 2.2.4 (`ov.fm` does **not** exist); use as standalone packages; **always run a linear baseline** for perturbation prediction (Nature Methods 2025)
+- **Foundation models (scGPT/Geneformer/UCE)** → not yet wrapped in omicverse (`ov.fm` does **not** exist as of `compat.yaml` verified version); use as standalone packages; **always run a linear baseline** for perturbation prediction (Nature Methods 2025)
 
 ## When to Use / When NOT to Use (engine choice)
 
@@ -141,8 +141,11 @@ Data has spatial coords / tissue image?
 
 ## Version & architecture
 
-- **Version**: 17.0.0 (scop 0.8.0 → 0.8.9 upgrade — **major API expansion**. 0.8.9 ships 314 exports / 133 Run\* (was 126 / 40). Nearly every capability previously documented as "NOT wrapped, use standalone" is **now wrapped**: SCENIC / SCENICPlus / CisTarget / GENIE3 / GRNBoost2 / scTenifoldKnk (GRN); Milo / scCODA / Propeller / LISI / MDIC3 / Statial / mcRigor (compositional DA); RCTD / cell2location / SPOTlight / STdeconvolve / CytoSPACE / CARD / SpatialDWLS / CSIDE (spatial deconvolution); BANKSY / BayesSpace / SmoothClust / MERINGUE / Giotto family / Semla family (spatial domains); SecAct ×5 / CellphoneDB / LIANA / Nichenetr / MultiNichenetr / MistyR / SpatialCellChat (CCC); CNV (copykat/fastCNV/scevan/infercnv); GSVA / Dorothea / Augur / ESTIMATE / Metabolism / scFEA (pathway); LabelTransfer / ReferenceMapping / SciBet / CellCycle / scMalignant×3 (annotation); CCA / WNN / RPCA / MultiMAP / Coralysis / GLUE integrations; h5ad/loom/SPE/spata2/giotto converters + ConvertHomologs. Renames: `RunDimReduction` → `RunDimsReduction` + `RunDimsEstimate`; `CellChatPlot` → `SpatialCellChatPlot`. Rewrote `skills/single-cell/scop/SKILL.md` + `references/run_verbs_reference.md` end-to-end; updated 7 cross-references (top SKILL.md env table + When-to-Use, README env table + sub-skills table, skill-index.json, omicverse-pipeline When-NOT + §9b WNN, perturb-seq When-NOT, rna-velocity GRN table, spatial/deconvolution RCTD note, spatial/omicverse-spatial BayesSpace note). Install gotcha surfaced: 0.8.9's heavy new deps (thisplot/thisutils/Signac) broke the first `install_github(dependencies=TRUE)` — recover by installing Seurat as CRAN binary first + `install_github(upgrade=FALSE)`. All v16.0/v16.0.1 changes stand.)
+- **Version**: 18.0.0 (version management architecture — **never hardcode package versions again**. Three mechanisms: ① `compat.yaml` — single source of truth for all package versions (replaces 30 scattered "2.2.4" strings); ② `api_check.py --diff` — version mismatch detection that reports exactly what changed (removed/new APIs + files to update) in one command; ③ routing-layer de-versioning — SKILL.md/references/examples no longer pin versions, they reference `compat.yaml`. Also includes: omicverse upgraded 2.2.4→2.3.1 (verified 0 breaking changes via --diff; new modules ov.agent/ov.airr are out of skill scope); advanced figure aesthetics v17.1-17.2 (positive design layer + cns_style.py with journal presets/mplstyle export/seaborn integration, absorbed from SciencePlots 9k★ + Rougier 11k★ philosophy).)
 
+<!-- v18.0: 2026-07-31, version management architecture (compat.yaml + api_check --diff + de-versioning) + omicverse 2.3.1 -->
+<!-- v17.2: 2026-07-26, deep-integrate SciencePlots/Rougier into cns_style (journal presets + mplstyle + seaborn) -->
+<!-- v17.1: 2026-07-26, advanced figure aesthetics — positive design layer (color narrative / polish_axes / anchor panels) -->
 <!-- v17.0: 2026-07-26, scop 0.8.0→0.8.9 — 133 Run* verbs, rewrote scop skill + 7 cross-refs -->
 <!-- v16.0.1: 2026-07-25, correct v16.0 R/scop search-method error — scop IS installed in system R -->
 <!-- v16.0: 2026-07-25, deep audit — 3-round review fixed 3 P0 code bugs + env honesty + doc consistency -->
@@ -174,6 +177,7 @@ Data has spatial coords / tissue image?
 |---|---|---|
 | `SKILL.md` (this file) | **Routing authority** | Always read first |
 | `skill-index.json` | Compact index (name/triggers/engine/path/data_type) | When you need to locate a sub-skill quickly |
+| `compat.yaml` | **Single source of truth for package versions** (omicverse/pertpy/scop/squidpy/scanpy/anndata/spatialdata) | Check before any "which version" question; update after any package upgrade |
 | `references/workflow_routing.md` | Routing decision tree + Signal Patterns trap table | When the routing table match is ambiguous and needs refinement |
 | `references/omicverse_guide.md` | OmicVerse API cheat-sheet (task → API mapping) | When using ov.* |
 | `references/figure_aesthetics.md` | CNS publication-grade plotting spec (size / font / dual-track palette / CJK fallback / title & legend non-overlap) | **Must read before any plotting** |

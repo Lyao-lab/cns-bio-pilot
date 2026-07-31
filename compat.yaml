@@ -1,0 +1,60 @@
+# compat.yaml — SINGLE SOURCE OF TRUTH for package version compatibility
+#
+# All skill docs reference THIS file for version info (not hardcoded version
+# strings). When a package upgrades, update verified_against here, then run:
+#   python scripts/api_check.py --diff
+# to see exactly what changed and which files need updating.
+#
+# Rules:
+#   - verified_against: the version that was last fully verified via api_check
+#   - compatible_range: expected safe range (minor bumps usually OK, major may break)
+#   - breaking_changes: known breaking changes between versions (added after each upgrade)
+#   - last_verified: date of last api_check run against this version
+
+omicverse:
+  verified_against: "2.3.1"
+  compatible_range: ">=2.2.0, <2.4"
+  last_verified: "2026-07-31"
+  breaking_changes:
+    "2.2.3 -> 2.2.4": "none (patch); GASTON newly wrapped; synbio/Agent modules added"
+    "2.2.4 -> 2.3.1": "none breaking for skill APIs; new modules ov.agent/ov.airr (out of skill scope); 8280 new exports (agent+airr)"
+
+pertpy:
+  verified_against: "1.0.3"
+  compatible_range: ">=1.0, <2.0"
+  last_verified: "2026-07-26"
+  breaking_changes:
+    "0.7 -> 1.0": "PseudobulkDE->PseudobulkSpace; PerturbationSignature->Mixscape.perturbation_signature; perturbation_embedding/cluster_perturbations removed (use CentroidSpace); pt.pl.* emptied"
+
+scop:
+  verified_against: "0.8.9"
+  compatible_range: ">=0.8.9, <0.9"
+  last_verified: "2026-07-26"
+  breaking_changes:
+    "0.8.0 -> 0.8.9": "+94 Run* verbs (SCENIC/Milo/RCTD/BANKSY/SecAct/etc now wrapped); RunDimReduction->RunDimsReduction+RunDimsEstimate; CellChatPlot->SpatialCellChatPlot"
+
+squidpy:
+  verified_against: "1.2.2"
+  compatible_range: ">=1.2, <1.4"
+  last_verified: "2026-07-26"
+  breaking_changes: {}
+
+scanpy:
+  verified_against: "1.11.5"
+  compatible_range: ">=1.10, <2.0"
+  last_verified: "2026-07-26"
+  breaking_changes: {}
+
+anndata:
+  verified_against: "0.11.4"
+  compatible_range: ">=0.10, <0.13"
+  last_verified: "2026-07-26"
+  breaking_changes:
+    "0.12 -> 0.11": "omicverse 2.2.4 pins anndata 0.11.4 (downgrade from 0.12.19); read_loom deprecated path"
+
+spatialdata:
+  verified_against: "0.7.3"
+  compatible_range: ">=0.7, <1.0"
+  last_verified: "2026-07-26"
+  breaking_changes:
+    "0.1 -> 0.7": ".table -> .tables[TABLE_KEY] (dict access)"

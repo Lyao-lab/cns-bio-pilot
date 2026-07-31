@@ -1,7 +1,7 @@
 """Visium HD bin → single-cell segmentation with bin2cell (canonical example).
 
-Env:        conda env `sc` (omicverse 2.2.4 is already installed there)
-Reference:  omicverse 2.2.4+ (wraps bin2cell) | bin2cell 1.x+ | cellpose 3.0+ | Verify API if version differs
+Env:        conda env `sc` (omicverse is already installed there)
+Reference:  omicverse (version in compat.yaml; wraps bin2cell) | bin2cell 1.x+ | cellpose 3.0+ | Verify API if version differs
 
 Install (omicverse IS in sc; bin2cell + cellpose are NOT auto-installed):
   conda activate sc && pip install bin2cell cellpose

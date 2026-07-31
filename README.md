@@ -6,7 +6,7 @@
 >
 > **19 sub-skills** · router architecture · meta-methodology discipline · publication-grade aesthetics.
 
-[![version](https://img.shields.io/badge/version-17.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
+[![version](https://img.shields.io/badge/version-18.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-19-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
 
 ---
 
@@ -71,9 +71,8 @@ The skill itself is plain Markdown — **no install needed**. What needs install
 conda create -n sc python=3.11 -y
 conda activate sc
 pip install omicverse scanpy scvelo anndata
-# Verified working versions (2026-07):
-#   omicverse 2.2.4 · scanpy 1.11.5 · scvelo 0.3.4 · anndata 0.11.4
-# cell2location + scvi (deconvolution & integration, coexist since omicverse 2.2.4):
+# Verified working versions — see compat.yaml for authoritative version declarations.
+# cell2location + scvi (deconvolution & integration, coexist since omicverse ≥2.2):
 pip install cell2location scvi-tools
 #   cell2location 0.1.5 · scvi-tools 1.4.2
 # CellRank 2 (trajectory/fate) + LIANA+ (communication):
@@ -248,7 +247,7 @@ git clone https://github.com/Lyao-lab/cns-bio-pilot.git ~/.agents/skills/cns-bio
 cd ~/.agents/skills/cns-bio-pilot
 conda run -n sc python scripts/api_check.py   # API existence self-check (run after every omicverse update)
 python scripts/postcheck.py --help            # should print usage (needs anndata)
-conda run -n sc python -c "import omicverse; print(omicverse.__version__)"  # 2.2.4
+conda run -n sc python -c "import omicverse; print(omicverse.__version__)"  # check compat.yaml
 ```
 
 > **After every `pip install --upgrade omicverse`**, re-run `api_check.py` — it scans all skill docs for `ov.*` API calls and verifies each one still exists in the new version. If omicverse renames/removes an API, the script flags it with a fix suggestion.
@@ -285,7 +284,7 @@ This skill is current as of **July 2026**. Key positions:
 | **Perturbation prediction** | Two routes: ML-based (GEARS/CPA, needs Perturb-seq, **linear baseline mandatory**) + GRN-based virtual KO (CellOracle/SCENIC+, needs only WT scRNA) |
 | **Trajectory** | CellRank 2 primary (Nat Methods 2024); moscot for discrete timepoints (Nature 2025); LEMUR for cluster-free multi-condition DE (Nat Genet 2025) |
 | **RNA velocity** | scVelo-stochastic default (most stable per 17-study benchmark); cell2fate (Nat Methods 2025) for Bayesian modular; pyro-Velocity for uncertainty |
-| **Spatial deconvolution** | `ov.space.Deconvolution` unifies cell2location/Tangram/RCTD/Starfysh/flashdeconv — no separate c2l env since omicverse 2.2.4 |
+| **Spatial deconvolution** | `ov.space.Deconvolution` unifies cell2location/Tangram/RCTD/Starfysh/flashdeconv — no separate c2l env since omicverse ≥2.2 |
 | **Cell communication** | LIANA+ consensus (Mol Syst Biol 2024) for single-cell; COMMOT for spatial |
 | **Bulk DE** | DESeq2/edgeR/limma unchanged; PyDESeq2 now scverse-maintained |
 

@@ -1,5 +1,5 @@
 ---
-name: single-cell-research-planner
+name: research-planner
 description: 单细胞课题设计方法论（零代码）——从研究方向生成完整可执行的研究计划：研究问题→study pattern→样本分组→分析模块→验证阶梯→figure 规划，输出 Lite/Standard/Advanced/Publication+ 四档配置。当用户要做课题设计、研究规划、research plan、study design、sample size、分组设计、单细胞立项时触发。强制 Dataset Disclaimer，绝不编造数据集/accession/文献。
 license: MIT
 author: AIPOCH
@@ -117,14 +117,6 @@ This skill should:
 9. define a validation ladder and evidence hierarchy
 10. specify figure logic and deliverables
 11. provide a literature-support layer only with verified references
-
-This skill should **not**:
-- promise that a dataset definitely exists when it has not been verified
-- force every project into trajectory, communication, regulon, or integration analysis
-- confuse descriptive cell-state findings with mechanistic proof
-- present post-treatment or post-outcome signals as baseline predictors without labeling them correctly
-- generate fake accession numbers, PMIDs, DOIs, journal details, or cohort metadata
-- output a dependency-inconsistent workflow in which later steps require data or modules never introduced earlier
 
 ---
 
@@ -311,17 +303,6 @@ Include:
 12. **Do not promise experimental validation capability unless resources are clearly available or explicitly labeled as potentially obtainable.**
 13. **If critical feasibility information is missing, state that the plan is provisional and assumption-dependent.**
 14. **The final workflow must be dependency-consistent.** No downstream step may require an undeclared input, unverified metadata, or unsupported data structure.
-
----
-
-## What This Skill Should Not Do
-
-- It should not behave like a generic single-cell encyclopedia.
-- It should not dump long lists of tools without a study logic.
-- It should not turn every project into an atlas paper.
-- It should not assume that public data are always enough for a publishable story.
-- It should not claim translational readiness without validation and evidence layering.
-- It should not produce a fake methods section disguised as a plan.
 
 ---
 

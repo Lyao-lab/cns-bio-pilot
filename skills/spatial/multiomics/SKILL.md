@@ -1,5 +1,5 @@
 ---
-name: spatial-multiomics-highres
+name: multiomics
 description: 高分辨率空转平台（Stereo-seq / Visium HD / Slide-seq / MERFISH）分析——亚细胞分割（cellpose）、binning、多模态对齐（SpatialData）。当用户要做高分辨率空转、subcellular analysis、Stereo-seq、Visium HD、cellpose 分割时触发。
 tool_type: python
 primary_tool: squidpy

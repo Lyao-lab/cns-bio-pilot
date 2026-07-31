@@ -26,7 +26,7 @@ Read this file → pick ONE sub-skill → read that sub-skill's SKILL.md → exe
 | **Figures** (design → render → assemble; any plot type) | `visualization/figure-production` | cns_style.py + ov.pl |
 | Schematics / mechanism diagrams / graphical abstract | `visualization/scientific-schematics` | AI + matplotlib |
 | **Manuscript writing** (Methods / Results / Figure Legends) | `presentation/manuscript-writing` | LLM |
-| Slides (lab meeting / conference / defense) | `presentation/scientific-slides` | PptxGenJS / Beamer |
+| Slides (lab meeting / conference / defense) | `presentation/scientific-slides` | python-pptx / Beamer |
 
 ## Environments
 

@@ -1,5 +1,5 @@
 ---
-name: omicverse-spatial-pipeline
+name: omicverse-spatial
 description: 空间转录组全流程（IO→空间邻域→QC→空间域→SVG→通讯→可视化）基于 OmicVerse V2 统一 API，覆盖 Visium/Xenium/Nanostring/VisiumHD。一个 import omicverse as ov 完成 90% 常规空转分析。
 ---
 

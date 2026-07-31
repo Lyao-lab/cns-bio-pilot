@@ -1,5 +1,5 @@
 ---
-name: spatial-deconvolution
+name: deconvolution
 description: Visium 等多细胞 spot 的细胞类型去卷积。基于 OmicVerse V2 的 ov.space.Deconvolution（统一封装 cell2location/Tangram/RCTD/Starfysh/flashdeconv 五法）从 scRNA-seq 参考集推断 spot 细胞构成。当用户要做去卷积、estimate cell type composition、spot 细胞类型比例时触发。
 ---
 

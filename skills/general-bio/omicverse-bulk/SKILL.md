@@ -1,5 +1,5 @@
 ---
-name: omicverse-bulk-pipeline
+name: omicverse-bulk
 description: Bulk RNA-seq / 表达矩阵全流程（差异表达→富集→WGCNA→PPI→批次校正）基于 OmicVerse V2，纯 Python，无需 R 环境和 DESeq2/clusterProfiler/WGCNA R 包。一个 import omicverse as ov 覆盖 90% bulk 分析。
 ---
 

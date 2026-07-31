@@ -1,5 +1,5 @@
 ---
-name: omicverse-single-cell-pipeline
+name: omicverse-pipeline
 description: 单细胞全流程（ambient 去除→QC→doublet→降维聚类→注释→批次校正→通讯→轨迹）+ 多组学整合（MOFA+/GLUE/CITE-seq/代谢/SIMBA/CEFCON）基于 OmicVerse V2 统一 API，无需在 scanpy/Seurat/scVI/CellTypist 间切换。一个 import omicverse as ov 覆盖 90% 常规分析。当用户要做单细胞、scRNA、多组学、CITE-seq、scRNA+ATAC、代谢、MOFA、GLUE 时触发。
 ---
 
@@ -80,8 +80,6 @@ ov.pp.qc(
 > **⚠️ Do NOT pass `mt_thresh=20` — that parameter does NOT exist on `ov.pp.qc`** (it is silently swallowed by `**kwargs` and ignored). The correct API is `tresh={'mito_perc': <frac>, ...}` (seurat mode) or `mode='mads', nmads=5` (auto-threshold from the distribution, 5 median-absolute-deviations — good when you don't want to hand-pick).
 >
 > **⚠️ Never copy-paste a mito threshold.** 20% is wrong for liver (too strict — kills real hepatocytes), wrong for brain (too loose — keeps dying neurons), wrong for nuclei (any mt% = contamination). The only honest workflow is: plot → find knee → check tissue table → document your choice (or use `mode='mads'`).
-
-> **Ambient RNA removal happens BEFORE `ov.pp.qc`** (see §1.5 below). Do not run QC on contaminated counts — ambient RNA inflates mt%, inflates marker scores, and makes doublet rates misleading.
 
 Decision: `scdblfinder` default (Python port of R scDblFinder via `pyscdblfinder`, xgboost on kNN+cxds features — [Germain et al. 2021 F1000](https://f1000research.com/articles/10-979), matches Seurat's DoubletFinder accuracy without the R roundtrip). `scrublet` is the legacy pure-Python fallback (faster but slightly lower recall); `doubletfinder` requires R. `sccomposite` (scvi-tools, Bayesian) is the heavy alternative.
 
@@ -284,7 +282,6 @@ ov.single.Monocle(adata)
 
 > **Trajectory choice:**
 > - **CellRank 2** (Nat Methods 2024) is the default for **continuous fate mapping** (velocity / pseudotime / metabolic-labeling kernels unified). Velocity-driven trajectory → `single-cell/rna-velocity` (incl. `cellrank_fate`).
-> - **moscot** (Nature 2025, optimal transport) is the SOTA for **discrete timepoints / spatial time series** (e.g. 4sU/SLAM multi-timepoint, spatial snapshots). Not installed in `sc` env / not wrapped in omicverse — install standalone; its output feeds CellRank's RealTimeKernel.
 > - **LEMUR** (Ahlmann-Eltze & Huber, Nat Genet 2025, [s41588-024-01996-0](https://www.nature.com/articles/s41588-024-01996-0)) — cluster-free multi-condition DE on a Grassmann manifold; same lab as the linear-baseline paper; new paradigm for "does condition X shift cells along trajectory Y" without pre-clustering.
 > - Standalone Monocle3/Slingshot/Palantir: legacy/teaching fallback, not first choice.
 > - Diffusion map / DPT: obsolete, only as pseudotime input to CellRank.

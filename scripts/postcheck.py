@@ -10,27 +10,27 @@ cns-bio-pilot postcheck — 科学严谨性自动校验
 把 cns-bio-pilot 核心原则中【可机检】的部分机械化。不替代人工判断，
 只捕捉最常见的科学错误。每条检查输出 ✅ PASS / ⚠️ WARN / ❌ FAIL。
 
-检查项（对应 SKILL.md 核心原则）：
+检查项（对应 SKILL.md Core Rules + references/meta_methodology.md）：
   [ADATA] 数据层完整性
-    A1  raw counts 保留 (layers['counts'])              原则 8
+    A1  raw counts 保留 (layers['counts'])              Core Rule 2 / meta ②
   [DE]   差异表达严谨性
-    D1  报告 Padj 而非裸 P                              原则 2
-    D2  阈值 Padj<0.05 & |Log2FC|>1.0                   原则 3
-    D3  未对 batch-corrected embedding 跑 DE            原则 6 🚨
-    D4  单细胞 DE 是否 pseudobulk（启发式）             原则 2
+    D1  报告 Padj 而非裸 P                              统计严谨
+    D2  阈值 Padj<0.05 & |Log2FC|>1.0                   统计严谨
+    D3  未对 batch-corrected embedding 跑 DE            meta ② 🚨
+    D4  单细胞 DE 是否 pseudobulk（启发式）             Core Rule 2
   [DECONV] 空间去卷积
-    V1  输出含质量评估列                                 原则 9
+    V1  输出含质量评估列                                 meta ①
   [VELOCITY] RNA velocity
-    E1  spliced/unspliced layers 存在                   前置
+    E1  spliced/unspliced layers 存在                   前置条件
   [SLIDES] 演示文稿
-    S1  关键数值图保留 N / 统计检验标注                  原则 2/3
+    S1  关键数值图保留 N / 统计检验标注                  Core Rule 1
   [LANG]  措辞
-    L1  无未授权因果词 (regulates/causes/induces)       原则 5 🚨
-    L2  CCC 分析的因果词纪律（启发式）                   原则 1/3
+    L1  无未授权因果词 (regulates/causes/induces)       Core Rule 1 🚨
+    L2  CCC 分析的因果词纪律（启发式）                   Core Rule 1
   [COMP]  组成型数据
-    C1  细胞比例分析勿用卡方/Fisher（启发式）            原则 3
-  [FACT] 虚构检测（原则 1：基于事实，不猜测不虚构）
-    F1  无虚构信号（example/demo/test 占位、编造的 accession）   原则 1 🚨
+    C1  细胞比例分析勿用卡方/Fisher（启发式）            meta ③
+  [FACT] 虚构检测（Core Rule 1：基于事实，不猜测不虚构）
+    F1  无虚构信号（example/demo/test 占位、编造的 accession）   Core Rule 1 🚨
 
 注：D4 / L2 / C1 均为启发式 WARN，需人工判断（如 method='wilcoxon' 的画图调用
 可能触发 D4；C1 的 'composition' 子串较宽）。FAIL 仍是确定性错误。

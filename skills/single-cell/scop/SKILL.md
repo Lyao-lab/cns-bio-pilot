@@ -1,5 +1,5 @@
 ---
-name: scop-single-cell
+name: scop
 description: 用 scop R 包做单细胞/空转全流程（基于 Seurat，133 verified Run* 动词 in scop 0.8.9）——QC/整合/注释/DE/轨迹/通讯/velocity/GRN/空间域/去卷积/组成型 DA。当用户要用 R、Seurat、scop、R 单细胞、standard_scop/integration_scop/RunPCA/RunUMAP/RunCellChat/RunSCVELO/RunMonocle3/RunSCENICPlus/RunMilo/RunRCTD/RunBANKSY 等 Run* 动词时触发。0.8.9 起 SCENIC+/Milo/scCODA/RCTD/BANKSY/SecAct/Giotto/EcoTyper/SCENIC 等已被 scop 包装。
 ---
 

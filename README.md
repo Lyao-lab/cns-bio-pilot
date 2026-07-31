@@ -10,7 +10,7 @@ Single-cell + spatial transcriptomics bioinformatics skill library. Router archi
 # Environment (see compat.yaml for versions)
 conda activate sc          # omicverse + scanpy + scvelo + pertpy + spatialdata
 conda activate st          # squidpy (spatial stats)
-# System R: "D:\Program Files (x86)\R-4.3.3\bin\Rscript.exe"  (scop 0.8.9)
+# R/scop: ~/miniforge3/envs/scop_env/bin/Rscript  (conda scop_env, R 4.5.3, scop 0.8.9)
 
 # After any package upgrade:
 python scripts/api_check.py --diff    # see what changed

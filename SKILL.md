@@ -34,7 +34,7 @@ Read this file → pick ONE sub-skill → read that sub-skill's SKILL.md → exe
 |---|---|---|
 | `sc` | omicverse (see `compat.yaml`) + scanpy + scvelo + scvi + tangram + spatialdata + pertpy + decoupler | `conda activate sc` |
 | `st` | squidpy (older scanpy) | `conda activate st` |
-| system R | R-4.3.3 + scop 0.8.9 + Seurat | `"D:\Program Files (x86)\R-4.3.3\bin\Rscript.exe"` |
+| `scop_env` (conda) | R 4.5.3 + scop 0.8.9 + Seurat | `~/miniforge3/envs/scop_env/bin/Rscript` |
 
 Package versions: **`compat.yaml`** (single source of truth). After any upgrade: `python scripts/api_check.py --diff`.
 

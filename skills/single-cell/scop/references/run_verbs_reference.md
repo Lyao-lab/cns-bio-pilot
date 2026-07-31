@@ -265,7 +265,7 @@ srt <- RunCNV(srt, method = "copykat"|"fastCNV"|"scevan"|"infercnv", ...)  # NEW
 ## Benchmark / permutation
 
 ```r
-RunBenchmark(srt, ...)        # NEW — benchmark wrapper
+BenchmarkPlot(srt, ...)        # benchmark visualization (RunBenchmark does NOT exist in scop 0.8.9)
 RunPermutation(srt, ...)      # NEW — permutation testing
 ```
 
@@ -331,7 +331,7 @@ CCCHeatmap(srt); CCCNetworkPlot(srt); CCCStatPlot(srt)
 SpatialCellChatPlot(srt)                                        # renamed from CellChatPlot in 0.8.0
 # Spatial plots (NEW):
 SpatialSpotPlot(srt); SpatialCellPlot(srt); SpatialNetworkPlot(srt)
-SpatialDeconvolutionPlot(srt); Cell2locationPlot(srt); DeconvolutionPlot(srt)
+Cell2locationPlot(srt); DeconvolutionPlot(srt)  # NOTE: SpatialDeconvolutionPlot does NOT exist in scop 0.8.9
 SpatialGradientPlot(srt); SpatialVariableFeaturePlot(srt); SpatialNeighborhoodPlot(srt)
 SpatialIntegrationPlot(srt); SpatialCoordinates(srt)
 SpatialEcoTyperSpatialPlot(srt); SpatialEcoTyperCompositionPlot(srt)

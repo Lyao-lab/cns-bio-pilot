@@ -37,7 +37,7 @@ Source-verified (omicverse; version in `compat.yaml`): `deconvolution(method=...
 | `'Starfysh'` | Starfysh | needs anchor-gene priors | optional | ❌ `pip install starfysh` |
 | `'flashdeconv'` | flashdeconv | fast exploration | — | ✅ |
 
-> **Pre-flight check**: `python -c "import importlib.util as u; print({m: u.find_spec(m) is not None for m in ['cell2location','tangram','starfysh','flashdeconv']})"`. RCTD/SPOTlight/CARD are R — since scop 0.8.9 they are wrapped (`RunRCTD`/`RunSPOTlight`/`RunCARD`); verify the system R (R-4.3.3) has scop 0.8.9 installed.
+> **Pre-flight check**: `python -c "import importlib.util as u; print({m: u.find_spec(m) is not None for m in ['cell2location','tangram','starfysh','flashdeconv']})"`. RCTD/SPOTlight/CARD are R — since scop 0.8.9 they are wrapped (`RunRCTD`/`RunSPOTlight`/`RunCARD`); verify scop 0.8.9 is installed in conda `scop_env` (`~/miniforge3/envs/scop_env/bin/Rscript`).
 
 ```python
 import omicverse as ov

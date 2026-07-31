@@ -56,6 +56,7 @@ safe_scanpy_plot(sc.pl.umap, adata, color='celltype',
     palette=apply_5plus1_palette(cats, focus_list=['Fibro','Macro']),
     size=point_size_for_n(adata.n_obs), alpha=0.7, edgecolor='none',
     legend_loc=None, ax=ax, show=False)
+add_cluster_labels(ax, adata, groupby='celltype')  # on-plot labels with white halo
 clean_umap_axes(ax)
 optical_margin(ax, 0.12)
 finalize_figure(fig)  # ← 必须！检查 legend 位置/文字重叠/比例畸形
@@ -76,7 +77,7 @@ ax.scatter(de.loc[sig_down,'log2FC'], -np.log10(de.loc[sig_down,'padj'].clip(1e-
 ax.scatter(de.loc[sig_up,'log2FC'], -np.log10(de.loc[sig_up,'padj'].clip(1e-300)),
            s=4, alpha=0.8, color=vc['up'], edgecolor='none')
 ax.axhline(-np.log10(0.05), ls='--', lw=0.5, alpha=0.3, color=vc['threshold'])
-ax.axvline([-1, 1], ls='--', lw=0.5, alpha=0.3, color=vc['threshold'])
+for xv in (-1, 1): ax.axvline(xv, ls='--', lw=0.5, alpha=0.3, color=vc['threshold'])
 # Top-5 gene labels
 top5 = de.assign(score=-np.log10(de['padj'].clip(1e-300))*de['log2FC'].abs()).nlargest(5,'score')
 for _, r in top5.iterrows():

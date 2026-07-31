@@ -96,7 +96,8 @@ optical_margin(ax, 0.12)  # 圆形数据多留 12% 呼吸空间
 - Individual points: s=2, α=0.5, color=#2E3440, jitter
 
 ### Spatial
-- Tissue α=0.4 background; spots s=1.5 (Visium) / s=0.3 (high-res)
+- Tissue `alpha_img=1.0`（不透明）; spots `alpha=0.85`, s=1.5 (Visium) / s=0.3 (high-res)
+- **Scale bar 必须有**（缺它审稿人立刻扣分）; colorbar 横置于图下方
 - 一基因一 panel; shared vmin/vmax (99th percentile clip)
 - `add_elegant_colorbar(label=gene_name)`
 
@@ -112,6 +113,83 @@ optical_margin(ax, 0.12)  # 圆形数据多留 12% 呼吸空间
 ### Trajectory
 - PAGA (3.5×3) + pseudotime UMAP (4.5×4)
 - 分支拓扑 → 绝不用单线性曲线
+- Gene-along-pseudotime: LOESS 平滑线 `lw=1.2` + 95% CI 带 `alpha=0.15`
+
+### Enrichment Bar (GO/KEGG)
+- **水平条形**，按 -log10(FDR) 降序排列
+- 条色 = -log10(FDR) 映射（单暖色 `#BF616A` 或 EXPR_CMAP）
+- x 轴: "-log₁₀(FDR)"；条右端标 gene count（`fontsize=6, color=GREY`）
+- Top 10-15 条；通路名 ≤40 字符截断（`textwrap.shorten`）
+- figsize: (4.5, 0.35×n_terms + 1)
+- `polish_axes(ax)`；无 grid
+```python
+terms = enr.nsmallest(15, 'FDR')
+fig, ax = plt.subplots(figsize=(4.5, 0.35*len(terms)+1))
+y_pos = range(len(terms))
+bars = ax.barh(y_pos, -np.log10(terms['FDR']), color='#BF616A', height=0.6, edgecolor='none')
+ax.set_yticks(y_pos)
+ax.set_yticklabels([t[:40] for t in terms['Term']], fontsize=7)
+ax.set_xlabel(r'$-$log$_{10}$(FDR)', labelpad=10)
+ax.invert_yaxis()  # top = most significant
+for i, (b, n) in enumerate(zip(bars, terms['Gene_count'])):
+    ax.text(b.get_width()+0.1, b.get_y()+b.get_height()/2, str(n), va='center', fontsize=6, color=GREY)
+polish_axes(ax)
+```
+
+### Heatmap + Annotation Bar
+- 列注释条（condition/celltype/batch）：高 0.1 inch/条，色来自 manifest
+- 注释条与热图间留 0.5pt 白缝
+- 用 `seaborn.clustermap(col_colors=...)` 或 GridSpec `height_ratios`
+```python
+import seaborn as sns
+# col_colors: DataFrame, columns=annotation names, index=same as heatmap columns
+col_ann = pd.DataFrame({'Condition': conditions}, index=celltypes)
+col_ann_colors = {'Condition': CONDITION_COLORS}
+g = sns.clustermap(expr_z, cmap=EXPR_CMAP, vmin=-2, vmax=2,
+                   col_colors=col_ann, col_cluster=False, row_cluster=True,
+                   figsize=recipe_figsize('heatmap', n_x=expr_z.shape[1], n_y=expr_z.shape[0]),
+                   linewidths=0, cbar_pos=(0.02, 0.8, 0.03, 0.15))
+```
+
+### Spatial + Scale Bar
+- H&E `alpha_img=1.0`（不透明！当前 guide 写 0.4 太淡）；spots `alpha=0.85`
+- **Scale bar 必须有**（缺它 = 审稿人一眼扣分）
+- Colorbar 横置于图下方：`orientation='horizontal', fraction=0.046, pad=0.08`
+- Scale bar 长度取 100/200/500µm 中最接近图宽 1/5 者
+```python
+from cns_style import NEAR_BLACK
+def add_scale_bar(ax, length_um=200, px_per_um=1.0, color='white', fontsize=7):
+    length_px = length_um * px_per_um
+    xlim = ax.get_xlim(); ylim = ax.get_ylim()
+    x0 = xlim[0] + (xlim[1]-xlim[0])*0.05
+    y0 = ylim[0] + (ylim[1]-ylim[0])*0.05
+    ax.plot([x0, x0+length_px], [y0, y0], color=color, lw=2, solid_capstyle='butt')
+    ax.text(x0+length_px/2, y0+(ylim[1]-ylim[0])*0.02, f'{length_um} μm',
+            ha='center', va='bottom', fontsize=fontsize, color=color,
+            path_effects=[__import__('matplotlib.patheffects',fromlist=['withStroke']).withStroke(linewidth=2, foreground='black')])
+```
+
+### L-R Bubble Plot (pathway × cell-type pair)
+- x = cell-type pair (sender→receiver)；y = pathway
+- size = -log10(p-value)，映射到 `s ∈ [20, 200]`
+- color = mean expression（EXPR_CMAP）
+- ≤10 pairs × ≤15 pathways；pair 标签 `rotation=45, ha='right', fontsize=6`
+```python
+fig, ax = plt.subplots(figsize=(max(5, n_pairs*0.6), max(4, n_pathways*0.35)))
+scatter = ax.scatter(x_idx, y_idx, s=sizes, c=mean_expr, cmap=EXPR_CMAP,
+                     edgecolor='#2E3440', linewidth=0.3, alpha=0.85)
+ax.set_xticks(x_idx); ax.set_xticklabels(pair_labels, rotation=45, ha='right', fontsize=6)
+ax.set_yticks(y_idx); ax.set_yticklabels(pathway_names, fontsize=7)
+add_elegant_colorbar(scatter, ax, label='Mean expression')
+polish_axes(ax, subtle_grid=False)
+```
+
+### Feature Plot Matrix (多基因 UMAP)
+- `ncols=min(3, n_genes)`；每 panel (3, 3)
+- 所有 panel 共享 `vmin=0, vmax=99th_percentile`（跨基因可比）
+- 基因名斜体作 title（`fontstyle='italic', fontsize=10, pad=4`）
+- 矩阵级单 colorbar（仅当基因同量纲）或 per-panel mini colorbar
+- `clean_umap_axes(ax)` on all panels
 
 ---
 

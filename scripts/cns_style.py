@@ -28,8 +28,16 @@ import numpy as np
 # ============================================================
 # Palette definitions (Morlandi Nord — user-selected default)
 # ============================================================
+# Base 8 (for ≤8 categories; #D8DEE9 removed — too light on white background)
 MORLANDI = ['#88C0D0', '#BF616A', '#A3BE8C', '#D08770',
-            '#B48EAD', '#EBCB8B', '#5E81AC', '#D8DEE9']
+            '#B48EAD', '#EBCB8B', '#5E81AC', '#81A1C1']
+
+# Extended 20 (for atlas figures with 10-20+ cell types; low-saturation, harmonious)
+MORLANDI_EXTENDED = MORLANDI + [
+    '#7B9E89', '#C9ADA7', '#9A8C98', '#6D6875',
+    '#B5838D', '#E5989B', '#8ECAE6', '#83C5BE',
+    '#A2836E', '#C6DABF', '#B8B8FF', '#F4ACB7',
+]
 
 OKABE_ITO = ['#E69F00', '#56B4E9', '#009E73', '#F0E442',
              '#0072B2', '#D55E00', '#CC79A7', '#000000']
@@ -37,6 +45,15 @@ OKABE_ITO = ['#E69F00', '#56B4E9', '#009E73', '#F0E442',
 MUTED = '#C8CDD3'          # non-focus clusters
 NEAR_BLACK = '#2E3440'     # axis/text color (Morlandi polar-night)
 GREY = '#4C566A'           # annotation/subtle text (Morlandi grey)
+
+# Condition colors (reserved for Normal/Disease narrative — NOT for cell types)
+CONDITION_COLORS = {
+    'Normal': '#88C0D0',    # cool = quiet (reserved)
+    'Disease': '#BF616A',   # warm = active (reserved)
+    'Treated': '#A3BE8C',   # recovery
+    'Control': '#88C0D0',
+    'Stimulated': '#D08770',
+}
 
 # Sequential: blue-yellow-red (low-saturation, bioinformatics consensus)
 EXPR_CMAP = LinearSegmentedColormap.from_list('byr_morlandi',
@@ -200,11 +217,14 @@ def safe_scanpy_plot(plot_func, *args, **kwargs):
     """Wrap sc.pl.* calls to prevent rcParams corruption.
 
     scanpy's plotting functions modify global rcParams (figure.figsize, etc).
-    This saves and restores them around the call.
+    This saves and restores them around the call (try/finally ensures restore
+    even if the plot function raises an exception).
     """
     saved = plt.rcParams.copy()
-    result = plot_func(*args, **kwargs)
-    plt.rcParams.update(saved)
+    try:
+        result = plot_func(*args, **kwargs)
+    finally:
+        plt.rcParams.update(saved)
     return result
 
 
@@ -272,86 +292,212 @@ def add_panel_label(ax, label, offset=(-0.12, 1.08), fontsize=12):
 # 8b. finalize_figure(fig) — mandatory pre-save layout check
 # ============================================================
 
-def finalize_figure(fig, move_legend_right=True, check_aspect=True, verbose=True):
-    """Mandatory pre-save check: fix legend placement, detect text overlap, verify proportions.
+def finalize_figure(fig, move_legend_right=True, check_overlap=True,
+                    check_rasterize=True, verbose=True):
+    """Mandatory pre-save check: fix legend, detect text overlap, check rasterization.
 
     Call this BEFORE every fig.savefig(). It:
     1. Moves any in-axes legend to outside-right (铁律1)
-    2. Checks for text bounding-box overlaps and warns (铁律2)
-    3. Checks scatter axes aspect ratio and warns if distorted (铁律3)
+    2. Detects text bounding-box overlaps and warns (铁律2)
+    3. Warns if large scatter not rasterized (PDF bloat)
 
     Args:
         fig: matplotlib Figure
-        move_legend_right: if True, relocate legends to bbox_to_anchor=(1.02, 0.5)
-        check_aspect: if True, warn if scatter axes have non-square aspect
+        move_legend_right: relocate legends to outside-right
+        check_overlap: detect text overlaps (requires rendering)
+        check_rasterize: warn if >50k points not rasterized
         verbose: print warnings
     """
     issues = []
+
+    # Ensure figure is rendered (needed for bbox calculations)
+    try:
+        fig.draw_without_rendering()
+        renderer = fig.canvas.get_renderer()
+    except Exception:
+        renderer = None
 
     for ax in fig.axes:
         # --- 铁律 1: Legend outside-right ---
         if move_legend_right and ax.get_legend() is not None:
             leg = ax.get_legend()
-            bbox = leg.get_bbox_to_anchor()
-            # If legend anchor is inside axes (loc != external), move it
-            try:
-                leg_xy = leg.get_window_extent(fig.canvas.get_renderer())
-                ax_bbox = ax.get_window_extent(fig.canvas.get_renderer())
-                # Check if legend overlaps with axes data area
-                if leg_xy.overlaps(ax_bbox):
-                    leg.set_bbox_to_anchor((1.02, 0.5), transform=ax.transAxes)
-                    leg._loc = 6  # 'center left' equivalent
-                    if verbose:
-                        issues.append(f"Legend moved to outside-right (was overlapping data)")
-            except Exception:
-                pass  # renderer not available, skip overlap check
+            if renderer:
+                try:
+                    leg_bb = leg.get_window_extent(renderer)
+                    ax_bb = ax.get_window_extent(renderer)
+                    if leg_bb.overlaps(ax_bb):
+                        leg.set_bbox_to_anchor((1.02, 0.5), transform=ax.transAxes)
+                        leg._loc = 6  # center left
+                        issues.append("Legend moved to outside-right (was overlapping data)")
+                except Exception:
+                    pass
+            else:
+                # No renderer: conservatively move all legends outside
+                leg.set_bbox_to_anchor((1.02, 0.5), transform=ax.transAxes)
 
-        # --- 铁律 3: Aspect ratio check for scatter ---
-        if check_aspect and ax.collections:  # has scatter/points
-            try:
-                xlim = ax.get_xlim()
-                ylim = ax.get_ylim()
-                data_w = xlim[1] - xlim[0]
-                data_h = ylim[1] - ylim[0]
-                if data_h > 0 and data_w > 0:
-                    pos = ax.get_position()
-                    fig_w = fig.get_figwidth() * pos.width
-                    fig_h = fig.get_figheight() * pos.height
-                    display_ratio = fig_w / fig_h if fig_h > 0 else 1
-                    data_ratio = data_w / data_h
-                    # If display ratio and data ratio differ by >30%, likely distorted
-                    if abs(display_ratio - data_ratio) / max(display_ratio, data_ratio) > 0.3:
+        # --- 铁律 2: Text overlap detection ---
+        if check_overlap and renderer:
+            text_elements = []
+            # Collect: title, xlabel, ylabel, tick labels, annotations
+            if ax.title.get_text():
+                text_elements.append(('title', ax.title))
+            if ax.xaxis.label.get_text():
+                text_elements.append(('xlabel', ax.xaxis.label))
+            if ax.yaxis.label.get_text():
+                text_elements.append(('ylabel', ax.yaxis.label))
+            for txt in ax.texts:
+                if txt.get_text().strip():
+                    text_elements.append(('annotation', txt))
+
+            # Check pairwise overlaps
+            for i in range(len(text_elements)):
+                for j in range(i+1, len(text_elements)):
+                    try:
+                        bb_i = text_elements[i][1].get_window_extent(renderer)
+                        bb_j = text_elements[j][1].get_window_extent(renderer)
+                        if bb_i.overlaps(bb_j):
+                            issues.append(
+                                f"Text overlap: '{text_elements[i][1].get_text()[:20]}' "
+                                f"({text_elements[i][0]}) ↔ "
+                                f"'{text_elements[j][1].get_text()[:20]}' "
+                                f"({text_elements[j][0]}). Increase spacing or reduce text.")
+                            break  # one warning per element pair is enough
+                    except Exception:
+                        pass
+
+        # --- Rasterization check ---
+        if check_rasterize:
+            for coll in ax.collections:
+                try:
+                    n_pts = len(coll.get_offsets())
+                    if n_pts > 50000 and not coll.get_rasterized():
                         issues.append(
-                            f"Aspect ratio may be distorted (display {display_ratio:.2f} "
-                            f"vs data {data_ratio:.2f}). Consider set_aspect('equal') "
-                            f"or adjusting figsize.")
-            except Exception:
-                pass
+                            f"Large scatter ({n_pts} points) not rasterized — "
+                            f"PDF will be huge. Add rasterized=True.")
+                        break
+                except Exception:
+                    pass
 
     if issues and verbose:
         print("⚠️  finalize_figure warnings:")
         for issue in issues:
             print(f"   - {issue}")
-    elif verbose and not issues:
-        pass  # silent on success (don't spam)
 
     return fig
 
 
 # ============================================================
-# 9. condition_colors() — temperature narrative
+# 9. add_cluster_labels() — on-plot labels with white halo (Nature 2024 style)
 # ============================================================
-CONDITION_COLORS = {
-    'Normal': '#88C0D0',    # frost-blue = quiet
-    'Disease': '#BF616A',   # dark-red = active
-    'Treated': '#A3BE8C',   # moss-green = recovery
-    'Control': '#88C0D0',   # cool
-    'Stimulated': '#D08770', # warm
-}
+
+def add_cluster_labels(ax, adata, basis='umap', groupby='celltype', fontsize=7,
+                       palette=None):
+    """Add cluster labels at median positions with white halo (no adjustText needed).
+
+    This is the 2024-25 Nature/Cell convention: labels directly on the UMAP at
+    cluster centroids, with a white stroke halo for readability over dense points.
+    """
+    import matplotlib.patheffects as pe
+    basis_key = f'X_{basis}' if f'X_{basis}' in adata.obsm else basis
+    coords = adata.obsm[basis_key]
+    categories = adata.obs[groupby].cat.categories
+
+    for i, cat in enumerate(categories):
+        mask = (adata.obs[groupby] == cat).values
+        if mask.sum() == 0:
+            continue
+        cx, cy = np.median(coords[mask], axis=0)
+        color = NEAR_BLACK
+        if palette and cat in palette:
+            color = palette[cat]
+        ax.text(cx, cy, str(cat), fontsize=fontsize, ha='center', va='center',
+                color=color, fontweight='bold', fontfamily='Arial',
+                path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
 
 
 # ============================================================
-# 9b. Recipe helpers (figure_guide.md — high-frequency decisions)
+# 9b. add_significance_bracket() — p-value annotation
+# ============================================================
+
+def add_significance_bracket(ax, x1, x2, pval, y=None, height_frac=0.03):
+    """Add bracket + star between two groups. Auto-positions if y not given.
+
+    Args:
+        x1, x2: x positions of the two groups
+        pval: p-value (determines star count)
+        y: y position of bracket (auto = just above data max)
+        height_frac: bracket height as fraction of y-range
+    """
+    if pval < 0.0001: star = '****'
+    elif pval < 0.001: star = '***'
+    elif pval < 0.01:  star = '**'
+    elif pval < 0.05:  star = '*'
+    else:              star = 'ns'
+
+    ylim = ax.get_ylim()
+    yrange = ylim[1] - ylim[0]
+    if y is None:
+        y = ylim[1] + yrange * 0.02
+    h = yrange * height_frac
+
+    ax.plot([x1, x1, x2, x2], [y, y+h, y+h, y],
+            lw=0.8, color=NEAR_BLACK, clip_on=False)
+    ax.text((x1+x2)/2, y+h, star, ha='center', va='bottom',
+            fontsize=8, color=NEAR_BLACK)
+    # Expand ylim to fit bracket
+    ax.set_ylim(ylim[0], max(ylim[1], y+h+yrange*0.05))
+
+
+# ============================================================
+# 9c. Manifest functions (paper-level color consistency)
+# ============================================================
+
+def init_manifest(celltypes, conditions=None, path='manifest.yaml', palette=None):
+    """Create manifest.yaml locking cell-type and condition colors for a paper.
+
+    Call ONCE at project start. All figure scripts then use load_manifest().
+    """
+    import yaml
+    if palette is None:
+        palette = MORLANDI_EXTENDED if len(celltypes) > 8 else MORLANDI
+
+    ct_colors = {ct: palette[i % len(palette)] for i, ct in enumerate(celltypes)}
+    cond_colors = conditions or {}
+
+    manifest = {
+        'cell_type_colors': ct_colors,
+        'condition_colors': cond_colors if cond_colors else CONDITION_COLORS,
+        'sequential_cmap': 'byr_morlandi',
+        'diverging_cmap': 'log2fc',
+        'font_base': 8,
+        'scale_ratio': 1.2,
+    }
+    with open(path, 'w') as f:
+        yaml.dump(manifest, f, default_flow_style=False, allow_unicode=True)
+    print(f"Manifest saved: {path} ({len(ct_colors)} cell types)")
+    return manifest
+
+
+def load_manifest(path='manifest.yaml'):
+    """Load manifest.yaml and apply colors globally. Returns color dicts.
+
+    Usage:
+        ct_colors, cond_colors = load_manifest('manifest.yaml')
+        sc.pl.umap(adata, color='celltype', palette=ct_colors)
+    """
+    import yaml
+    with open(path) as f:
+        m = yaml.safe_load(f)
+    ct_colors = m.get('cell_type_colors', {})
+    cond_colors = m.get('condition_colors', CONDITION_COLORS)
+    # Apply to matplotlib prop_cycle
+    if ct_colors:
+        plt.rcParams['axes.prop_cycle'] = plt.cycler(color=list(ct_colors.values()))
+    return ct_colors, cond_colors
+
+
+# ============================================================
+# 9d. Recipe helpers (figure_guide.md — high-frequency decisions)
 # ============================================================
 
 def point_size_for_n(n_obs):
@@ -418,7 +564,7 @@ def recipe_figsize(chart_type, n_x=None, n_y=None, journal='generic'):
     scale = 0.8 if journal in ('nature', 'science', 'cell') else 1.0
 
     recipes = {
-        'umap': (4.5, 4.0),
+        'umap': (4.5, 4.5),  # must be square (铁律3: no ellipse distortion)
         'volcano': (4.0, 3.5),
         'feature': (3.0, 3.0),      # per-gene panel in a grid
         'spatial': (5.0, 4.5),

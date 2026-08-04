@@ -52,6 +52,8 @@ description: 论文写作（Methods / Results / Figure Legends 三种模式）�
 
 ## section=results
 
+> **先读 `references/story_builder.md`** —— Results 段落顺序 = 故事叙事弧（story_builder §2 Step 5）。
+
 **结构**（每个 Figure 一段）：
 
 ```

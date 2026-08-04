@@ -27,6 +27,8 @@ Step N: 所有 panel 验证通过 → 拼成 composite
 
 ## Step 1: 大框架设计（开始画图前）
 
+> **先读 `references/story_builder.md`** —— 它教你从分析结果构建生物学故事（五步法：清点发现 → 找因果链 → 提炼主结论 → 映射 Figure → 写叙事弧）。
+
 三件事，定死不随数据摇摆：
 
 1. **Main message**（一句话，≤30 词，论证性）

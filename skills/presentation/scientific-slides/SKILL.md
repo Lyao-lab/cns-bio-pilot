@@ -18,9 +18,11 @@ This skill generates research presentation slides with **python-pptx** (default)
 
 **Design philosophy** (drawn from siril9/presentation-skill + anthropics/pptx patterns):
 - **Deck as Code**: `outline.json` is the single source; a script renders `.pptx`; a QA loop verifies layout — no one-off inline python-pptx; edit the source, not the artifact
+- **图为主，文字在备注**：每张幻灯片以**真实分析图为主体**（占内容区 ≥70%）。图的解读（fig legend / take-home / 数据出处 / 统计信息）写在** PowerPoint 备注栏**（speaker notes），不堆在幻灯片页面上。讲解时看备注，观众看图。
+- **中文为主**：标题、图注、备注、bullet 均用中文（技术名词保留英文缩写如 UMAP / DEG / CCC）。
+- **图形式多样化**：禁止连续 3+ 张相同图型。一张 PPT 里应该有 UMAP / 火山图 / 热图 / 小提琴 / 空间切片 / 通讯图 / 轨迹图 等多种形式。**不要大量使用条形图（bar chart）**——比例变化用堆叠柱可以，但连续 3+ 张 bar = 视觉疲劳。
 - **Visual-First**: every slide embeds a real analysis figure (UMAP / volcano / spatial section), not a bullet-list pileup
-- **Research-Backed**: every data figure annotates N / statistical test / threshold (Wilcoxon+FDR / Moran's I)
-- **Minimal Text**: bullets are prompts; you narrate verbally — 3-4 bullets, ≤6 words each, 24-28pt
+- **Research-Backed**: every data figure annotates N / statistical test / threshold (Wilcoxon+FDR / Moran's I) — 写在备注里
 - **Readability Contract**: title ≥24pt / body ≥12pt / caption ≥7.5pt / chart labels ≥7pt (preflight-enforced)
 - **Anti-AI-taste iron rule** (from anthropics/pptx): **never add a decorative line under a title** — that is the hallmark of AI-generated slides
 
@@ -36,25 +38,41 @@ This skill generates research presentation slides with **python-pptx** (default)
 
 ```json
 {
-  "title": "cns-bio-pilot Bioinformatics Pipeline Validation",
-  "subtitle": "Single-cell + spatial transcriptomics full pipeline with OmicVerse + squidpy",
+  "title": "单细胞 + 空间转录组分析汇报",
+  "subtitle": "基于 OmicVerse + squidpy 的全流程分析",
   "preset": "cns-bio-light",
   "slides": [
-    {"variant": "title", "title": "...", "subtitle": "..."},
-    {"variant": "scientific-figure", "title": "Single-cell clustering",
+    {"variant": "title", "title": "单细胞 + 空间转录组分析汇报", "subtitle": "基于 OmicVerse + squidpy"},
+    {"variant": "figure-hero", "title": "细胞类型图谱",
      "image": "figures/umap_celltype.png",
-     "caption": "Fig 1. UMAP by cell type (N=2,700, leiden res=0.6)",
-     "bullets": ["6 clusters", "CD4 T / Mono / B / CD8 T / NK / Platelet"]},
-    {"variant": "image-sidebar", "title": "Differential expression",
+     "caption": "图1. UMAP 细胞类型（N=2700, leiden res=0.6）",
+     "notes": "10 个细胞类型，Fibro 占比最高（44%）。UMAP 分群清晰，无明显批次效应。每个 cluster 的 marker 基因见附表。"},
+    {"variant": "figure-dual", "title": "Normal vs POP 组成对比",
+     "image": "figures/prop_normal.png", "caption_left": "Normal",
+     "image2": "figures/prop_pop.png", "caption_right": "POP",
+     "notes": "Fibro 比例 44%→57%（+13pp, padj<1e-40），M2 巨噬 +16.7%。其余细胞类型无显著变化。"},
+    {"variant": "figure-hero", "title": "差异表达火山图",
      "image": "figures/volcano.png",
-     "caption": "Fig 2. Volcano (Padj<0.05 & |log2FC|>1, BH-FDR)",
-     "bullets": ["602 sig genes", "Top: RPS12/LDHB (T-cell metabolism)"]},
-    {"variant": "results-table", "title": "Spatial SVGs",
-     "table": {"headers": ["Rank","Gene","I","p"],"rows": [["1","Pcp2","0.85","<0.001"]]}},
-    {"variant": "methods-flow", "title": "Pipeline", "steps": ["QC","Cluster","Annotate","DE"]}
+     "caption": "图3. DE 火山图（Padj<0.05 & |log2FC|>1, BH-FDR）",
+     "notes": "602 个显著差异基因。上调 top: CXCL12, COL1A1, PDGFRB（纤维化通路）。下调 top: LDHB, RPS12（代谢转换）。"},
+    {"variant": "figure-grid", "title": "Fibroblast 亚群多维度分析",
+     "images": ["figures/fibro_umap.png","figures/fibro_dotplot.png","figures/fibro_violin.png","figures/fibro_heatmap.png"],
+     "caption": "图4. Fibro 亚群：UMAP / dotplot / violin / heatmap",
+     "notes": "Quiescent_1→2/3 内部重塑。CXCL12 在 Quiescent_2/3 特异高表达。轨迹分析显示静息态向活化态转换。"},
+    {"variant": "figure-hero", "title": "空间验证：CXCL12 与 M2 共定位",
+     "image": "figures/spatial_cxcl12.png",
+     "caption": "图5. CXCL12 空间表达 + M2 巨噬标记共定位",
+     "notes": "CXCL12+ Fibro 与 M2 巨噬在纤维化区域空间共定位（距离 <50μm）。支持 CXCL12-CXCR4 轴驱动纤维化-免疫正反馈的假说。"},
+    {"variant": "methods-flow", "title": "分析流程", "steps": ["QC","聚类","注释","DE","通讯","空间验证"]}
   ]
 }
 ```
+
+> **outline.json 规则**：
+> - `notes` 字段 = PowerPoint **备注栏**（speaker notes），写图注/解读/统计信息，不显示在幻灯片页面上
+> - 每张数据图的 `notes` 应包含：**take-home（一句话结论）+ 关键数字（N/padj/fold change）+ 讲解提示**
+> - 标题和图注用**中文**（技术名词保留英文：UMAP / DEG / CCC / padj）
+> - 图形式**多样化**：不要连续 3+ 张相同类型。上面示例用了 hero / dual / grid 三种布局 + UMAP / 比例柱 / 火山图 / 多面板 / 空间切片五种图型
 
 ### Step 2: Render (python-pptx)
 

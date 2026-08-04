@@ -70,6 +70,10 @@ def build(outline_path, output_path, preset_name="cns-bio-light"):
             _flow_slide(s, sdef, preset)
         else:
             _bullets_slide(s, sdef, preset)
+        # 备注（speaker notes）—— 图注/解读/统计写在备注栏，不显示在页面上
+        notes = sdef.get("notes", "")
+        if notes:
+            s.notes_slide.notes_text_frame.text = notes
 
     prs.save(str(output_path))
     print(f"SAVED {output_path} ({len(prs.slides)} slides)")

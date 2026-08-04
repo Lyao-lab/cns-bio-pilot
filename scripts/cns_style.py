@@ -501,6 +501,37 @@ def load_manifest(path='manifest.yaml'):
 
 
 # ============================================================
+# 9c2. add_scale_bar() — spatial figure scale bar (mandatory)
+# ============================================================
+
+def add_scale_bar(ax, length_um=200, px_per_um=1.0, color='white',
+                  fontsize=7, y_frac=0.05, x_frac=0.05):
+    """Add a scale bar to a spatial plot (mandatory for spatial figures).
+
+    Args:
+        ax: matplotlib axes
+        length_um: bar length in micrometers (pick from 100/200/500 closest to 1/5 figure width)
+        px_per_um: pixels per micrometer (coordinate units per μm)
+        color: bar/text color (white on dark tissue, #2E3440 on light)
+        fontsize: label font size
+        y_frac: vertical position as fraction of axes height (from bottom)
+        x_frac: horizontal position as fraction of axes width (from left)
+    """
+    import matplotlib.patheffects as pe
+    length_px = length_um * px_per_um
+    xlim = ax.get_xlim(); ylim = ax.get_ylim()
+    x0 = xlim[0] + (xlim[1] - xlim[0]) * x_frac
+    y0 = ylim[0] + (ylim[1] - ylim[0]) * y_frac
+    ax.plot([x0, x0 + length_px], [y0, y0], color=color, lw=2.5,
+            solid_capstyle='butt', zorder=10)
+    ax.text(x0 + length_px / 2, y0 + (ylim[1] - ylim[0]) * 0.02,
+            f'{length_um} μm', ha='center', va='bottom', fontsize=fontsize,
+            color=color, zorder=10,
+            path_effects=[pe.withStroke(linewidth=2, foreground='black'
+                         if color == 'white' else 'white')])
+
+
+# ============================================================
 # 9d. Recipe helpers (figure_guide.md — high-frequency decisions)
 # ============================================================
 

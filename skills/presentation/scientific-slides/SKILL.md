@@ -8,7 +8,7 @@ license: MIT
 # Scientific Slides
 
 ## When NOT to use this skill
-- Writing paper Methods / Results / figure legend text → use `presentation/manuscript-writing` / `presentation/manuscript-writing` / `presentation/manuscript-writing`
+- Writing paper Methods / Results / figure legend text → use `presentation/manuscript-writing`
 - Standalone publication-grade figure (not a slide) → use `visualization/figure-production`
 - Drawing mechanism / flow / architecture diagrams (not slides) → use `visualization/scientific-schematics`
 

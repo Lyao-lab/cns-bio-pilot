@@ -142,7 +142,7 @@
       ]
     },
     {
-      "name": "multiomics-spatial",
+      "name": "multiomics",
       "path": "skills/spatial/multiomics/SKILL.md",
       "engine": "squidpy + spatialdata",
       "data_type": [

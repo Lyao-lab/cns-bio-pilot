@@ -17,7 +17,7 @@ set_cns_style_journal('nature')  # 'nature'|'science'|'cell'|'generic'
 | 要画什么 | 首选（一行搞定） | 必须调的 cns_style 函数 | 最关键参数 |
 |---|---|---|---|
 | UMAP/tSNE | `ov.pl.embedding(adata, color='ct', frameon='small')` | `add_cluster_labels()` + `finalize_figure()` | size=point_size_for_n(n) |
-| Volcano | `ov.pl.volcano(de_df, pval_name='padj', fc_name='log2FC')` | `volcano_colors()` + `polish_axes()` + `finalize_figure()` | figsize=(4,4) 正方形 |
+| Volcano | `ov.pl.volcano(de_df, pval_name='padj', fc_name='log2FC')` | `volcano_colors()` + `polish_axes()` + `finalize_figure()` | figsize=(4,3.5) |
 | Dotplot | `ov.pl.dotplot(adata, var_names=genes, groupby='ct')` | `finalize_figure()` | standard_scale='var' |
 | Violin | `ov.pl.violin(adata, keys=genes, groupby='ct', alternating_background=True)` | `finalize_figure()` | violin_alpha=0.8, spine=#b4aea9 |
 | Heatmap | `sc.pl.heatmap(adata, var_names=genes, groupby='ct')` | `add_elegant_colorbar()` + `finalize_figure()` | vmin=-2, vmax=2, cmap=EXPR_CMAP |
@@ -48,7 +48,7 @@ set_cns_style_journal('nature')  # 'nature'|'science'|'cell'|'generic'
 
 **Morlandi Nord**（离散/categorical）：
 ```python
-MORLANDI = ['#88C0D0','#BF616A','#A3BE8C','#D08770','#B48EAD','#EBCB8B','#5E81AC','#D8DEE9']
+MORLANDI = ['#88C0D0','#BF616A','#A3BE8C','#D08770','#B48EAD','#EBCB8B','#5E81AC','#81A1C1']
 ```
 
 **连续表达**（heatmap/feature）：`EXPR_CMAP`（蓝→麦→暗红）
@@ -108,7 +108,7 @@ optical_margin(ax, 0.12)  # 圆形数据多留 12% 呼吸空间
 ### Volcano — omicverse 风格
 - **优先用 `ov.pl.volcano()`**（自动配色 + top-10 标注 + legend 下方）
 - 手动时对齐 omicverse 默认色：Up=`#e25d5d`, Down=`#7388c1`, NS=`#d7d7d7`
-- figsize: **(4, 4) 正方形**（omicverse 默认）
+- figsize: **(4, 3.5)**（与 `recipe_figsize('volcano')` 一致）
 - 阈值线: `ls='--', lw=0.5, alpha=0.3`
 - Gene labels: **top 10**（不是 5），fontsize=10，italic
 - Legend: **图下方**（`bbox_to_anchor=(0.8, -0.2), ncol=2, fontsize=12`）
@@ -339,25 +339,13 @@ polish_axes(ax, subtle_grid=False)
 ## 9. 统计标注（p-value bracket / star）
 
 ```python
-# 手动 bracket（不依赖 statannotations 包）
-def add_significance_bracket(ax, x1, x2, y, pval, height=0.05):
-    """Add bracket + star annotation between two groups."""
-    if pval < 0.0001: star = '****'
-    elif pval < 0.001: star = '***'
-    elif pval < 0.01:  star = '**'
-    elif pval < 0.05:  star = '*'
-    else:              star = 'ns'
-    # Bracket lines
-    ax.plot([x1, x1, x2, x2], [y, y+height, y+height, y],
-            lw=0.8, color='#2E3440', clip_on=False)
-    # Star text
-    ax.text((x1+x2)/2, y+height, star, ha='center', va='bottom',
-            fontsize=8, fontweight='bold', color='#2E3440')
+# 使用 cns_style.py 的函数（签名：ax, x1, x2, pval, y=None, height_frac=0.03）
+from cns_style import add_significance_bracket
 
-# Usage (after bar/violin plot):
-add_significance_bracket(ax, x1=0, x2=1, y=0.85, pval=3.2e-5)
-# Multiple brackets: stagger y heights to avoid overlap
-add_significance_bracket(ax, x1=0, x2=2, y=0.95, pval=0.003)
+# y 不传时自动定位（数据最大值上方 2%）
+add_significance_bracket(ax, x1=0, x2=1, pval=3.2e-5)
+# 多组比较：自动错开高度
+add_significance_bracket(ax, x1=0, x2=2, pval=0.003)
 ```
 
 **规则**：

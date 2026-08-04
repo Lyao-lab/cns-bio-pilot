@@ -102,9 +102,9 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
 - Reference docs: `references/best_practices.md`, `references/diagram_types.md`
 - Script entry `scripts/generate_schematic.py`
 
-## Pre-Output Checklist (core 5 in **top-level** `references/meta_methodology.md` + skill-specific)
+## Pre-Output Checklist (core rules in **top-level** `references/meta_methodology.md` + skill-specific)
 
-- [ ] Core 5 passed (numeric integrity / citation / no speculation / association≠causation / no fabrication — see **top-level** `references/meta_methodology.md`)
+- [ ] Core rules passed (fact-based / pseudobulk / search-first / postcheck / checkpoint — see `SKILL.md` Core Rules)
 - [ ] No fake/placeholder data in schematic (pure mechanism, no bars/plots)
 - [ ] OPENROUTER_API_KEY set; quality score ≥8.5/10
 
@@ -112,7 +112,7 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
 
 - Assemble the generated schematic into a publication figure → `visualization/figure-production`
 - Write the schematic legend → `presentation/manuscript-writing`
-- Embed into a slide → `presentation/scientific-slides` (`--attach figures/output.png`)
+- Embed into a slide → `presentation/scientific-slides` (add `"image": "figures/output.png"` to outline.json)
 - Note: this skill outputs mechanism/schematic/graphical-abstract figures; data-driven plots (UMAP/volcano/heatmap) go to `visualization/figure-production`
 
 ## Mode: Graphical Abstract (merged from former graphical-abstract skill)
@@ -137,7 +137,7 @@ For detailed layout rules, grid templates, and AI prompt templates, see `referen
 ## Key pitfalls
 
 - **Depends on OPENROUTER_API_KEY**: without the env var, generate_schematic.py fails — run `export OPENROUTER_API_KEY=...` first
-- **Quality threshold 8.5/10**: the refine loop regenerates repeatedly if the threshold isn't met — set max_iter to avoid infinite loops
+- **Quality threshold 8.5/10**: the refine loop is capped at MAX_RETRIES=3 in `generate_schematic.py`; adjust the constant if needed
 - **AI-generated figures ≠ accurate figures**: the model may draw biological facts incorrectly (e.g., labeling a T-cell marker as a B-cell) — **manually verify the mechanism/labels**; don't blindly trust AI output
 - **graphical-abstract mode only produces prompts**: the former graphical-abstract skill's abstract→layout capability has been merged in, but Midjourney/DALL-E still need external image-generation tools
 - **scientific-schematics is for non-data figures**: pure mechanism/flow; data-driven plots (UMAP/volcano) go to `visualization/figure-production`

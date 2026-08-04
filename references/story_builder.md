@@ -146,7 +146,6 @@ Figure 3 (机制: 通讯+空间):
 
 ## 5. 与 skill 其他部分的关系
 
-```
 research-planner: 设计时预读本文 → 知道"这个故事需要几组数据、什么验证"
                   （分析前：决定做什么实验能支撑想要的故事）
 
@@ -157,6 +156,7 @@ figure-production: 出图时读本文 → Step 1 大框架的 panel 列表来自
                    （画图：每个 panel 论证什么）
 
 manuscript-writing: 写作时读本文 → Results 段落顺序 = Step 5 叙事弧
+                    （写作：文字组织）
 
 ---
 

@@ -70,25 +70,15 @@ slide.addNotes("Speaker-only text: emphasize X; expect question on Y; credit col
 ```
 Notes don't show on the projected slide — use them to carry detail you won't put in bullets (citations, backup numbers, transition cues).
 
-## Template-script workflow (existing .pptx)
+## Template-script workflow
 
-| Script | Purpose |
-|---|---|
-| `scripts/inventory.py` | Extract all text shapes → JSON (find what to replace) |
-| `scripts/rearrange.py` | Duplicate/reorder slides: `rearrange.py in.pptx out.pptx 0,5,5,12` |
-| `scripts/replace.py` | Apply text replacements from JSON |
-| `scripts/thumbnail.py` | Render thumbnail grid for visual QA |
-
-```bash
-python scripts/inventory.py template.pptx inv.json
-python scripts/rearrange.py template.pptx working.pptx 0,5,5,12,18,22
-python scripts/replace.py working.pptx replacements.json output.pptx
-python scripts/thumbnail.py output.pptx review --cols 4
-```
+本 skill 使用 `outline.json` → `build_deck.py` 的 source-first 工作流，不依赖模板脚本。
+如需修改已有 .pptx，使用 python-pptx 直接操作（参考 `scripts/build_deck.py` 中的 API 用法）。
 
 ## Visual validation (mandatory before presenting)
 
-Render thumbnails (`thumbnail.py`) and check each slide:
+Run `python scripts/qa_deck.py output.pptx` (geometry/overflow/font check) +
+`python scripts/validate_presentation.py output.pptx` (content/placeholder check), then visually check each slide:
 - [ ] Text not cut off / not too small
 - [ ] No element overlap
 - [ ] Figures clear and properly sized

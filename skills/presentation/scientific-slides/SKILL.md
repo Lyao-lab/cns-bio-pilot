@@ -8,7 +8,7 @@ license: MIT
 # Scientific Slides
 
 ## When NOT to use this skill
-- Writing paper Methods / Results / figure legend text → use `presentation/manuscript-writing` / `presentation/manuscript-writing` / `presentation/manuscript-writing`
+- Writing paper Methods / Results / figure legend text → use `presentation/manuscript-writing`
 - Standalone publication-grade figure (not a slide) → use `visualization/figure-production`
 - Drawing mechanism / flow / architecture diagrams (not slides) → use `visualization/scientific-schematics`
 
@@ -18,9 +18,11 @@ This skill generates research presentation slides with **python-pptx** (default)
 
 **Design philosophy** (drawn from siril9/presentation-skill + anthropics/pptx patterns):
 - **Deck as Code**: `outline.json` is the single source; a script renders `.pptx`; a QA loop verifies layout — no one-off inline python-pptx; edit the source, not the artifact
+- **图为主，文字在备注**：每张幻灯片以**真实分析图为主体**（占内容区 ≥70%）。图的解读（fig legend / take-home / 数据出处 / 统计信息）写在** PowerPoint 备注栏**（speaker notes），不堆在幻灯片页面上。讲解时看备注，观众看图。
+- **图用英文，备注用中文**：幻灯片页面上的标题、图注、坐标轴标签等保持**英文**（与发表级 figure 一致）；备注栏（speaker notes）用**中文**写解读和讲解提示。
+- **图形式多样化**：禁止连续 3+ 张相同图型。一张 PPT 里应该有 UMAP / volcano / heatmap / violin / spatial section / CCC / trajectory 等多种形式。**不要大量使用 bar chart**——比例变化用堆叠柱可以，但连续 3+ 张 bar = 视觉疲劳。
 - **Visual-First**: every slide embeds a real analysis figure (UMAP / volcano / spatial section), not a bullet-list pileup
-- **Research-Backed**: every data figure annotates N / statistical test / threshold (Wilcoxon+FDR / Moran's I)
-- **Minimal Text**: bullets are prompts; you narrate verbally — 3-4 bullets, ≤6 words each, 24-28pt
+- **Research-Backed**: every data figure annotates N / statistical test / threshold (Wilcoxon+FDR / Moran's I) — 写在备注里
 - **Readability Contract**: title ≥24pt / body ≥12pt / caption ≥7.5pt / chart labels ≥7pt (preflight-enforced)
 - **Anti-AI-taste iron rule** (from anthropics/pptx): **never add a decorative line under a title** — that is the hallmark of AI-generated slides
 
@@ -36,25 +38,40 @@ This skill generates research presentation slides with **python-pptx** (default)
 
 ```json
 {
-  "title": "cns-bio-pilot Bioinformatics Pipeline Validation",
-  "subtitle": "Single-cell + spatial transcriptomics full pipeline with OmicVerse + squidpy",
+  "title": "Single-cell + Spatial Transcriptomics Analysis",
+  "subtitle": "OmicVerse + squidpy pipeline",
   "preset": "cns-bio-light",
   "slides": [
-    {"variant": "title", "title": "...", "subtitle": "..."},
-    {"variant": "scientific-figure", "title": "Single-cell clustering",
+    {"variant": "title", "title": "Single-cell + Spatial Transcriptomics Analysis", "subtitle": "OmicVerse + squidpy"},
+    {"variant": "figure-hero", "title": "Cell type atlas",
      "image": "figures/umap_celltype.png",
-     "caption": "Fig 1. UMAP by cell type (N=2,700, leiden res=0.6)",
-     "bullets": ["6 clusters", "CD4 T / Mono / B / CD8 T / NK / Platelet"]},
-    {"variant": "image-sidebar", "title": "Differential expression",
+     "caption": "Fig 1. UMAP by cell type (N=2700, leiden res=0.6)",
+     "notes": "10 个细胞类型，Fibro 占比最高（44%）。UMAP 分群清晰，无明显批次效应。每个 cluster 的 marker 基因见附表。"},
+    {"variant": "figure-dual", "title": "Normal vs POP composition",
+     "image": "figures/prop_normal.png", "caption_left": "Normal",
+     "image2": "figures/prop_pop.png", "caption_right": "POP",
+     "notes": "Fibro 比例 44%→57%（+13pp, padj<1e-40），M2 巨噬 +16.7%。其余细胞类型无显著变化。"},
+    {"variant": "figure-hero", "title": "Differential expression",
      "image": "figures/volcano.png",
-     "caption": "Fig 2. Volcano (Padj<0.05 & |log2FC|>1, BH-FDR)",
-     "bullets": ["602 sig genes", "Top: RPS12/LDHB (T-cell metabolism)"]},
-    {"variant": "results-table", "title": "Spatial SVGs",
-     "table": {"headers": ["Rank","Gene","I","p"],"rows": [["1","Pcp2","0.85","<0.001"]]}},
-    {"variant": "methods-flow", "title": "Pipeline", "steps": ["QC","Cluster","Annotate","DE"]}
+     "caption": "Fig 3. Volcano (Padj<0.05 & |log2FC|>1, BH-FDR)",
+     "notes": "602 个显著差异基因。上调 top: CXCL12, COL1A1, PDGFRB（纤维化通路）。下调 top: LDHB, RPS12（代谢转换）。"},
+    {"variant": "figure-grid", "title": "Fibroblast subtype analysis",
+     "images": ["figures/fibro_umap.png","figures/fibro_dotplot.png","figures/fibro_violin.png","figures/fibro_heatmap.png"],
+     "caption": "Fig 4. Fibro subtypes: UMAP / dotplot / violin / heatmap",
+     "notes": "Quiescent_1→2/3 内部重塑。CXCL12 在 Quiescent_2/3 特异高表达。轨迹分析显示静息态向活化态转换。"},
+    {"variant": "figure-hero", "title": "Spatial validation: CXCL12 + M2",
+     "image": "figures/spatial_cxcl12.png",
+     "caption": "Fig 5. CXCL12 spatial expression + M2 macrophage co-localization",
+     "notes": "CXCL12+ Fibro 与 M2 巨噬在纤维化区域空间共定位（距离 <50μm）。支持 CXCL12-CXCR4 轴驱动纤维化-免疫正反馈的假说。"},
+    {"variant": "methods-flow", "title": "Pipeline", "steps": ["QC","Cluster","Annotate","DE","CCC","Spatial"]}
   ]
 }
 ```
+
+> **outline.json 规则**：
+> - 页面内容（title / caption / 轴标签）用**英文**（与发表级 figure 一致）
+> - `notes` 字段用**中文**写解读（take-home + 关键数字 + 讲解提示）
+> - 图形式**多样化**：不要连续 3+ 张相同类型；不要大量用 bar chart
 
 ### Step 2: Render (python-pptx)
 
@@ -79,19 +96,63 @@ python scripts/validate_presentation.py presentation.pptx
 
 > **USE SUBAGENTS for visual QA** (from anthropics/pptx): reviewing your own code invites confirmation bias — let a subagent check overlap / overflow / contrast with fresh eyes. "If you don't spot any problem at first glance, you aren't looking closely enough."
 
-## Slide Variants (layout discipline, drawn from siril9)
+## Slide Variants (12 种布局，多样化 + 防重叠)
 
-| variant | use | layout discipline |
+> **布局安全间距铁律**：图片和文字之间必须留 ≥0.3inch (≈8mm) 安全间距。图片区域和文字区域**不重叠**——每个元素有明确的 bounding box，代码中用 `_safe_zone()` 函数强制检查。
+
+| variant | 用途 | 布局规则 | 适用场景 |
+|---|---|---|---|
+| `title` | 标题页 | 标题居中 40pt + 副标题 20pt，无装饰线 | 开场 |
+| `section` | 章节分隔 | 单行居中 36pt，留白 >60% | 转场 |
+| **`figure-hero`** | 全宽大图 | 图片占满可用区域（左 0.5→右 12.8inch），图注在图片下方独立行，**无文字侧栏** | 最有冲击力的单张图（UMAP 全景 / 空间切片） |
+| `figure-sidebar` | 图+文分屏 | 图片左 55%（0.5→7.3inch），文字右 40%（7.8→12.8inch），**间距 0.5inch** | 图+解读（DE 火山图 + top genes 列表） |
+| **`figure-dual`** | 左右双图对比 | 图1左 40%（0.5→5.8inch）+ 图2右 40%（6.5→11.8inch），共用标题，各自图注；**可加中间 1 行文字注释** | Normal vs Disease / Pre vs Post / 两个条件对比 |
+| **`figure-top-text`** | 图上文下 | 文字在上（0.8→3.5inch），图在下（3.8→7.0inch），**间距 0.3inch** | 先给 take-home 再展示证据 |
+| **`figure-grid`** | 2×2 四宫格 | 四张小图 + 统一标题 + 统一图注；每张 ≤3.5×2.8inch；间距 0.3inch | marker dotplot + heatmap + proportion + violin 概览 |
+| `scientific-figure` | 2-4 panel（兼容旧版） | 同 figure-sidebar，但允许 2-4 张子图拼成一张 PNG 嵌入 | 复合图 |
+| `results-table` | 结果表格 | 表头 12pt bold，数据 11pt，pass 绿/fail 红，数字右对齐 | QC 统计 / SVG 排名 |
+| `methods-flow` | 流程图 | 水平箭头流，每步一个词 18pt，≤8 步 | pipeline 概览 |
+| `bullets` | 纯文字 | ≤4 行，每行 ≤6 词，18pt | 总结 / 过渡 |
+| **`split-compare`** | 左右分屏对比 | 左半 50%（含标题+图+文）vs 右半 50%（标题+图+文）；中间分隔线 0.5pt | 两种方法对比 / 两个数据集对比 |
+
+### 防重叠规则（代码强制，不是建议）
+
+```python
+# build_deck.py 中每个布局函数都调用的安全检查：
+SAFE_GAP = Inches(0.3)  # 图片与文字之间的最小安全间距
+
+def _safe_zones(width_in=13.333, height_in=7.5):
+    """返回安全区域字典——每个元素只能在自己的区域内"""
+    title_zone = (0.5, 0.3, 12.3, 1.0)      # 标题区: top 0.3-1.0
+    content_zone = (0.5, 1.2, 12.3, 5.3)     # 内容区: top 1.2-6.5
+    caption_zone = (0.5, 6.7, 12.3, 0.6)     # 图注区: top 6.7-7.2
+    # 图片放 content_zone 内，文字也放 content_zone 内，但两者在水平/垂直方向上不重叠
+    return {"title": title_zone, "content": content_zone, "caption": caption_zone}
+```
+
+**规则**：
+1. **标题区（0.3-1.0inch）**不放图、不放正文——只放标题
+2. **图注区（6.7-7.2inch）**不放图、不放正文——只放 caption
+3. **内容区（1.2-6.5inch）**内图片和文字**水平分离**：图片在左半区，文字在右半区，中间 ≥0.3inch 空白
+4. **全宽图片**（figure-hero）：图片占满内容区宽度，文字移到图注区或下一张幻灯片
+5. **上下布局**（figure-top-text）：文字在上 1/3，图在下 2/3，中间 0.3inch
+
+### 图形式多样化原则
+
+不要每张都用"图左+文右"（image-sidebar）。根据内容选布局：
+
+| 内容类型 | 推荐布局 | 理由 |
 |---|---|---|
-| `title` | title page | centered large title, subtitle, no decorative line |
-| `section` | section divider | single centered line, whitespace >60% |
-| `scientific-figure` | 2-4 panel real figure | **max 4 panels, preflight errors beyond that**; tight bbox, trim whitespace |
-| `image-sidebar` | 1 large figure + text interpretation | figure 60%, bullets 35%, caption below figure |
-| `results-table` | results table (with semantic color) | pass/fail in green/red, numbers right-aligned |
-| `methods-flow` | method flow | horizontal/vertical step arrows, one word per step |
-| `bullets` | text-only (use sparingly) | ≤4 bullets, ≤6 words each |
+| UMAP / 空间切片全景 | `figure-hero` | 全宽冲击力 |
+| 火山图 + top genes 列表 | `figure-sidebar` | 图+文互补 |
+| Normal vs Disease 对比 | `figure-dual` | 直接对比 |
+| "先说结论再给证据" | `figure-top-text` | 叙事驱动 |
+| 4 种分析结果概览 | `figure-grid` | 信息密度 |
+| 两种方法/数据集对比 | `split-compare` | 方法学对比 |
 
-> **scientific-figure key** (core bioinformatics scenario): when plotting in Python (matplotlib/ov.pl), export at the target aspect ratio + `bbox_inches='tight'` + `trim_image_whitespace.py` to strip margins, then embed. Otherwise the slide gets an ugly white border.
+**同一套 PPT 里至少用 3 种不同布局**——全是 figure-sidebar = 视觉单调。
+
+> **scientific-figure key** (核心生信场景)：在 Python 里 `bbox_inches='tight'` 导出后，用 PIL `ImageOps.crop` 去白边再嵌入，否则幻灯片会有丑陋的白色边框。
 
 ## Preset: cns-bio-light (bioinformatics-specific)
 

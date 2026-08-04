@@ -145,4 +145,4 @@ ov.pl.dotplot(adata, var_names=...)    # gene-condition dot plot
 - Write Methods describing the bulk workflow → `presentation/manuscript-writing`
 - Write Results narrative → `presentation/manuscript-writing`
 - Write figure legends → `presentation/manuscript-writing`
-- Build talk slides → `presentation/scientific-slides` (DEG volcano/heatmap via `--attach` embedded into results slide)
+- Build talk slides → `presentation/scientific-slides` (add DEG volcano/heatmap as `"image"` in outline.json)

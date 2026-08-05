@@ -3,7 +3,7 @@
 Spatial Proteomics Analysis with scimap
 Demonstrates analysis of CODEX/IMC/MIBI data
 """
-# Reference: anndata 0.10+, scanpy 1.10+, squidpy 1.3+ | Verify API if version differs
+# Packages: see compat.yaml for versions. Verify API with inspect.signature before first use.
 
 import scimap as sm
 import anndata as ad

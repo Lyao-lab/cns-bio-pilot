@@ -50,6 +50,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 3. **Search before implementing.** omicverse/scop wrapper → standalone package → R/Bioconductor → adapt → from-scratch (last resort). GEO → GEOparse.
 4. **Postcheck is mandatory.** After any quantitative analysis (DE/deconvolution/CCC/composition), run `python scripts/postcheck.py`. FAIL must be resolved before proceeding.
 5. **Save checkpoints.** After each major step (QC/cluster/annotation/DE), save `adata.write_h5ad('checkpoints/XX_step.h5ad')`. Upstream changes → re-run from last valid checkpoint.
+6. **Runtime API self-adaptation.** Do NOT trust hardcoded version numbers or assume API signatures. Before calling any ov.*/pt.*/sc.* function for the first time, verify with `inspect.signature(func)` — parameter names may differ from documentation or training data. If a function signature doesn't match expectations, adapt the call rather than failing. Run `python scripts/api_check.py --diff` after any package upgrade to detect breaking changes.
 
 ## Key Files
 

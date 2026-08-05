@@ -1,7 +1,7 @@
 """Transcript → cell mask assignment (canonical example).
 
 Env:        any env with numpy/pandas (sc or st); cellpose needs its own install
-Reference:  cellpose 3.0+ | numpy 1.26+ | pandas 2.2+ | Verify API if version differs
+Packages: see compat.yaml for versions. Verify API with inspect.signature before first use.
 
 Install (cellpose is NOT auto-installed in sc/st):
   conda activate sc && pip install cellpose   # for Option A only

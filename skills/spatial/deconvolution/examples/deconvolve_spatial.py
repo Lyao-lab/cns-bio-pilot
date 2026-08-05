@@ -1,5 +1,5 @@
 '''Deconvolve spatial data with Tangram'''
-# Reference: anndata 0.10+, matplotlib 3.8+, numpy 1.26+, pandas 2.2+, scanpy 1.10+ | Verify API if version differs
+# Packages: see compat.yaml for versions. Verify API with inspect.signature before first use.
 
 import scanpy as sc
 import tangram as tg

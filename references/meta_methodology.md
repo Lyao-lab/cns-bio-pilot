@@ -11,9 +11,16 @@
 
 **Root cause**: Every method, API, and LLM output carries implicit assumptions / preconditions. Failure means **using it without checking its preconditions** — code that runs is the most dangerous, because it lowers vigilance.
 
+**Version self-adaptation**: Package versions change constantly. Do NOT hardcode version assumptions in your code or trust API signatures from memory/training data. Instead:
+- Before calling any `ov.*` / `pt.*` / `sc.*` function for the first time: `inspect.signature(func)` — verify parameter names exist
+- After any `pip install --upgrade`: run `python scripts/api_check.py --diff` to detect breaking changes
+- If a parameter doesn't match: adapt the call (read the actual signature), don't fail silently
+- See `compat.yaml` for the currently verified environment (but treat it as a snapshot, not a constraint)
+
 | What you assume | What you must verify |
 |---|---|
 | "this function exists" | `inspect.signature()` / official docs — LLM package-hallucination rate ~9–20% |
+| "this parameter name is correct" | `inspect.signature(func)` — params get renamed across versions (e.g. `tresh` not `thresh`, `methods` not `method`) |
 | "this GEO/PMID/gene name is real" | batch-check NCBI/HGNC — ~20% of LLM citations are fabricated |
 | "DESeq2 assumes replicates" | check `design`, is donor in the model? n≤3 = exploratory only |
 | "CellChat p<0.001 = real signaling" | it assumes mRNA ≈ protein activity; multi-method consensus = evidence |

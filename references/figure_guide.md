@@ -444,18 +444,43 @@ fig, ax = plt.subplots(figsize=recipe_figsize('umap'))  # (4.5, 4.5) 正方形
 | 3 | **legend 挤压数据区** | finalize_figure 自动移 legend → 预先放好（底部/右侧外置） |
 | 4 | **行名/列名消失** | set_yticklabels 后检查渲染（finalize_figure 可能移位） |
 
-### 11.3 火山图 → 条形图的替代决策
+### 11.3 火山图 → 分组散点图的替代决策
 
-**教训**：火山图在 niche DE 场景经常**丑且不可读**——基因标注重叠、灰点密集、关键基因挤在 FDR 地板。
+**教训**：火山图在 niche DE / 多时点 / 多组间比较场景经常**丑且不可读**——基因标注重叠、灰点密集、关键基因挤在 FDR 地板。多组比较时火山图无法并列展示。
 
-**替代方案**：**水平条形图**（y=基因，x=logFC，多时点并列）：
+**替代方案**：**分组散点图**（y=logFC，x=各时点/组别，每点=一个基因）：
 ```python
-# 每基因 3 根条（三时点），alpha 渐变
-for ti, tp in enumerate(TPS):
-    alpha = 0.5 + 0.25 * ti  # 13w 浅 → 24w 深
-    ax.barh(y + offset, logFC, alpha=alpha, color=UP if sig else GREY)
+# 多时点/多组别 DE 结果：x=组别，y=logFC，每点=一个基因
+fig, ax = plt.subplots(figsize=recipe_figsize('bar', n_x=len(comparisons)))
+for i, comp in enumerate(comparisons):  # ['13w_vs_ctrl', '24w_vs_ctrl', '36w_vs_ctrl']
+    de = de_dict[comp]
+    sig = de['padj'] < 0.05
+    # 显著基因：彩色散点
+    ax.scatter(np.full(sig.sum(), i) + np.random.uniform(-0.15, 0.15, sig.sum()),
+               de.loc[sig, 'log2FC'], s=20, alpha=0.7,
+               color=UP_COLOR, edgecolor='white', linewidth=0.3, zorder=3)
+    # ns 基因：灰色散点
+    ns = ~sig
+    ax.scatter(np.full(ns.sum(), i) + np.random.uniform(-0.15, 0.15, ns.sum()),
+               de.loc[ns, 'log2FC'], s=8, alpha=0.3,
+               color=NS_COLOR, edgecolor='none', zorder=2)
+    # 标注 top-3 基因
+    top3 = de.loc[sig].nlargest(3, 'log2FC')
+    for _, r in top3.iterrows():
+        ax.annotate(r['gene'], xy=(i, r['log2FC']),
+                    xytext=(i+0.2, r['log2FC']+0.3), fontsize=6,
+                    fontstyle='italic', color=NEAR_BLACK,
+                    arrowprops=dict(arrowstyle='-', lw=0.4, color=GREY))
+
+ax.axhline(0, color=GREY, lw=0.5, ls='-')
+ax.axhline([1, -1], color=GREY, lw=0.4, ls='--', alpha=0.3)  # logFC threshold
+ax.set_xticks(range(len(comparisons)))
+ax.set_xticklabels(comparisons, fontsize=8, rotation=30, ha='right')
+ax.set_ylabel(r'log$_2$(Fold Change)', fontsize=10, labelpad=10)
+polish_axes(ax)
+finalize_figure(fig)
 ```
-**优势**：三时点直接可比、无标注重叠、灰色标 ns、信息密度更高。
+**优势**：多时点/多组直接可比；无标注重叠；显著 vs ns 用颜色+大小区分；每个组别的 DE 分布一目了然。
 
 ### 11.4 UMAP 双层次注释的陷阱
 

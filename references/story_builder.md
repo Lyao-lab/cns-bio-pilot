@@ -410,3 +410,85 @@ VIC 1,155 cells 分 7 群 → 每群 58-274（不稳定，小群可能是噪声�
 合并为 4 群（增殖/ECM/信号/晚期）→ 每群 58-647，生物学意义更清晰。
 
 **规则**：n<2000 cells 的亚群聚类，目标 3-5 群（不是越多越好）。用 marker 生物学相似性合并小群，不要硬凑。
+
+---
+
+## 8. 完整 Worked Example：从分析结果到生物学故事
+
+> 用一个真实的心脏瓣膜发育项目走一遍完整流程（五步法 + 漏洞扫描 + so-what 测试）。
+
+### Step 1: 发现清单（从分析输出扫描）
+
+```
+发现 1: 13w→36w 瓣膜细胞组成变化：VIC 占比 35%→52%（+17pp, padj<1e-20）
+发现 2: VIC 内部 Quiescent → Activated 转换（轨迹 + velocity 一致）
+发现 3: Activated VIC 上调 COL1A1/COL3A1/POSTN（ECM 重塑通路, GSEA NES=2.1）
+发现 4: 空间域分析发现"纤维化前沿"niche（BANKSY, 跨 8/10 样本出现）
+发现 5: 纤维化前沿内 VIC-Macrophage 邻域富集（置换检验 p<0.001）
+发现 6: 纤维化前沿 DE: CXCL12↑, TIMP1↑（padj<0.001）
+发现 7: CXCL12+VIC 与 CD68+Macrophage 空间共定位（距离 <50μm, p<0.01）
+```
+
+### Step 2: 因果链
+
+```
+主线（纤维化机制）:
+  发现1（VIC 扩增）→ 发现2（状态转换）→ 发现3（ECM 分子变化）
+  → 发现4（空间 niche 形成）→ 发现5-7（VIC-Mac 空间互作）
+
+Step 2b 漏洞扫描:
+  ✅ 1→2: 有直接证据（轨迹显示 Quiescent 减少 Activated 增多）
+  ⚠️ 2→3: 缺——Activated 的 ECM 上调是否均匀？→ 补 violin 看分布
+  ✅ 3→4: 有（ECM 基因富集区域 = 空间域 marker）
+  ⚠️ 5→6: 缺——niche DE 是否由 VIC 组成变化驱动（Simpson's paradox）？
+     → 补：VIC 内部按亚型分层重新检验 DE
+  ✅ 6→7: 有正交证据（空转共定位）
+```
+
+### Step 3: 主结论
+
+```
+✓ "心脏瓣膜发育中 VIC 从静息态向活化态转换，形成纤维化前沿 niche，
+   通过 CXCL12-TIMP1 轴招募巨噬细胞，建立纤维化-免疫正反馈。
+   该 niche 跨样本可复现（8/10），是潜在干预靶点。"
+```
+
+### Step 3b: So-what 测试
+
+```
+Q: 这个 niche 有什么临床意义？
+A: 纤维化前沿的 CXCL12 轴可被抗体阻断（已有心衰模型验证，PMID:39443792）
+   → 可成药靶点
+
+Q: 和已发表瓣膜研究比，新在哪？
+A: 已知 VIC 活化（2018 文献）；不知道活化 VIC 会形成空间 niche 且招募免疫
+   → 新发现：空间 niche + 免疫互作（不是细胞本身）
+```
+
+### Step 4: Figure 映射
+
+```
+Figure 1 (atlas):
+  A: 全组织 UMAP（一次）
+  B: 三时点比例柱
+  C: marker dotplot
+
+Figure 2 (VIC 机制):
+  A: VIC 亚群 UMAP
+  B: 状态转换轨迹（PAGA + pseudotime）
+  C: ECM 基因 violin
+  D: 分组散点图（三时点 DE）
+
+Figure 3 (空间验证):
+  A: 空间域图 + H&E 对照
+  B: 纤维化前沿 niche 组成
+  C: CXCL12 空间 overlay + scale bar
+  D: CXCL12+VIC 与 CD68+Mac 共定位 + 距离定量曲线
+```
+
+### Step 5: 叙事弧
+
+```
+背景 → 有哪些细胞，谁在变 → VIC 怎么变（分子层面）
+→ 变化在空间哪里发生 → 空间中谁跟谁在对话 → 这意味着什么（靶点）
+```

@@ -214,6 +214,21 @@ plt.close(fig)
 - `add_elegant_colorbar(label=gene_name)`
 - omicverse spatial 默认：`frameon='small'`, `colorbar_loc='right'`
 
+```python
+# 完整可跑示例：空间基因表达 overlay
+import squidpy as sq
+fig, ax = plt.subplots(figsize=(5, 4.5))
+sq.pl.spatial_scatter(adata_sp, color='Cxcl12', ax=ax, size=1.2,
+                      cmap=EXPR_CMAP, vmin=0, alpha_img=1.0, alpha=0.85,
+                      title='', show=False)
+add_scale_bar(ax, length_um=200, px_per_um=0.5)
+add_elegant_colorbar(ax.collections[0], ax, label='Expression', orientation='horizontal')
+clean_umap_axes(ax, xlabel='', ylabel='')
+finalize_figure(fig)
+fig.savefig('panels/spatial_cxcl12.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+plt.close(fig)
+```
+
 ### Bar (proportions)
 - 95% CI error bars (capsize=3, lw=1)
 - Per-sample dots overlay (s=15, α=0.7)
@@ -506,3 +521,123 @@ finalize_figure(fig)
 - 画图前预先规划 legend 位置（`bbox_to_anchor` 底部或右外置）
 - 跑完后检查 finalize 的 warning（"Legend moved to outside-right"）
 - 如果 Panel B 因为 legend 移位变空 → 去掉 Panel B（信息冗余时）或把 legend 放 Panel A 内
+
+---
+
+## 12. 完整 Worked Example（三个图从数据到 PDF）
+
+> 官方最佳实践："三个 worked example 胜过二十条约束。" 以下是三个最高频图型的完整端到端代码。
+
+### Example 1: UMAP（5000 cells → PDF）
+
+```python
+import sys; sys.path.insert(0, 'scripts/')
+from cns_style import *
+import scanpy as sc
+import omicverse as ov
+
+set_cns_style_journal('nature')
+
+# 假设 adata 已完成 QC + normalize + PCA + neighbors + leiden
+# UMAP 全宽展示，on-plot labels
+fig, ax = plt.subplots(figsize=recipe_figsize('umap'))
+
+# 用 ov.pl.embedding（自动 frameon='small' + bold legend）
+ov.pl.embedding(adata, basis='X_umap', color='celltype',
+                size=point_size_for_n(adata.n_obs),
+                alpha=0.7, ax=ax, show=False, legend_loc=None)
+
+# on-plot labels with white halo
+add_cluster_labels(ax, adata, basis='umap', groupby='celltype', fontsize=7)
+clean_umap_axes(ax)
+optical_margin(ax, 0.12)
+finalize_figure(fig)
+fig.savefig('panels/A_umap.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+plt.close(fig)
+```
+
+### Example 2: 分组散点图（多时点 DE → PDF）
+
+```python
+# 多时点 DE：x=组别，y=log2FC，每点=一个基因
+import pandas as pd
+
+comparisons = ['13w', '24w', '36w']  # vs ctrl
+de_dict = {tp: pd.read_csv(f'de_{tp}.csv') for tp in comparisons}  # each has gene, log2FC, padj
+
+fig, ax = plt.subplots(figsize=recipe_figsize('bar', n_x=len(comparisons)))
+for i, tp in enumerate(comparisons):
+    de = de_dict[tp]
+    sig = (de['padj'] < 0.05) & (de['log2FC'].abs() > 0.5)
+    ns = ~sig
+    # ns: 小灰点
+    jitter_ns = np.random.uniform(-0.15, 0.15, ns.sum())
+    ax.scatter(np.full(ns.sum(), i) + jitter_ns, de.loc[ns,'log2FC'],
+               s=8, alpha=0.3, color='#d7d7d7', edgecolor='none', rasterized=True)
+    # sig: 大彩色点
+    jitter_sig = np.random.uniform(-0.15, 0.15, sig.sum())
+    colors = np.where(de.loc[sig,'log2FC'] > 0, '#e25d5d', '#7388c1')
+    ax.scatter(np.full(sig.sum(), i) + jitter_sig, de.loc[sig,'log2FC'],
+               s=20, alpha=0.7, c=colors, edgecolor='white', linewidth=0.3, zorder=3)
+    # top-3 标注
+    top3 = de.loc[sig].reindex(de.loc[sig,'log2FC'].abs().sort_values(ascending=False).index[:3])
+    for _, r in top3.iterrows():
+        ax.annotate(r['gene'], xy=(i, r['log2FC']),
+                    xytext=(i+0.15, r['log2FC']+0.2), fontsize=6,
+                    fontstyle='italic', color='#2E3440',
+                    arrowprops=dict(arrowstyle='-', lw=0.4, color='#4C566A'))
+
+ax.axhline(0, color='#4C566A', lw=0.5)
+ax.axhline(1, color='#4C566A', lw=0.4, ls='--', alpha=0.3)
+ax.axhline(-1, color='#4C566A', lw=0.4, ls='--', alpha=0.3)
+ax.set_xticks(range(len(comparisons)))
+ax.set_xticklabels([f'{c} vs ctrl' for c in comparisons], fontsize=8, rotation=20, ha='right')
+ax.set_ylabel(r'log$_2$(Fold Change)', fontsize=10, labelpad=10)
+polish_axes(ax)
+finalize_figure(fig)
+fig.savefig('panels/B_de_scatter.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+plt.close(fig)
+```
+
+### Example 3: 空间表达 + scale bar + 比例定量
+
+```python
+# 空间基因表达 + scale bar + 配对箱线图（niche 内 vs 外）
+import squidpy as sq
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=recipe_figsize('bar', n_x=2),
+                                gridspec_kw={'width_ratios': [1.2, 1]})
+
+# 左：空间 overlay
+sq.pl.spatial_scatter(adata_sp, color='Cxcl12', ax=ax1, size=1.2,
+                      cmap=EXPR_CMAP, vmin=0, alpha_img=1.0, alpha=0.85,
+                      title='', show=False)
+add_scale_bar(ax1, length_um=200, px_per_um=0.5)
+clean_umap_axes(ax1, xlabel='', ylabel='')
+add_elegant_colorbar(ax1.collections[0], ax1, label='Expression',
+                     orientation='horizontal')
+
+# 右：niche 内 vs 外的表达分布（配对箱线）
+niche_cells = adata_sp.obs['niche'] == 'fibrotic'
+expr_niche = adata_sp[niche_cells, 'Cxcl12'].X.toarray().ravel() if hasattr(adata_sp.X, 'toarray') else adata_sp[niche_cells, 'Cxcl12'].X.ravel()
+expr_other = adata_sp[~niche_cells, 'Cxcl12'].X.toarray().ravel() if hasattr(adata_sp.X, 'toarray') else adata_sp[~niche_cells, 'Cxcl12'].X.ravel()
+
+bp = ax2.boxplot([expr_other, expr_niche], positions=[0, 1], widths=0.4,
+                 patch_artist=True, showfliers=False,
+                 boxprops=dict(facecolor='#88C0D0', edgecolor='#2E3440', lw=0.8),
+                 medianprops=dict(color='#BF616A', lw=1.5))
+bp['boxes'][1].set_facecolor('#BF616A')
+# 散点叠加
+for i, data in enumerate([expr_other, expr_niche]):
+    jit = np.random.uniform(-0.1, 0.1, len(data))
+    ax2.scatter(np.full(len(data), i) + jit, data, s=3, alpha=0.4,
+                color='#2E3440', edgecolor='none', rasterized=True)
+ax2.set_xticks([0, 1])
+ax2.set_xticklabels(['Other', 'Fibrotic niche'], fontsize=8)
+ax2.set_ylabel('Cxcl12 expression', fontsize=9, labelpad=8, fontstyle='italic')
+add_significance_bracket(ax2, 0, 1, pval=1e-6)
+polish_axes(ax2)
+finalize_figure(fig, move_legend_right=False)
+fig.savefig('panels/C_spatial_quant.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+plt.close(fig)
+```

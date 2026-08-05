@@ -2,7 +2,8 @@
 name: research-planner
 description: 单细胞课题设计方法论（零代码）——从研究方向生成完整可执行的研究计划：研究问题→study pattern→样本分组→分析模块→验证阶梯→figure 规划，输出 Lite/Standard/Advanced/Publication+ 四档配置。当用户要做课题设计、研究规划、research plan、study design、sample size、分组设计、单细胞立项时触发。强制 Dataset Disclaimer，绝不编造数据集/accession/文献。
 license: MIT
-author: AIPOCH
+metadata:
+  author: AIPOCH
 ---
 
 ## When NOT to use this skill

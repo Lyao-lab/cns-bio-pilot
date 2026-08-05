@@ -1,7 +1,7 @@
 """Multi-modal spatial analysis with SpatialData (canonical example).
 
 Env:        conda env `sc` (spatialdata 0.7.3 is already installed there)
-Reference:  spatialdata 0.7+ | spatialdata-io 0.1+ | scanpy 1.11+ | Verify API if version differs
+Packages: see compat.yaml for versions. Verify API with inspect.signature before first use.
 
 Install (spatialdata IS in sc; only spatialdata-io is missing):
   conda activate sc && pip install spatialdata-io

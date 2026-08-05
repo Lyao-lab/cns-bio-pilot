@@ -2,7 +2,8 @@
 name: scientific-schematics
 description: 自动生成发表级科学示意图（机制图/流程图/架构图/路径图/图形摘要 Graphical Abstract）。从自然语言描述或论文 abstract 出发，经 AI 生成→视觉审查→精炼循环产出 journal/poster 级图片。当用户要画机制图、流程图、神经网络架构、信号通路、论文图形摘要/TOC 图时触发。
 license: MIT
-author: AIPOCH
+metadata:
+  author: AIPOCH
 ---
 
 ## When NOT to use this skill

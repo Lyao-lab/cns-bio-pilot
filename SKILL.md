@@ -1,6 +1,11 @@
 ---
 name: cns-bio-pilot
-description: 生信分析全流程技能库（空间转录组、单细胞、bulk 组学 + 绘图 + 论文/PPT 产出）。当用户要做生信分析、处理单细胞或空转数据、画发表级图表、写论文/PPT 时触发。核心原则：基于事实不懂就问不虚构；不重复造轮子（先检索 PubMed/GitHub/PyPI/R 库是否已有实现，实在没有才改造相似算法，GEO 下载用 GEOparse）；元方法论纪律（主动证伪、链式失效与熔断、环境依赖前置）。本 skill 是路由器——触发后读取它来确定走哪个子 skill，具体分析在子 skill 中进行。
+description: 生信分析全流程技能库（空间转录组、单细胞、bulk 组学 + 绘图 + 论文/PPT 产出）。当用户要做生信分析、处理单细胞或空转数据、画发表级图表、写论文/PPT/汇报、构建生物学故事时触发。触发后读取 SKILL.md 路由到具体子 skill。
+compatibility: Requires Python 3.11+ with omicverse/scanpy/scvelo (conda env 'sc'), squidpy (env 'st'), R 4.3.3 with scop 0.8.9. See compat.yaml for version details.
+license: GPL-3.0
+metadata:
+  version: "22.3"
+  author: Lyao-lab
 ---
 
 # CNS Bio-Pilot — Router
@@ -45,6 +50,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 3. **Search before implementing.** omicverse/scop wrapper → standalone package → R/Bioconductor → adapt → from-scratch (last resort). GEO → GEOparse.
 4. **Postcheck is mandatory.** After any quantitative analysis (DE/deconvolution/CCC/composition), run `python scripts/postcheck.py`. FAIL must be resolved before proceeding.
 5. **Save checkpoints.** After each major step (QC/cluster/annotation/DE), save `adata.write_h5ad('checkpoints/XX_step.h5ad')`. Upstream changes → re-run from last valid checkpoint.
+6. **Runtime API self-adaptation.** Do NOT trust hardcoded version numbers or assume API signatures. Before calling any ov.*/pt.*/sc.* function for the first time, verify with `inspect.signature(func)` — parameter names may differ from documentation or training data. If a function signature doesn't match expectations, adapt the call rather than failing. Run `python scripts/api_check.py --diff` after any package upgrade to detect breaking changes.
 
 ## Key Files
 
@@ -53,6 +59,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 | `compat.yaml` | Version questions; after any package upgrade |
 | `references/figure_guide.md` | Before ANY plotting (the only figure reference needed) |
 | `references/story_builder.md` | **After analysis, before drawing/writing** — how to turn results into a biological story (5-step method: findings → causal chain → main message → figure mapping → story arc) |
+| `references/discovery_miner.md` | **Right after analysis** — scan each result type (DE/proportion/CCC/trajectory/niche) for candidate discoveries, score priority, exclude false positives, determine story level |
 | `scripts/cns_style.py` | Import at top of every plotting script |
 | `scripts/postcheck.py` | After any analysis (scientific rigor auto-check) |
 | `scripts/api_check.py` | After installing/updating omicverse or pertpy |

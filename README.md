@@ -20,14 +20,17 @@ python scripts/api_check.py           # full verification
 ## Architecture
 
 ```
-SKILL.md (router, 65 lines)
+SKILL.md (router)
 ├── compat.yaml (package versions — single source of truth)
-├── skill-index.json (machine-readable index)
 ├── references/
 │   ├── figure_guide.md (the ONLY figure reference — specs + recipes)
 │   ├── meta_methodology.md (6 self-check rules)
 │   ├── omicverse_guide.md (ov.* API cheat-sheet)
-│   └── (3 references — figure_guide / meta_methodology / omicverse_guide)
+│   ├── figure_guide.md (visual specs + recipes)
+│   ├── meta_methodology.md (6 self-check rules)
+│   ├── omicverse_guide.md (ov.* API cheat-sheet)
+│   ├── story_builder.md (results → biological narrative)
+│   └── discovery_miner.md (analysis → candidate discoveries)
 ├── scripts/
 │   ├── cns_style.py (one-shot aesthetics: set_cns_style_journal/polish_axes/...)
 │   ├── api_check.py (API verification + --diff mode)

@@ -34,7 +34,8 @@ This skill generates research presentation slides with **python-pptx** (default)
 
 ## Talk Arc（汇报叙事弧模板）
 
-> **先读 `references/discovery_miner.md` + `references/story_builder.md`** —— 发现挖掘 + 故事构建。
+> **先读 `references/discovery_miner.md` + `references/story_builder.md`** —— 发现挖掘 + 故事构建（含逻辑漏洞扫描 + 补缺分析）。
+> 构建汇报前必须先完成 story_builder Step 2b（逻辑漏洞扫描）：**因果链里有跳步或缺证据的地方，先补分析再组织汇报**——不要带着漏洞做 PPT。
 > 然后按以下弧组织幻灯片。**标题必须是结论句**（assertion-evidence 模型，Naegle 2021 Rule 3），禁止 "Results"/"Analysis" 式标签标题。
 
 ### 标准 10 页叙事弧

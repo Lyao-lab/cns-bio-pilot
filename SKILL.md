@@ -53,6 +53,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 | `compat.yaml` | Version questions; after any package upgrade |
 | `references/figure_guide.md` | Before ANY plotting (the only figure reference needed) |
 | `references/story_builder.md` | **After analysis, before drawing/writing** — how to turn results into a biological story (5-step method: findings → causal chain → main message → figure mapping → story arc) |
+| `references/discovery_miner.md` | **Right after analysis** — scan each result type (DE/proportion/CCC/trajectory/niche) for candidate discoveries, score priority, exclude false positives, determine story level |
 | `scripts/cns_style.py` | Import at top of every plotting script |
 | `scripts/postcheck.py` | After any analysis (scientific rigor auto-check) |
 | `scripts/api_check.py` | After installing/updating omicverse or pertpy |

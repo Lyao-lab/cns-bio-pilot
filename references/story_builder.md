@@ -31,6 +31,8 @@ LLM 最常犯的错误：直接从 Layer 1 跳到 Layer 3（"CXCL12 上调 → C
 
 ### Step 1: 清点发现（What did I find?）
 
+> **前置：先读 `references/discovery_miner.md`** —— 它教你从每类分析输出（DE 表/比例表/CCC/轨迹/niche）中扫描候选发现、排优先级、排雷。发现信号矩阵 → 评分卡 → 伪发现排雷 → 确定故事级别。
+
 把所有分析结果列成"发现清单"，**不加解读，只陈述数据**：
 
 ```

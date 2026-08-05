@@ -32,6 +32,56 @@ This skill generates research presentation slides with **python-pptx** (default)
 - Need to embed real analysis figures (PNGs from `visualization/figure-production`)
 - Need an editable .pptx (peers/advisor will edit text) or a compiled PDF (Beamer)
 
+## Talk Arc（汇报叙事弧模板）
+
+> **先读 `references/discovery_miner.md` + `references/story_builder.md`** —— 发现挖掘 + 故事构建。
+> 然后按以下弧组织幻灯片。**标题必须是结论句**（assertion-evidence 模型，Naegle 2021 Rule 3），禁止 "Results"/"Analysis" 式标签标题。
+
+### 标准 10 页叙事弧
+
+| 页 | arc_role | 内容 | 标题示例（结论式） |
+|---|---|---|---|
+| 1 | hook | 临床/生物学问题 + 现有认知的不足 | "POP 的纤维化机制不明：谁是驱动者？" |
+| 2 | design | 队列 + 技术组合 + 分析流程 | "10 例配对 scRNA + Visium 多模态设计" |
+| 3 | atlas | UMAP 全景 + 组成（**UMAP 全场只用一次**） | "10 cell types identified; Fibro dominant (44%)" |
+| 4 | finding-1 | 组成变化定量（推进因果链第一环） | "Fibroblast expand 13pp in POP (padj<1e-40)" |
+| 5 | finding-2 | 亚群细分/分子变化（第二环） | "Quiescent_1→2/3 rewiring, CXCL12↑" |
+| 6 | mechanism | 通讯/轨迹/GRN 证据（第三环） | "CXCL12-CXCR4 is the top Fibro→Mac axis" |
+| 7 | spatial | 空间验证（正交证据） | "CXCL12+ Fibro and M2 co-localize in fibrotic zones" |
+| 8 | sowhat | 功能/临床意义 | "CXCL12-CXCR4 axis: potential anti-fibrotic target" |
+| 9 | model | 模型图/总结图 | "Proposed model: Fibro-Mac positive feedback loop" |
+| 10 | takehome | ≤3 条 take-home | "3 key findings: rewiring / CXCL12 / spatial niche" |
+
+> **规则**：每页标题 = 该页结论（从 story_builder Step 3 主结论/因果链取词）。
+> **UMAP 全场只用一次**（展示结构，不做定量论证）。
+> 空间图必须配定量 panel（箱线/距离曲线），单独的"好看切片图"不构成证据。
+
+### 场景预设
+
+| 场景 | 时长 | 页数 | 背景:方法:发现:讨论 | 诚实边界 |
+|---|---|---|---|---|
+| 会议 talk | 10-20min | 10-15 | 1:1:6:2 | 结论措辞保守 |
+| 答辩 | 30-45min | 20-30 | 2:2:5:1 | 可行性+前期基础重 |
+| 基金 pitch | 10min | 8-10 | 1:1:6:2 | 创新性+前期数据重 |
+| 周报/月报 | 5-10min | 5-8 | 0:0:7:3 | 诚实标"exploratory"（走 lab-meeting 模式） |
+| 年会 seminar | 45-60min | 25-40 | 2:2:4:2 | mechanism+validation 加深 |
+| Journal club | 20-30min | 15-20 | 复现原论文弧 | 解构他人论文叙事 |
+
+### 图表选择决策表（你想论证什么 → 该画什么图）
+
+| 你要论证 | 首选图型 | variant | 备注必写项 |
+|---|---|---|---|
+| 有哪些细胞 | UMAP（全场仅此一次） | figure-hero | N + resolution + batch check |
+| 谁的比例变了 | 堆叠柱 + 患者级箱线 | figure-dual | n=patients + 检验方法 + padj |
+| 哪些基因变了 | volcano + top genes | figure-sidebar | threshold + 校正方法 |
+| 什么通路激活 | 富集条形图（GO/KEGG） | figure-sidebar | gene set 来源 + FDR |
+| 谁跟谁通讯 | L-R bubble / heatmap | figure-sidebar | 方法（CellChat/LIANA）+ scope |
+| 细胞怎么转换 | PAGA + pseudotime UMAP | figure-grid | kernel 类型 + 方向性证据 |
+| 在组织中真的发生 | 空间 overlay + 定量曲线 | figure-dual | 距离统计 + 置换检验 p |
+| 两种条件对比 | 左右分屏 | figure-dual / split-compare | 对比维度 + N |
+
+> **图型纪律**：禁止连续 3+ 张相同图型；不要大量用 bar chart；circle plot 信息密度低不推荐。
+
 ## Workflow: outline.json source-first (python-pptx)
 
 ### Step 1: Write outline.json (the single source)
@@ -42,14 +92,42 @@ This skill generates research presentation slides with **python-pptx** (default)
   "subtitle": "OmicVerse + squidpy pipeline",
   "preset": "cns-bio-light",
   "slides": [
-    {"variant": "title", "title": "Single-cell + Spatial Transcriptomics Analysis", "subtitle": "OmicVerse + squidpy"},
-    {"variant": "figure-hero", "title": "Cell type atlas",
+    {"variant": "title", "title": "POP 的纤维化机制不明：谁是驱动者？", "subtitle": "Single-cell + Spatial Transcriptomics", "arc_role": "hook"},
+    {"variant": "methods-flow", "title": "10 例配对 scRNA + Visium 多模态设计", "arc_role": "design", "steps": ["QC","Cluster","Annotate","DE","CCC","Spatial"]},
+    {"variant": "figure-hero", "title": "10 cell types; Fibroblast dominant (44%)",
      "image": "figures/umap_celltype.png",
-     "caption": "Fig 1. UMAP by cell type (N=2700, leiden res=0.6)",
-     "notes": "10 个细胞类型，Fibro 占比最高（44%）。UMAP 分群清晰，无明显批次效应。每个 cluster 的 marker 基因见附表。"},
-    {"variant": "figure-dual", "title": "Normal vs POP composition",
+     "caption": "Fig 1. UMAP by cell type (N=2700)",
+     "arc_role": "atlas",
+     "notes": "10 个细胞类型，Fibro 占比最高（44%）。UMAP 分群清晰，无明显批次效应。"},
+    {"variant": "figure-dual", "title": "Fibroblast expand 13pp in POP (padj<1e-40)",
      "image": "figures/prop_normal.png", "caption_left": "Normal",
      "image2": "figures/prop_pop.png", "caption_right": "POP",
+     "arc_role": "finding",
+     "notes": "Fibro 比例 44%→57%（+13pp），M2 巨噬 +16.7%。"},
+    {"variant": "figure-hero", "title": "Quiescent_1→2/3 rewiring; CXCL12↑",
+     "image": "figures/volcano.png",
+     "caption": "Fig 3. Volcano (Padj<0.05 & |log2FC|>1)",
+     "arc_role": "finding",
+     "notes": "602 个显著差异基因。上调 top: CXCL12, COL1A1, PDGFRB。"},
+    {"variant": "figure-hero", "title": "CXCL12-CXCR4 is the top Fibro→Mac axis",
+     "image": "figures/ccc_heatmap.png",
+     "caption": "Fig 4. CellChat L-R heatmap",
+     "arc_role": "mechanism",
+     "notes": "CXCL12-CXCR4 通讯 score 在 Fibro-Mac 对中最高（0.85），disease 组显著增强。"},
+    {"variant": "figure-dual", "title": "CXCL12+ Fibro and M2 co-localize in fibrotic zones",
+     "image": "figures/spatial_cxcl12.png", "caption_left": "CXCL12",
+     "image2": "figures/spatial_m2.png", "caption_right": "M2 macrophage",
+     "arc_role": "spatial",
+     "notes": "CXCL12+ Fibro 与 M2 巨噬在纤维化区域空间共定位（距离 <50μm，置换检验 p<0.01）。"},
+    {"variant": "bullets", "title": "CXCL12-CXCR4 axis: potential anti-fibrotic target",
+     "arc_role": "sowhat",
+     "bullets": ["Fibro-Mac positive feedback loop", "CXCL12 blockade: testable hypothesis", "Niche-level targeting vs cell-type targeting"]},
+    {"variant": "bullets", "title": "3 key findings",
+     "arc_role": "takehome",
+     "bullets": ["Fibro quiescent rewiring (not myofibroblast)", "CXCL12-CXCR4 connects fibrosis-inflammation", "Spatial niche validates the loop"]}
+  ]
+}
+```
      "notes": "Fibro 比例 44%→57%（+13pp, padj<1e-40），M2 巨噬 +16.7%。其余细胞类型无显著变化。"},
     {"variant": "figure-hero", "title": "Differential expression",
      "image": "figures/volcano.png",

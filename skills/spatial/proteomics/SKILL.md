@@ -1,8 +1,9 @@
 ---
 name: proteomics
 description: 空间蛋白组（CODEX / IMC / MIBI）分析——细胞分割、phenotyping（scimap）、蛋白共定位、与空转整合。当用户要做空间蛋白、multiplexed imaging、CODEX/IMC/MIBI、蛋白 gating、protein colocalization 时触发。
-tool_type: python
-primary_tool: scimap
+metadata:
+  tool_type: python
+  primary_tool: scimap
 ---
 
 ## When NOT to use this skill

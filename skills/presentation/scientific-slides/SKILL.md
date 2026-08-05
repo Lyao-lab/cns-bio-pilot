@@ -1,8 +1,8 @@
 ---
 name: scientific-slides
 description: 用 python-pptx 或 LaTeX Beamer 生成科研演讲幻灯片，覆盖正式会议 talk 与内部组会/lab meeting/进度汇报两类场景。当用户要做 PPT、幻灯片、slides、汇报、beamer、presentation、组会、lab meeting、project review、周报月报时触发。纯代码生成，不依赖 AI 生图 API——嵌入真实分析图（UMAP/火山图/空间切片等），outline.json 驱动，含 readability 契约与几何 QA。
-allowed-tools: Read Write Edit Bash
 license: MIT
+allowed-tools: Read Write Edit Bash
 ---
 
 # Scientific Slides
@@ -311,7 +311,7 @@ xelatex beamer_template_conference.tex   # Chinese-safe compile
 
 ## Mode: Lab Meeting (group meeting / progress report / PI update)
 
-> Merged from the original `presentation/lab-meeting-slides` skill (merged 2026-07).
+> Merged from the original `presentation/lab-meeting-slides` skill (merged 2026-07 (historical)).
 > Use this mode when the task is an **internal group meeting / lab meeting / project review / weekly-monthly report / PI update**. It differs from the default formal-talk mode in: **discussion-driven + data-honesty boundary + no inflating progress**.
 
 ### When to enter lab-meeting mode

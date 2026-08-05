@@ -1,6 +1,11 @@
 ---
 name: cns-bio-pilot
 description: 生信分析全流程技能库（空间转录组、单细胞、bulk 组学 + 绘图 + 论文/PPT 产出）。当用户要做生信分析、处理单细胞或空转数据、画发表级图表、写论文/PPT/汇报、构建生物学故事时触发。触发后读取 SKILL.md 路由到具体子 skill。
+compatibility: Requires Python 3.11+ with omicverse/scanpy/scvelo (conda env 'sc'), squidpy (env 'st'), R 4.3.3 with scop 0.8.9. See compat.yaml for version details.
+license: GPL-3.0
+metadata:
+  version: "22.3"
+  author: Lyao-lab
 ---
 
 # CNS Bio-Pilot — Router

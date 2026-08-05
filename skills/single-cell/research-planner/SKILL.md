@@ -43,18 +43,18 @@ It must always distinguish between:
 
 ## Reference Module Integration
 
-The `references/` directory is not optional background material. It defines the operational rules that must be actively used while running this skill.
+The `references/` directory is not optional background material. It defines the operational rules that must be actively used while running this skill. It is organized as **3 consolidated files, each containing multiple sections**: `study_design.md` (design-phase rules), `workflow_rules.md` (execution-phase rules), and `validation_and_figures.md` (validation + figure rules).
 
 Use the reference modules as follows:
-- `references/study-patterns.md` → use when selecting the dominant single-cell study pattern in **Section B**.
-- `references/workload-configurations.md` → use when generating **Section C** and choosing the primary recommendation in **Section D**.
-- `references/dataset-recommendation-and-disclaimer.md` → use whenever datasets, cohorts, repositories, or public resources are named in **Sections E, G, and H**.
-- `references/analysis-modules.md` → use when selecting the analysis flow in **Sections F and H**.
-- `references/method-library.md` → use when translating modules into concrete methods and tools in **Section F**.
-- `references/validation-evidence-hierarchy.md` → use when designing the validation ladder in **Section I**.
-- `references/figure-deliverable-plan.md` → use when defining figure logic and output package expectations in **Section J**.
-- `references/literature-retrieval-and-citation.md` → use when a literature-support layer is requested or when formal references are provided in **Section K**.
-- `references/workflow-step-template.md` → use to keep the workflow sequence consistent and to enforce the mandatory Dataset Disclaimer in **Section H**.
+- `references/study_design.md` §Study Patterns → use when selecting the dominant single-cell study pattern in **Section B**.
+- `references/study_design.md` §Workload Configurations → use when generating **Section C** and choosing the primary recommendation in **Section D**.
+- `references/study_design.md` §Dataset Recommendation and Disclaimer → use whenever datasets, cohorts, repositories, or public resources are named in **Sections E, G, and H**.
+- `references/workflow_rules.md` §Analysis Modules → use when selecting the analysis flow in **Sections F and H**.
+- `references/study_design.md` §Method Library → use when translating modules into concrete methods and tools in **Section F**.
+- `references/validation_and_figures.md` §Validation Evidence Hierarchy → use when designing the validation ladder in **Section I**.
+- `references/validation_and_figures.md` §Figure and Deliverable Plan → use when defining figure logic and output package expectations in **Section J**.
+- `references/study_design.md` §Literature Retrieval and Citation → use when a literature-support layer is requested or when formal references are provided in **Section K**.
+- `references/workflow_rules.md` §Workflow Step Template → use to keep the workflow sequence consistent and to enforce the mandatory Dataset Disclaimer in **Section H**.
 
 If any output section is generated without using its corresponding reference module, the output should be treated as incomplete.
 
@@ -136,7 +136,7 @@ If the input is underspecified, infer a reasonable default and label assumptions
 
 ### Step 2 — Select the Dominant Study Pattern
 
-Choose the best-fit pattern using `references/study-patterns.md`.
+Choose the best-fit pattern using `references/study_design.md` §Study Patterns.
 
 The dominant pattern must be explicit. If a secondary pattern is useful, label it as a supporting layer rather than blending everything into one vague design.
 
@@ -153,7 +153,7 @@ For each configuration, specify:
 - strengths
 - limitations
 
-Use `references/workload-configurations.md`.
+Use `references/study_design.md` §Workload Configurations.
 
 ### Step 4 — Recommend One Primary Plan
 
@@ -166,7 +166,7 @@ Explain:
 
 ### Step 4.5 — Literature Support Layer (when requested or appropriate)
 
-If the user requests references, or if formal literature support is useful for design justification, apply `references/literature-retrieval-and-citation.md`.
+If the user requests references, or if formal literature support is useful for design justification, apply `references/study_design.md` §Literature Retrieval and Citation.
 
 Rules:
 - never fabricate references
@@ -185,15 +185,15 @@ Before finalizing the plan, ensure:
 
 ### Step 6 — Generate the Workflow
 
-Produce the study workflow using `references/workflow-step-template.md`.
+Produce the study workflow using `references/workflow_rules.md` §Workflow Step Template.
 
 If any dataset, repository, cohort, accession, public resource, or database is mentioned in the workflow, the **Dataset Disclaimer must appear immediately before the workflow steps**.
 
 ### Step 7 — Add Validation, Figures, and Risk Review
 
 Use:
-- `references/validation-evidence-hierarchy.md`
-- `references/figure-deliverable-plan.md`
+- `references/validation_and_figures.md` §Validation Evidence Hierarchy
+- `references/validation_and_figures.md` §Figure and Deliverable Plan
 
 Then end with a self-critical risk review covering:
 - strongest part of the design
@@ -322,8 +322,8 @@ A good output from this skill should:
 ## Prerequisites (where data comes from)
 
 - **Research-direction input** → user provides: disease/phenotype + single-cell interest (mechanism / cell state / biomarker / communication / treatment response), optionally with tissue, platform, public-data-only constraint, wet-lab availability, target workload
-- **No code or data files required** — this is a zero-code study-design methodology (with 9 `references/` modules)
-- **Literature support (optional)** → if the user provides verified citations, include them per `references/literature-retrieval-and-citation.md`; otherwise provide only a search strategy — never fabricate PMIDs/DOIs
+- **No code or data files required** — this is a zero-code study-design methodology (with 3 consolidated `references/` module files)
+- **Literature support (optional)** → if the user provides verified citations, include them per `references/study_design.md` §Literature Retrieval and Citation; otherwise provide only a search strategy — never fabricate PMIDs/DOIs
 
 ## When to leave this skill (where to go)
 

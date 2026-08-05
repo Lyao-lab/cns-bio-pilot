@@ -83,15 +83,15 @@ Why certain content leads, why certain background was cut, why certain open prob
 
 ## Rule modules (load on demand)
 
-| rule file | when to use |
+| rule section | when to use |
 |---|---|
-| `rules/clarification-first-rule.md` | before any long structural output |
-| `rules/meeting-goal-selection-rules.md` | when judging the deck type |
-| `rules/slide-priority-rules.md` | when deciding content proportions |
-| `rules/data-honesty-boundary-rules.md` | to prevent inflating incomplete results |
-| `rules/next-step-structuring-rules.md` | open problem → discussable next step |
-| `rules/logic-reporting-rule.md` | to explain slide-order reasoning |
-| `rules/hard-rules.md` | applied throughout, overrides any polish pressure |
+| `lab_meeting_rules.md` §Clarification First | before any long structural output |
+| `lab_meeting_rules.md` §Meeting Goal Selection | when judging the deck type |
+| `lab_meeting_rules.md` §Slide Priority | when deciding content proportions |
+| `lab_meeting_rules.md` §Data Honesty Boundary | to prevent inflating incomplete results |
+| `lab_meeting_rules.md` §Next Step Structuring | open problem → discussable next step |
+| `lab_meeting_rules.md` §Logic Reporting | to explain slide-order reasoning |
+| `lab_meeting_rules.md` §Hard Rules | applied throughout, overrides any polish pressure |
 
 ---
 
@@ -103,4 +103,4 @@ python scripts/build_deck.py outline_labmeeting.json -o labmeeting.pptx
 python scripts/qa_deck.py labmeeting.pptx   # geometric QA
 ```
 
-**Key difference**: the lab-meeting-mode outline.json should **reduce background slides, add more open-problem / next-step slides, and use "exploratory" wording for incomplete results** (see `data-honesty-boundary-rules.md`).
+**Key difference**: the lab-meeting-mode outline.json should **reduce background slides, add more open-problem / next-step slides, and use "exploratory" wording for incomplete results** (see `lab_meeting_rules.md` §Data Honesty Boundary).

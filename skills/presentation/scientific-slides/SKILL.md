@@ -300,7 +300,7 @@ xelatex beamer_template_conference.tex   # Chinese-safe compile
 |---|---|
 | Content/Design/Timing pitfalls + 10 principles | `references/pitfalls.md` |
 | Full LaTeX Beamer document | `references/beamer_guide.md` |
-| **Lab meeting mode** (group meeting / progress / PI update — 9 steps + A-I output + Hard Rules + 7 rule modules) | `references/lab_meeting/lab_meeting_workflow.md` + `references/lab_meeting/rules/*.md` |
+| **Lab meeting mode** (group meeting / progress / PI update — 9 steps + A-I output + Hard Rules + 7 rule modules) | `references/lab_meeting/lab_meeting_workflow.md` + `references/lab_meeting/lab_meeting_rules.md` |
 | Figure aesthetics (color / font / non-overlap) | top-level `references/figure_guide.md` |
 | Multi-panel composition (layout / shared legend / panel labels) | top-level `references/figure_guide.md` |
 
@@ -346,7 +346,7 @@ The user says "make a group-meeting PPT", "organize a lab meeting", "weekly/mont
 
 ### Workflow
 
-The full 9-step workflow + mandatory output structure (A-I) + Hard Rules live in **`references/lab_meeting/lab_meeting_workflow.md`**. Rule modules load on demand from `references/lab_meeting/rules/*.md` (clarification-first / meeting-goal-selection / slide-priority / data-honesty-boundary / next-step-structuring / logic-reporting / hard-rules).
+The full 9-step workflow + mandatory output structure (A-I) + Hard Rules live in **`references/lab_meeting/lab_meeting_workflow.md`**. Rule modules load on demand from `references/lab_meeting/lab_meeting_rules.md` (sections: Clarification First / Meeting Goal Selection / Slide Priority / Data Honesty Boundary / Next Step Structuring / Logic Reporting / Hard Rules).
 
 ### outline.json differences vs the formal-talk mode
 

@@ -27,9 +27,9 @@ metadata:
 - **Document-type aware critique**: Reviewer feedback adapts to `journal` vs `poster` requirements.
 - **Model-configurable pipeline**: Choose separate LLMs for generation and vision-based review.
 - **Output validation**: Performs final checks (e.g., resolution/accessibility considerations) before saving to `figures/`.
-- Reference guidance:
-  - Best practices: `references/best_practices.md`
-  - Supported diagram categories: `references/diagram_types.md`
+- Reference guidance (inline sections below):
+  - Best practices: see §Best Practices below
+  - Supported diagram categories: see §Supported Diagram Categories below
 
 ## Dependencies
 - Python 3.10+ (recommended)
@@ -100,7 +100,7 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
 - **Natural-language description** → text describing the mechanism/flow/architecture (from `presentation/manuscript-writing` method narrative, or directly from the user)
 - **Optional reference figure** → existing sketch/schematic (to assist generation)
 - **Environment**: `OPENROUTER_API_KEY` (required); Python 3.10+, deps `pillow`/`matplotlib`/`requests`
-- Reference docs: `references/best_practices.md`, `references/diagram_types.md`
+- Reference docs: see §Best Practices and §Supported Diagram Categories below
 - Script entry `scripts/generate_schematic.py`
 
 ## Pre-Output Checklist (core rules in **top-level** `references/meta_methodology.md` + skill-specific)
@@ -108,6 +108,39 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
 - [ ] Core rules passed (fact-based / pseudobulk / search-first / postcheck / checkpoint — see `SKILL.md` Core Rules)
 - [ ] No fake/placeholder data in schematic (pure mechanism, no bars/plots)
 - [ ] OPENROUTER_API_KEY set; quality score ≥8.5/10
+
+## Best Practices
+
+### Design Guidelines
+1.  **Colorblind Safety**: Use palettes that are distinguishable by colorblind individuals (e.g., Viridis, Cividis).
+2.  **Whitespace**: Maintain adequate whitespace to avoid clutter.
+3.  **Typography**: Use sans-serif fonts (Arial, Helvetica) for legibility at small sizes.
+4.  **Consistency**: Ensure arrowheads and line weights are consistent throughout the diagram.
+
+### Journal vs. Poster
+- **Journal**: Focus on high resolution (300+ DPI) and compact layout.
+- **Poster**: Focus on readability from a distance, larger fonts, and bold colors.
+
+## Supported Diagram Categories
+
+### Neural Networks
+- Architecture diagrams (CNN, RNN, Transformer)
+- Layer visualizations
+- Data flow graphs
+
+### Biological Pathways
+- Metabolic pathways
+- Signal transduction
+- Gene regulatory networks
+
+### Circuit Diagrams
+- Electronic schematics
+- Logic gates
+
+### Flowcharts
+- Algorithm steps
+- Decision trees
+- Process workflows
 
 ## When to leave this skill (where to go)
 

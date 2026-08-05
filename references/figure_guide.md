@@ -416,3 +416,68 @@ fig, ax = plt.subplots(figsize=(6, 3))  # 太扁
 # ✅ 正例：
 fig, ax = plt.subplots(figsize=recipe_figsize('umap'))  # (4.5, 4.5) 正方形
 ```
+
+---
+
+## 11. 实战教训（从真实 PPT 迭代中提炼）
+
+> 以下教训来自一次 16-slide 瓣膜发育 PPT 的完整迭代过程（11 张脚本、15 张图、多轮返工）。每条都是真实踩过的坑。
+
+### 11.1 空间散点图（spatial scatter）的 7 个陷阱
+
+| # | 陷阱 | 表现 | 解决 |
+|---|---|---|---|
+| 1 | **niche bins 太少被背景淹没** | 13w 仅 687/41923 bins，niche 散点几乎不可见 | niche 点 s≥12 + 背景减到 ≤30000 subsample + alpha 0.15 |
+| 2 | **细长 niche 的 bbox 计算错误** | niche 19850×9150px，buffer=max(W,H)*0.25=4962 → bbox 太大 | buffer=`min(W,H)*0.15`（用短边，更紧凑） |
+| 3 | **全切片散点 s 太大糊成色块** | 483646 bins × s=1 → 点重叠 | s=0.3-0.5（>20 万 bins）；niche 放大图 s=8-15 |
+| 4 | **convex hull 轮廓遮挡数据** | 在散点上画黑色多边形 → 用户反感 | 不要主动画 hull；如需标 niche 用文字注释或 inset |
+| 5 | **多 panel 统一 colorscale** | 三时点各自 vmax → 不可比 | `vmax = max(三时点 p95)`，共享 |
+| 6 | **scale bar 缺失** | 审稿人一眼扣分 | `add_scale_bar()` 必须有；坐标→μm 换算需平台元数据 |
+| 7 | **24w niche 细长导致 panel "空"** | niche 占 panel 面积 <5% | 放大到 niche bbox（不是全切片）；或改为梯度曲线 |
+
+### 11.2 dotplot 的 4 个陷阱
+
+| # | 陷阱 | 解决 |
+|---|---|---|
+| 1 | **点太大**（s=420 for frac=100%）→ 重叠 | `s = 8 + frac/100 * 100`（max s=108，不是 420） |
+| 2 | **26 类×26 基因糊成一团** | 行/列分组（按 lineage 排序）+ 分隔线 |
+| 3 | **legend 挤压数据区** | finalize_figure 自动移 legend → 预先放好（底部/右侧外置） |
+| 4 | **行名/列名消失** | set_yticklabels 后检查渲染（finalize_figure 可能移位） |
+
+### 11.3 火山图 → 条形图的替代决策
+
+**教训**：火山图在 niche DE 场景经常**丑且不可读**——基因标注重叠、灰点密集、关键基因挤在 FDR 地板。
+
+**替代方案**：**水平条形图**（y=基因，x=logFC，多时点并列）：
+```python
+# 每基因 3 根条（三时点），alpha 渐变
+for ti, tp in enumerate(TPS):
+    alpha = 0.5 + 0.25 * ti  # 13w 浅 → 24w 深
+    ax.barh(y + offset, logFC, alpha=alpha, color=UP if sig else GREY)
+```
+**优势**：三时点直接可比、无标注重叠、灰色标 ns、信息密度更高。
+
+### 11.4 UMAP 双层次注释的陷阱
+
+| 陷阱 | 解决 |
+|---|---|
+| 26 亚型 on-plot labels 互相遮挡 | 只标 n>2000 的主要亚型 + VIC 焦点；其余靠颜色 |
+| labels 被散点挡住 | `zorder=12` + `path_effects=[withStroke(linewidth=3, foreground='white')]` |
+| 同色系深浅区分度差 | 用**不同色相**而非微调深浅（CM 蓝 vs EC 青是完全不同色相） |
+| 外置图例 26 行太挤 | 按大类分组（5 个 header + 子条目），fontsize=5.5 |
+
+### 11.5 颜色编码的纪律
+
+- **不要在散点上画圈/轮廓**——用户普遍反感（除非主动要求）
+- **VIC/焦点色用最饱和**（#E64B35 亮珊瑚），非焦点用同系浅色或灰
+- **三时点对比用 alpha 渐变**（0.5→0.75→1.0），不用完全不同颜色
+- **显著=彩色，ns=灰**（不要给 ns 也上色）
+
+### 11.6 finalize_figure 的自动干预
+
+`finalize_figure(fig)` 会自动移动重叠的 legend——但有时把 legend 移到意外位置导致 panel 被挤压。
+
+**对策**：
+- 画图前预先规划 legend 位置（`bbox_to_anchor` 底部或右外置）
+- 跑完后检查 finalize 的 warning（"Legend moved to outside-right"）
+- 如果 Panel B 因为 legend 移位变空 → 去掉 Panel B（信息冗余时）或把 legend 放 Panel A 内

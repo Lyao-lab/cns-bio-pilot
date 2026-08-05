@@ -99,16 +99,16 @@ def _add_bullets(s, left, top, width, height, bullets, size, color, font_name=No
 # ---- 安全区域（防重叠）----
 SLIDE_W, SLIDE_H = 13.333, 7.5
 SAFE_GAP = 0.3  # inch, 图片与文字之间的最小安全间距
-TITLE_TOP, TITLE_H = 0.3, 0.7   # 标题区
-CONTENT_TOP = 1.2                # 内容区起点
-CAPTION_TOP = 6.7                # 图注区起点
-CONTENT_H = CAPTION_TOP - CONTENT_TOP - 0.2  # 可用内容高度
+TITLE_TOP, TITLE_H = 0.25, 0.55   # 标题区（压缩，给图更多空间）
+CONTENT_TOP = 0.95                # 内容区起点（上移）
+CAPTION_TOP = 6.85                # 图注区起点（下移）
+CONTENT_H = CAPTION_TOP - CONTENT_TOP - 0.1  # 可用内容高度 = 5.80
 
 def _add_title(s, title, preset):
-    """统一标题放置：顶部 0.3-1.0inch，绝不与内容区重叠"""
+    """统一标题放置：顶部，绝不与内容区重叠"""
     if title:
-        _add_text(s, Inches(0.5), Inches(TITLE_TOP), Inches(SLIDE_W-1), Inches(TITLE_H),
-                  title, 28, preset["title"], bold=True, font_name=preset["font_name"])
+        _add_text(s, Inches(0.3), Inches(TITLE_TOP), Inches(SLIDE_W-0.6), Inches(TITLE_H),
+                  title, 20, preset["title"], bold=True, font_name=preset["font_name"])
 
 def _add_caption(s, caption, preset, left=0.5, width=None):
     """统一图注放置：底部 6.7-7.2inch"""
@@ -144,11 +144,30 @@ def _figure_hero(s, d, preset):
     _add_title(s, d.get("title",""), preset)
     img = d.get("image")
     if img and Path(img).exists():
-        # 全宽：0.5 → SLIDE_W-0.5，但限制最大高度 = CONTENT_H
+        from PIL import Image as _PIL
+        try:
+            with _PIL.open(img) as _im:
+                ow, oh = _im.size
+            aspect = ow / oh
+        except Exception:
+            aspect = 1.8
         max_w = SLIDE_W - 1.0
-        _place_image(s, img, left=0.5, top=CONTENT_TOP, max_w=max_w, max_h=CONTENT_H)
-    _add_caption(s, d.get("caption"), preset)
-    # hero 模式：文字放到图注下方（如果有的话）——不与图重叠
+        # wide images (aspect >= 1.8) keep caption room; narrower images expand toward bottom
+        if aspect >= 1.8:
+            max_h = CONTENT_H
+        else:
+            max_h = SLIDE_H - CONTENT_TOP - 0.25   # expand to near-bottom (skip caption for non-wide)
+        pic = s.shapes.add_picture(img, Inches(0.5), Inches(CONTENT_TOP))
+        w_in = pic.width / 914400; h_in = pic.height / 914400
+        ratio = min(max_w / w_in, max_h / h_in)
+        pic.width = int(pic.width * ratio)
+        pic.height = int(pic.height * ratio)
+        # center horizontally; vertically center in available space
+        pic.left = int((Inches(SLIDE_W) - pic.width) / 2)
+        avail_h = max_h
+        pic.top = int(Inches(CONTENT_TOP + (avail_h - h_in * ratio) / 2))
+    if d.get("caption"):
+        _add_caption(s, d.get("caption"), preset)
     # 如果有 bullets，建议用下一张 slide 而不是塞进来
 
 # ---- 新布局：figure-dual（左右双图对比）----

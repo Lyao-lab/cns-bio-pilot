@@ -83,6 +83,32 @@ This skill generates research presentation slides with **python-pptx** (default)
 
 > **图型纪律**：禁止连续 3+ 张相同图型；不要大量用 bar chart；circle plot 信息密度低不推荐。
 
+### 实战教训：PPT 组织的 8 个高频坑（从真实迭代提炼）
+
+> 以下教训来自一次 16-slide 瓣膜发育 PPT 的完整迭代（11 脚本、15 图、多轮返工）。
+
+| # | 坑 | 表现 | 解决 |
+|---|---|---|---|
+| 1 | **背景信息放太后** | "心脏组成动态"放在 S11，读者已忘 atlas 背景 | 背景（组成/QC）紧跟 atlas（S2→S3），不拖到最后 |
+| 2 | **两页讲同一件事** | S4 空间架构 + S5 基因梯度 = 重复空间差异 | 合并成一页；或一页定量一页定性（不重叠） |
+| 3 | **机制页与架构页脱节** | ECM 来源（S6）与空间架构（S5）隔了几页 | 机制紧跟发现（架构→来源解释→通讯） |
+| 4 | **缺 model 页** | 从发现直接跳结论，无整合模型 | Talk Arc 必须有 model 页（三轴整合图/总结） |
+| 5 | **标题字号太大换行** | 28pt 标题在 13.3" 宽 slide 上换两行 | 标题 20pt + 全宽 12.7" + 确保一行 |
+| 6 | **figure-hero 覆盖率低** | 图只占 slide 40%（大量留白） | 图宽高比匹配 slide（2:1）；非宽图用 `max_h` 突破 |
+| 7 | **硬编码 spec 值** | 图上标 ρ=-0.877（旧值），实际算出 -0.80 | 永远用 computed 值，print 对照 |
+| 8 | **Panel B 空/被挤压** | Panel A legend 移位 → Panel B 变空 | 去掉冗余 Panel B（如果 Panel A 已含信息） |
+
+### 空间转录组 PPT 的特殊纪律
+
+空间转录组论文的 PPT 比纯 scRNA 更容易出问题，额外纪律：
+
+1. **必须有标准反卷积空间图**：全切片 × 多细胞类型 × 三时点（cell2location proportion），不只是 niche bbox
+2. **必须有无监督域图**：BANKSY/BayesSpace domain（不依赖注释），与反卷积互验证
+3. **niche bbox 放大 + 全切片对比**：两张都要——bbox 看细节，全切片看 context
+4. **梯度必须连续曲线 + 离散热图**：core/ring 热图（离散）+ 距离-表达曲线（连续）互验证
+5. **COMMOT/通讯图必须三时点**：方向变化是跨时点的核心发现，单时点看不到
+6. **不要在散点上画圈**（convex hull/轮廓）——用户反感；用文字注释或 inset 代替
+
 ## Workflow: outline.json source-first (python-pptx)
 
 ### Step 1: Write outline.json (the single source)

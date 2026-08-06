@@ -203,9 +203,26 @@ Then end with a self-critical risk review covering:
 - likely reviewer criticisms
 - fallback plan if the key signal collapses after validation
 
----
+### Step 8 — Output Hypothesis Ledger (mandatory — Phase R depends on this)
 
-## Phase R — Review & Re-plan (the result-driven iteration loop)
+Following meta §8a, output a **hypothesis ledger** as part of the initial plan. This is the object that Phase R R1/R3/R4 will update each iteration — without it, the review loop has nothing to consume.
+
+```
+H1: [main biological hypothesis]
+    confidence: high | med | low
+    basis: [prior literature / pilot data / biological reasoning]
+    falsification criterion: [what result would refute it]
+    status: pending   ← updated to supported/refuted/inconclusive in Phase R
+
+H2: [secondary hypothesis]
+    ...
+
+Unexpected-finding slot: [reserved — post-hoc findings from discovery_miner enter here in Phase R with basis: post-hoc, exploratory]
+```
+
+This ledger is Section L of the Mandatory Output Structure below.
+
+---
 
 > **This is the most important phase.** Steps 1-7 produce an *initial* plan — but biology is evidence-driven, not spec-driven. The real research happens in the loop: run a batch → look at results → discuss with the researcher → revise → run the next batch. This is NOT optional (Core Rule 8). Do not treat the initial plan as a fixed spec to execute linearly.
 
@@ -217,7 +234,7 @@ After completing each analysis batch (e.g., after QC+clustering+annotation; afte
 
 #### R1. Result Interpretation (what does the data say?)
 
-Read `references/discovery_miner.md` and scan the batch's outputs:
+Read top-level `references/discovery_miner.md` and scan the batch's outputs:
 - For each hypothesis in the ledger (meta §8a): is it now `supported` / `refuted` / `inconclusive`? Update its status.
 - What **unexpected** signals appeared? (a cell state not in the plan, a pathway that shouldn't be there, a spatial pattern) — log these as candidate discoveries per discovery_miner §1.
 - Run the false-positive checklist (discovery_miner §3) on any new finding before believing it.

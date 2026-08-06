@@ -135,7 +135,7 @@ LLM 最常犯的错误：直接从 Layer 1 跳到 Layer 3（"CXCL12 上调 → C
 
 ### Step 4: 组织 Figure 叙事（Which panel tells what?）
 
-把因果链映射到 Figure/Panel：
+把因果链映射到 Figure/Panel。每种分析输出该用什么图型 → 查 `figure_guide.md` §0.1 数据→图型决策表（DE→volcano/分组散点、比例→带重复点的柱图、CCC→bubble/chord 等，含何时换备选）。
 
 **CNS 论文常见的 Figure 组织模式（非强制模板，仅参考）：**
 

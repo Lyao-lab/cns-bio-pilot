@@ -44,7 +44,7 @@ description: 论文写作（Methods / Results / Figure Legends 三种模式）�
 **规则**：
 - 匹配报告指南：CONSORT（RCT）/ STROBE（观察）/ PRISMA（meta）/ ARRIVE（动物）/ TRIPOD（预测模型）
 - 每个工具写：`Tool Name (version X.Y.Z; reference)`
-- 参数写具体值（`mt_max=20, nFeature_min=300`），不写"standard parameters"
+- 参数写具体值（`mt_max=20, nFeature_min=300`），不写"standard parameters"——参数来源查 `analysis_log.md`（meta §8b provenance contract）
 - 统计段必含：检验方法 + 校正方法 + 阈值 + n（biological vs technical）
 - 代码可用性：GitHub repo / Zenodo DOI
 

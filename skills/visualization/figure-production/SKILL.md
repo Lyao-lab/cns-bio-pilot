@@ -78,7 +78,7 @@ Step N: 所有 panel 验证通过 → 拼成 composite
 
 1. **这张 panel 论证什么？**（一句话 take-home）
 2. **上一张的结果改变了我的预期吗？**（如果有，调整这张的设计）
-3. **用什么图型最能讲清楚？**（查 `plotting_reference.md` §0 速查卡）
+3. **用什么图型最能讲清楚？**（不知道该用什么图 → 查 `figure_guide.md` §0.1 数据→图型决策表；知道图型后查 `plotting_reference.md` §0 速查卡找代码）
 
 ### 出图（标准流程，代码查 reference）
 
@@ -142,6 +142,8 @@ python skills/visualization/figure-production/scripts/main.py \
 ```
 
 **拼图只做排版**（label 位置/间距/DPI），不改内容。发现某张比例不对 → 回去重画那张。
+
+> **出 PPT/Beamer 用图**：`build_deck.py` 用 PIL 嵌图，只接受 PNG（不能嵌 PDF）。出 PPT 图时把 `save_panel` 的格式切为 PNG：`save_panel(fig, name, fmt='png')`，或拼图时 `--output figure1.png`。论文正文图保持 PDF（矢量），PPT/Beamer 用 PNG。
 
 ---
 

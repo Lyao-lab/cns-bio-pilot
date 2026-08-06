@@ -8,6 +8,7 @@ build_deck.py — outline.json → .pptx 渲染器（python-pptx，无 AI API �
     python build_deck.py outline.json -o out.pptx --preset cns-bio-light
 
 吸收 siril9/presentation-skill 的 source-first 范式 + davila7 的 DESIGN 常量。
+图片支持 PDF（自动转 300dpi PNG 嵌入）和 PNG/JPG。PDF 转换需 pymupdf (pip install pymupdf)。
 """
 import argparse, json, sys
 from pathlib import Path
@@ -117,8 +118,37 @@ def _add_caption(s, caption, preset, left=0.5, width=None):
         _add_text(s, Inches(left), Inches(CAPTION_TOP), Inches(w), Inches(0.5),
                   caption, 10, preset["caption"], italic=True, font_name=preset["font_name"])
 
+def _ensure_png(path):
+    """PDF → PNG 自动转换（python-pptx/PIL 不能直接处理 PDF）。
+
+    输入是 PDF 路径时，用 pymupdf (fitz) 转成 300dpi PNG 到临时文件，返回 PNG 路径。
+    输入是 PNG/JPG 时原样返回。
+    需要: pip install pymupdf（仅当用 PDF 图时）。
+    """
+    p = str(path)
+    if not p.lower().endswith('.pdf'):
+        return p
+    # PDF → PNG (300dpi)
+    try:
+        import fitz  # pymupdf
+    except ImportError:
+        print(f"WARNING: {p} 是 PDF，需要 pymupdf 来转换。运行: pip install pymupdf", file=sys.stderr)
+        print(f"  或者先把图转成 PNG 再传入。", file=sys.stderr)
+        return p  # 返回原路径，add_picture 会失败并报清晰错误
+    png_path = p.rsplit('.', 1)[0] + '_pptx.png'
+    doc = fitz.open(p)
+    page = doc[0]  # 第一页
+    # 300dpi: default 72dpi * zoom; 300/72 ≈ 4.17
+    zoom = 300 / 72
+    mat = fitz.Matrix(zoom, zoom)
+    pix = page.get_pixmap(matrix=mat)
+    pix.save(png_path)
+    doc.close()
+    return png_path
+
 def _place_image(s, img_path, left, top, max_w, max_h):
-    """放置图片并自动缩放到 max_w × max_h 内（保持宽高比）"""
+    """放置图片并自动缩放到 max_w × max_h 内（保持宽高比）。PDF 自动转 PNG。"""
+    img_path = _ensure_png(img_path)
     pic = s.shapes.add_picture(img_path, Inches(left), Inches(top))
     w_in = pic.width / 914400  # EMU → inch
     h_in = pic.height / 914400
@@ -144,6 +174,7 @@ def _figure_hero(s, d, preset):
     _add_title(s, d.get("title",""), preset)
     img = d.get("image")
     if img and Path(img).exists():
+        img = _ensure_png(img)
         from PIL import Image as _PIL
         try:
             with _PIL.open(img) as _im:

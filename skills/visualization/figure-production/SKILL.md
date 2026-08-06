@@ -143,7 +143,7 @@ python skills/visualization/figure-production/scripts/main.py \
 
 **拼图只做排版**（label 位置/间距/DPI），不改内容。发现某张比例不对 → 回去重画那张。
 
-> **出 PPT/Beamer 用图**：`build_deck.py` 用 PIL 嵌图，只接受 PNG（不能嵌 PDF）。出 PPT 图时把 `save_panel` 的格式切为 PNG：`save_panel(fig, name, fmt='png')`，或拼图时 `--output figure1.png`。论文正文图保持 PDF（矢量），PPT/Beamer 用 PNG。
+> **每张图保持 PDF 格式**（论文正文 + 拼大图都用 PDF 矢量）。PPT 嵌图时 `build_deck.py` 会自动把 PDF 转成 300dpi PNG（需 `pip install pymupdf`），你不需要手动切格式——PDF 是唯一源文件，PPT 只是消费端。
 
 ---
 

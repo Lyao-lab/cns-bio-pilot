@@ -29,7 +29,7 @@ This skill generates research presentation slides with **python-pptx** (default)
 ## When to Use This Skill
 
 - Conference talk (5-20 min) / seminar (45-60 min) / defense / grant pitch / journal club
-- Need to embed real analysis figures (PNGs from `visualization/figure-production`)
+- Need to embed real analysis figures (PDF or PNG from `visualization/figure-production`; PDF auto-converted to 300dpi PNG by `build_deck.py`, requires `pip install pymupdf`)
 - Need an editable .pptx (peers/advisor will edit text) or a compiled PDF (Beamer)
 
 ## Talk Arc（汇报叙事弧模板）

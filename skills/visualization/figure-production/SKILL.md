@@ -156,7 +156,7 @@ python skills/visualization/figure-production/scripts/main.py \
 
 ## 工具
 
-- `scripts/cns_style.py` — 一键美学（26 个函数：set_cns_style_journal / polish_axes / clean_umap_axes / finalize_figure / recipe_figsize / cohort_params / assert_anndata_keys / save_panel / ForbiddenCityBridge / palette_from_names / ...）
+- `scripts/cns_style.py` — 一键美学 + smart_plot 统一入口（26 辅助函数 + 18 个 plot_xxx：plot_umap / plot_volcano / plot_dotplot / ... 自动 ov/mpl 降级）
 - `references/plotting_reference.md` — 代码速查（唯一代码参考）
 - `references/figure_guide.md` — 视觉规格
 - `scripts/main.py`（本 skill 下）— 拼图脚本（函数式 assemble() API，示例见 scripts/example.py）

@@ -29,6 +29,8 @@ np.random.seed(42); torch.manual_seed(42)   # provenance: fixed seed (meta §8b)
 # ov.pp steps mostly use numpy internally → covered; scVI needs seed=42 passed at train time
 ```
 
+> **Provenance**: Create `analysis_log.md` in the project directory at init (meta §8b). After each major step (QC/cluster/annotation/DE/integration), append the key parameters and choices (thresholds, resolution, method, seed). This file is consumed by Phase R (decision records) and manuscript-writing (Methods parameters).
+
 > **Dependency:** `ov.single.*` (find_markers, annotation, etc.) requires `ipywidgets`. If you hit `ModuleNotFoundError: No module named 'ipywidgets'`, run `pip install ipywidgets` first. Without a GPU, ov auto-falls back to CPU mode (works, but scVI/scGPT finetune is slow).
 
 ## 1. Load data (keep `layers['counts']`)

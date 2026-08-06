@@ -1263,6 +1263,8 @@ def plot_volcano(de, pval_name='padj', fc_name='log2FC', ax=None, figsize=None,
             fig_ov.set_size_inches(*recipe_figsize('volcano'))
             ax = fig_ov.axes[0] if fig_ov.axes else ax
             fig = fig_ov
+            if save:                          # 修复：ov 路径也要走 save_panel
+                save_panel(fig, save)
             return fig, ax  # ov 自建 figure，直接返回
         except Exception as e:
             print(f"[smart_plot] ov.pl.volcano failed ({e}), mpl fallback")
@@ -1579,12 +1581,22 @@ def _spatial_mpl(adata_sp, color, ax, spot_alpha):
 # 20.7 plot_bar — 比例柱（ov 无，直接 mpl）
 # ============================================================
 
-def plot_bar(props, ax=None, figsize=None, save=None, **kwargs):
-    """Bar (proportions)：mpl（ov 无），带 95% CI error bars + per-sample dots。"""
+def plot_bar(props, ax=None, figsize=None, save=None, groupby=None, celltype_col='celltype',
+             **kwargs):
+    """Bar (proportions)：mpl（ov 无），带 95% CI error bars + per-sample dots。
+
+    可直接传 adata（AnnData）+ groupby 自动算比例，或传已算好的 props DataFrame。
+    """
     import pandas as pd
-    if isinstance(props, pd.DataFrame) and 'groupby' in kwargs:
-        # compute from adata
-        pass  # props is already computed
+    # 如传 AnnData + groupby，自动算比例
+    if hasattr(props, 'obs') and groupby is not None:
+        adata = props
+        props = (adata.obs.groupby(['sample' if 'sample' in adata.obs.columns else groupby,
+                                     celltype_col])
+                 .size().unstack(fill_value=0)
+                 .apply(lambda r: r / r.sum(), axis=1))
+    elif hasattr(props, 'obs'):
+        raise ValueError("plot_bar: AnnData 需同时传 groupby 参数")
     n = len(props.columns)
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or recipe_figsize('bar', n_x=n))

@@ -31,7 +31,7 @@ SKILL.md (router)
 │   ├── story_builder.md (results → biological narrative)
 │   └── discovery_miner.md (analysis → candidate discoveries)
 ├── scripts/
-│   ├── cns_style.py (one-shot aesthetics: 26 functions incl. save_panel/assert_anndata_keys/cohort_params)
+│   ├── cns_style.py (one-shot aesthetics + smart_plot: 26 helpers + 18 plot_xxx entry points)
 │   ├── api_check.py (API verification + --diff mode)
 │   ├── postcheck.py (scientific rigor auto-check)
 │   └── scop_api_check.R (scop API verification)

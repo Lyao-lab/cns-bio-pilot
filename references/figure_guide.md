@@ -43,9 +43,9 @@
 | **严谨注释证据**（审稿级） | genes×cells heatmap（带类型/样本/condition 注释条） | 细胞太多→按类均值 heatmap | ridge plot | §2.5 |
 | **比例变化（有重复）** | 分组柱/点图（每点=一样本）+ 统计检验 | 条件>3→heatmap（celltype×condition） | 箱线图；Milo beeswarm（无预定义 cluster） | §2.7 |
 | **比例变化（无重复）** | 堆叠柱（100%归一化） | **只能放 supplement**，正文不可做条件比较 | — | §3.5 |
-| **局部丰度变化（无预定义cluster）** | Milo beeswarm（logFC 映射 KNN 图节点） | 需配类型/空间注释才可读 | DA neighborhood heatmap | — |
+| **局部丰度变化（无预定义cluster）** | Milo beeswarm（logFC 映射 KNN 图节点） | 需配类型/空间注释才可读 | DA neighborhood heatmap | §3.8 |
 | **DE 单一对比** | volcano（pseudobulk 前提！） | per-cell Wilcoxon 做的 DE **禁止**画 volcano | MA plot | §2.2 |
-| **DE 多时点/多条件** | 分组散点（x=组别，y=logFC，每点=一基因） | volcano 无法容纳>1 个对比维度 | logFC×time heatmap | §11.3 |
+| **DE 多时点/多条件** | 分组散点（x=组别，y=logFC，每点=一基因） | volcano 无法容纳>1 个对比维度 | logFC×time heatmap | §3.6 |
 | **DE 基因模块/模式** | heatmap（行=基因，列=样本/伪群，带注释条） | — | — | §2.5 |
 | **候选基因验证** | violin/ridge（按类型+condition 分面） | 把 DE 结论落回单细胞层面 | feature plot | §2.4 |
 | **轨迹总览** | UMAP 按 pseudotime 着色 | **禁止用 UMAP 形状论证轨迹方向** | 按 branch 着色 | §2.1 |
@@ -53,14 +53,14 @@
 | **轨迹基因动态证据** | gene-along-pseudotime 曲线（带 CI/平滑） | 轨迹论文的"证据图"永远是这个，不是 UMAP | 分 bin heatmap | §3.3 |
 | **CCC 强度+显著性** | bubble/dot plot（LR对×细胞类型对） | 信息密度最高的标准形式 | LR heatmap | §2.9 |
 | **CCC 方向性叙事** | chord/circos（≤8 类型） | chord 丢 LR 细节，只适合"谁给谁收信号" | 聚合网络图 | §3.2 |
-| **CCC 信号角色模式** | outgoing-incoming pattern heatmap | 展示 sender/receiver/mediator 角色 | — | — |
+| **CCC 信号角色模式** | outgoing-incoming pattern heatmap | 展示 sender/receiver/mediator 角色 | — | §3.9 |
 | **空间单基因表达** | feature plot（spot/细胞着色） | 成像平台用单分子点渲染 | 阈值二值图（低表达基因） | §2.6 |
 | **空间+形态学** | H&E/IF 底图 overlay | 形态学结论必须 overlay 或并排 | 相邻并排面板 | §2.6 |
 | **空间多基因共表达** | RGB 合成图（≤3-4 基因） | 基因>4 换面板网格 | 共表达散点+空间 mask | — |
 | **空间 niche/domain** | 组织 categorical 着色（边界清晰） | **必须配定量面板**："在哪里"+"差多少"成对出现 | domain 边界描线 | §2.6 |
 | **空间 niche 定量** | 每 niche 细胞密度/组成/签名 score（箱线+点） | 着色图负责"在哪里"，此图负责"差多少" | domain×celltype 富集 heatmap | §2.7 |
 | **空间去卷积** | 每关键类型一张比例空间散点图 | 类型>6 时 per-spot pie 不可读 | per-spot 堆叠（≤5-6 类型） | §2.6 |
-| **空间 CCC** | 空间箭头/向量场 + 配受体相邻面板 | 空转 CCC 最低证据=共定位；chord 在空转退潮 | 通讯分-距离曲线 | — |
+| **空间 CCC** | 空间箭头/向量场 + 配受体相邻面板 | 空转 CCC 最低证据=共定位；chord 在空转退潮 | 通讯分-距离曲线 | §3.7 |
 | **scRNA+空转联合** | 三件套：scRNA UMAP + 同色系空间投影 + mapping score 图 | 只展示投影结果不做验证=审稿拒点 | 基因级验证散点 | §2.1+§2.6 |
 | **TF/regulon 活性** | TF×cluster 活性 heatmap | 定位→UMAP 着色；定量比较→violin | 二值化 regulon heatmap | §2.5 |
 
@@ -389,5 +389,5 @@ polish_axes(ax); finalize_figure(fig)
 
 - 代码模板 → `plotting_reference.md`（本文件所有 §5.X / §9 的代码实现都在那里）
 - 外部 omicverse-skills 参考 → `omicverse_skills_examples.md`
-- cns_style.py 函数 → 见该文件 docstring（26 个函数，含 assert_anndata_keys / cohort_params / ForbiddenCityBridge+palette_from_names / save_panel）
+- cns_style.py 函数 → 见该文件 docstring（26 个辅助函数 + 18 个 plot_xxx 统一入口，含 save_panel / assert_anndata_keys / cohort_params / plot_umap / plot_volcano / ...）
 - 流程（先定框架再迭代） → `skills/visualization/figure-production/SKILL.md`

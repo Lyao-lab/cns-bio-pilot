@@ -17,7 +17,7 @@
 | Spatial | `plot_spatial(adata_sp, color=..., save=...)` | scale bar 必须有；colorbar 横置 |
 | Bar（比例） | `plot_bar(props, save=...)`（或 adata+groupby） | Y 从 0；95% CI；per-sample dots |
 | 富集条形 | `plot_enrichment(enr, save=..., top_n=15)` | barh 按 -log10(FDR) 降序；条右标 gene count |
-| L-R Bubble | `plot_lr_bubble(x_idx, y_idx, sizes, mean_expr, pair_labels, pathway_labels, save=...)` | size=-log10(p)；color=mean expr |
+| L-R Bubble | `plot_lr_bubble(pair_labels, pathway_labels, sizes, mean_expr, save=...)` | size=-log10(p)；color=mean expr；x_idx/y_idx 可选 |
 | Feature 矩阵 | `plot_feature_matrix(adata, genes, save=..., ncols=3)` | 共享 vmin/vmax=99th pct |
 | PAGA | `plot_paga(adata, save=..., threshold=0.05)` | 前置 sc.tl.paga；threshold 滤噪声 |
 | Chord / CCC | `plot_chord(weight_matrix, save=...)` | ≤8 cell types；lw∝weight |

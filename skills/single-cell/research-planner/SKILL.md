@@ -220,7 +220,7 @@ H2: [secondary hypothesis]
 Unexpected-finding slot: [reserved — post-hoc findings from discovery_miner enter here in Phase R with basis: post-hoc, exploratory]
 ```
 
-This ledger is Section L of the Mandatory Output Structure below.
+This ledger is Section M of the Mandatory Output Structure below.
 
 ---
 
@@ -373,6 +373,9 @@ Include:
 - easiest-to-overinterpret result
 - likely reviewer criticisms
 - fallback plan
+
+### M. Hypothesis Ledger
+The pre-registered hypothesis list from Step 8 (each H with confidence/basis/falsification criterion/status=pending). This is the living document that Phase R updates each iteration.
 
 ---
 

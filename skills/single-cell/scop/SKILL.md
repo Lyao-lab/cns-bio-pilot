@@ -10,6 +10,8 @@ description: 用 scop R 包做单细胞/空转全流程（基于 Seurat，133 ve
 - Downstream analysis of measured Perturb-seq data → `single-cell/perturbation`
 - moscot / CellOracle / SpatialGlue / MENDER / BINARY / GraphST / COMMOT / Baysor / bin2cell / cellpose — **NOT wrapped in scop 0.8.9**, use standalone packages (see `references/run_verbs_reference.md` Capability gaps table)
 
+> **Iteration reminder (Core Rule 8)**: This pipeline is run in batches. After each major step batch (e.g., QC+cluster+annotation; or DE+enrichment), return to `research-planner` Phase R to review results with the researcher before the next batch. Do not auto-run end-to-end.
+
 # scop — Single-Cell Omics Analysis Pipeline (R)
 
 `scop` is an R package ([mengxu98/scop](https://github.com/mengxu98/scop), **v0.8.9** verified 2026-07-26, GPL-3) providing a unified pipeline for single-cell + spatial omics. It wraps **133 community tools** under consistent `Run*` verbs on the **Seurat** object (314 total exports), plus a one-call `standard_scop()` pipeline. Use this when the user prefers R/Seurat.
@@ -105,6 +107,7 @@ srt <- standard_scop(
 
 ## When to leave this skill (where to go)
 
+- After each analysis batch — **before the next batch** → `single-cell/research-planner` **Phase R** (Review & Re-plan, Core Rule 8): interpret results, discuss with researcher, revise plan
 - Python/AnnData-native large-scale analysis (>1M cells) → `single-cell/omicverse-pipeline` (AnnDataOOM backend)
 - Python-native spatial workflows (Visium HD bin2cell, cellpose segmentation, STAGATE/SpaceFlow/GASTON) → `spatial/multiomics` / `spatial/omicverse-spatial` (scop wraps BANKSY/BayesSpace/Giotto in R, but Python-native platforms need omicverse)
 - Spatial proteomics (CODEX/IMC) → `spatial/proteomics`

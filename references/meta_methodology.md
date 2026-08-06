@@ -122,9 +122,9 @@
 | **After enrichment** | Gene-set overlap is not "the entire gene list"; no anti-biological pathways top-ranked (e.g., apoptosis pathway top in a proliferation analysis) | Same 200 genes appear in every pathway; ribosomal/mitochondrial terms dominate |
 | **After CCC** | Known ligand-receptor direction correct (ligand in sender, receptor in receiver); not single-method-only (see discovery_miner §3) | Ligand and receptor both expressed in the same side; CCC score driven by one rare cell pair |
 | **After trajectory / pseudotime** | Root cell expresses known root marker; trajectory direction matches known biology or independent velocity | Root cell has no biological justification; pseudotime contradicts known developmental order |
-| **After each analysis batch** (before next batch) | **Discussion checkpoint passed**: results interpreted, hypothesis ledger updated, decision points surfaced to researcher, researcher responded | Proceeding to next batch without reviewing results or getting researcher input on direction (Core Rule 8 — biology is iterative, not linear) |
+| **After each analysis batch** (before next batch) | **Discussion checkpoint passed**: results interpreted, hypothesis ledger (§8a) updated, decision points surfaced to researcher, researcher responded | Proceeding to next batch without reviewing results or getting researcher input on direction (Core Rule 8 — biology is iterative, not linear) |
 
-> This check is **per-step**, not just at the end. meta_methodology §1-§6 are principles; §7 is the **operational gate** that enforces them mid-pipeline. The last row (discussion checkpoint) is the **batch-level gate** — it prevents the pipeline from auto-running end-to-end without the result-driven iteration loop that real biological research requires.
+> This check is **per-step**, not just at the end. meta_methodology §1-§6 are principles; §7 is the **operational gate** that enforces them mid-pipeline. The last row (discussion checkpoint) is the **batch-level gate** — procedure owned by `research-planner` Phase R; this row is just the gate reminder.
 
 ---
 
@@ -153,6 +153,7 @@ H2: [secondary hypothesis]
 - `confidence` is calibrated against the strength of the basis, not the desirability of the hypothesis
 - After analysis, **fill in `status`** for each: `supported` (data + significance + biology coherent) / `refuted` (data contradicts) / `inconclusive` (insufficient evidence)
 - Conclusions not in the ledger = post-hoc / exploratory; label them as such (see 8c)
+- **Unexpected findings** (from discovery_miner §1 scanning) enter the ledger as new H entries with `basis: post-hoc, exploratory` — they did not start as pre-registered hypotheses and must not be framed as if they did
 
 ### 8b. Provenance Contract
 

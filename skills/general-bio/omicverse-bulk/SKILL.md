@@ -15,6 +15,8 @@ description: Bulk RNA-seq / 表达矩阵全流程（差异表达→富集→WGCN
 
 `pip install omicverse` (V2). Fully R-free.
 
+> **Iteration reminder (Core Rule 8)**: This pipeline is run in batches. After each major step batch (e.g., QC+cluster+annotation; or DE+enrichment), return to `research-planner` Phase R to review results with the researcher before the next batch. Do not auto-run end-to-end.
+
 ## 0. Initialization
 
 ```python
@@ -140,6 +142,7 @@ ov.pl.dotplot(adata, var_names=...)    # gene-condition dot plot
 
 ## When to leave this skill (where to go)
 
+- After each analysis batch — **before the next batch** → `single-cell/research-planner` **Phase R** (Review & Re-plan, Core Rule 8): interpret results, discuss with researcher, revise plan
 - DEG/enrichment result visualization → `visualization/figure-production` (`ov.pl.volcano` / `ov.pl.complexheatmap` / `ov.pl.dotplot`)
 - Compose publication-grade figure → `visualization/figure-production`
 - Write Methods describing the bulk workflow → `presentation/manuscript-writing`

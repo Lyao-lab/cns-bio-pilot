@@ -10,7 +10,7 @@ metadata:
 
 # CNS Bio-Pilot — Router
 
-Read this file → pick ONE sub-skill → read that sub-skill's SKILL.md → execute. Never load multiple sub-skills at once.
+Read this file → pick ONE sub-skill → read that sub-skill's SKILL.md → execute (honoring Core Rule 8 batch checkpoints — do not auto-run a pipeline end-to-end). Never load multiple sub-skills at once.
 
 ## Routing Table
 
@@ -48,11 +48,13 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 1. **Fact-based; ask when unsure; never fabricate.** Every number/dataset/accession/API must have a source. Missing info → `[AUTHOR TO SPECIFY]`.
 2. **Pseudobulk for single-cell DE.** Per-cell Wilcoxon inflates false positives. Aggregate by sample×celltype → DESeq2/edgeR.
 3. **Search before implementing.** omicverse/scop wrapper → standalone package → R/Bioconductor → adapt → from-scratch (last resort). GEO → GEOparse.
-4. **Postcheck is mandatory.** After any quantitative analysis (DE/deconvolution/CCC/composition), run `python scripts/postcheck.py`. FAIL must be resolved before proceeding.
+4. **Postcheck is mandatory** *(automated, per-analysis)*. After any quantitative analysis (DE/deconvolution/CCC/composition), run `python scripts/postcheck.py`. FAIL must be resolved before proceeding.
 5. **Save checkpoints.** After each major step (QC/cluster/annotation/DE), save `adata.write_h5ad('checkpoints/XX_step.h5ad')`. Upstream changes → re-run from last valid checkpoint.
-6. **Runtime API self-adaptation.** Do NOT trust hardcoded version numbers or assume API signatures. Before calling any ov.*/pt.*/sc.* function for the first time, verify with `inspect.signature(func)` — parameter names may differ from documentation or training data. If a function signature doesn't match expectations, adapt the call rather than failing. Run `python scripts/api_check.py --diff` after any package upgrade to detect breaking changes.
-7. **Analysis discipline loop.** Every analysis follows meta_methodology §7 (step-gate sanity checks after each step) and §8 (hypothesis ledger + provenance contract + conclusion grading). This is not optional — the planner-verifier loop is the proven-optimal pattern for bioinformatics agents (K-Dense Analyst outperforms single-model by 6 points on BixBench precisely via per-step verification).
-8. **Result-driven iteration — biology is NOT software engineering.** Do NOT plan the entire analysis upfront and execute it linearly to a deliverable. Biology is evidence-driven: you run a batch of analysis → **look at the results** → **discuss with the researcher what they mean and which direction to pursue** → revise the plan → run the next batch → repeat. This loop (plan → execute → review → discuss → re-plan) continues until the hypothesis ledger (§8a) converges and a coherent story emerges. **Mandatory discussion checkpoints**: after each analysis batch, BEFORE proceeding to the next, surface the key decisions that need human judgment (cell-type naming, which signal to chase, whether a direction is worth pursuing) and pause for the researcher's input. Never auto-run an entire pipeline end-to-end without these checkpoints. See `research-planner` Phase R (Review & Re-plan).
+6. **Runtime API self-adaptation.** Do NOT trust hardcoded version numbers or assume API signatures. Before calling any ov.*/pt.*/sc.* function for the first time, verify with `inspect.signature(func)`. Run `python scripts/api_check.py --diff` after any package upgrade.
+7. **Step-gate + hypothesis ledger** *(agent self-check, per-step)*. Every analysis follows meta_methodology §7 (step-gate sanity checks after each step) and §8 (hypothesis ledger + provenance + conclusion grading).
+   > *Rationale*: The planner-verifier dual loop is the proven-optimal pattern for bioinformatics agents (K-Dense Analyst outperforms single-model by 6 points on BixBench via per-step verification).
+8. **Result-driven iteration** *(human gate, per-batch)*. Biology is evidence-driven, NOT linear like software. After each analysis batch: review results → **discuss direction with researcher** → revise plan → next batch. Pause for researcher input on decisions that need human judgment (cell-type naming, which signal to chase, threshold calibration). Full procedure: `research-planner` Phase R.
+   > *Rationale*: A pipeline that auto-runs QC→cluster→DE→CCC→figures without pausing to interpret results produces data dredging, not science.
 
 ## Key Files
 

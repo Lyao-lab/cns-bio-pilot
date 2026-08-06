@@ -16,6 +16,8 @@ description: 单细胞全流程（ambient 去除→QC→doublet→降维聚类�
 
 `pip install omicverse` (V2 released). Examples below use the real `ov` API, flagging key parameters and pitfalls.
 
+> **Iteration reminder (Core Rule 8)**: This pipeline is run in batches. After each major step batch (e.g., QC+cluster+annotation; or DE+enrichment), return to `research-planner` Phase R to review results with the researcher before the next batch. Do not auto-run end-to-end.
+
 ## 0. Init
 
 ```python
@@ -435,6 +437,7 @@ ov.pl.violin(adata, keys=['CD3D'], groupby='celltype')
 | R/Seurat pipeline, or scop-wrapped tools (CytoTRACE/Palantir/CellChat/Monocle3/SCVELO) | `single-cell/scop` |
 | Bulk RNA-seq DE / enrichment | `general-bio/omicverse-bulk` |
 | Study methodology design | `single-cell/research-planner` |
+| After each analysis batch (QC/cluster/DE/CCC) — **before the next batch** | `single-cell/research-planner` **Phase R** (Review & Re-plan, Core Rule 8) — interpret results, discuss direction with researcher, revise plan |
 | Multi-panel figures / graphic summary | `visualization/*` |
 
 ## Key pitfalls

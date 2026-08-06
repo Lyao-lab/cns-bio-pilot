@@ -15,6 +15,8 @@ description: 空间转录组全流程（IO→空间邻域→QC→空间域→SVG
 
 `pip install omicverse` (V2). Built on scanpy/squidpy/anndata.
 
+> **Iteration reminder (Core Rule 8)**: This pipeline is run in batches. After each major step batch (e.g., QC+cluster+annotation; or DE+enrichment), return to `research-planner` Phase R to review results with the researcher before the next batch. Do not auto-run end-to-end.
+
 ## 0. Initialization
 
 ```python
@@ -163,6 +165,7 @@ H&E / IF image analysis: ov V2 integrates basic registration; complex registrati
 
 | Need | Go to |
 |---|---|
+| After each analysis batch (domain detection/SVG/CCC/spatial mapping) — **before the next batch** | `single-cell/research-planner` **Phase R** (Review & Re-plan, Core Rule 8) — interpret results, discuss direction with researcher, revise plan |
 | Spot/cell deconvolution (cell2location etc.) | `spatial/deconvolution` |
 | Stereo-seq / high-resolution platform workflow | `spatial/multiomics` |
 | Spatial proteomics (CODEX/IMC/MIBI) | `spatial/proteomics` |

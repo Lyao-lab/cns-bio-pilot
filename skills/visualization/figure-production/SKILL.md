@@ -28,6 +28,8 @@ Step N: 所有 panel 验证通过 → 拼成 composite
 ## Step 1: 大框架设计（开始画图前）
 
 > **先读 `references/story_builder.md`** —— 它教你从分析结果构建生物学故事（五步法：清点发现 → 找因果链 → 提炼主结论 → 映射 Figure → 写叙事弧）。
+>
+> **快速通道**：如果用户已明确给出结论/故事（"帮我画一张 UMAP，按 cell type 着色"），跳过 story_builder，直接查 `figure_guide.md` §0 速查卡选图型 → 进 Step 2。只有"我有一堆结果，不知道怎么组织成图"时才需要完整的 story_builder 流程。
 
 三件事，定死不随数据摇摆：
 

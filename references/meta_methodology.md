@@ -122,8 +122,9 @@
 | **After enrichment** | Gene-set overlap is not "the entire gene list"; no anti-biological pathways top-ranked (e.g., apoptosis pathway top in a proliferation analysis) | Same 200 genes appear in every pathway; ribosomal/mitochondrial terms dominate |
 | **After CCC** | Known ligand-receptor direction correct (ligand in sender, receptor in receiver); not single-method-only (see discovery_miner §3) | Ligand and receptor both expressed in the same side; CCC score driven by one rare cell pair |
 | **After trajectory / pseudotime** | Root cell expresses known root marker; trajectory direction matches known biology or independent velocity | Root cell has no biological justification; pseudotime contradicts known developmental order |
+| **After each analysis batch** (before next batch) | **Discussion checkpoint passed**: results interpreted, hypothesis ledger updated, decision points surfaced to researcher, researcher responded | Proceeding to next batch without reviewing results or getting researcher input on direction (Core Rule 8 — biology is iterative, not linear) |
 
-> This check is **per-step**, not just at the end. meta_methodology §1-§6 are principles; §7 is the **operational gate** that enforces them mid-pipeline.
+> This check is **per-step**, not just at the end. meta_methodology §1-§6 are principles; §7 is the **operational gate** that enforces them mid-pipeline. The last row (discussion checkpoint) is the **batch-level gate** — it prevents the pipeline from auto-running end-to-end without the result-driven iteration loop that real biological research requires.
 
 ---
 

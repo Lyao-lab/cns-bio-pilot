@@ -61,10 +61,12 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 | File | When to read |
 |---|---|
 | `compat.yaml` | Version questions; after any package upgrade |
-| `references/figure_guide.md` | Before ANY plotting (the only figure reference needed) |
+| `references/figure_guide.md` | Before ANY plotting — visual specs, three iron rules, real-world lessons (no code) |
+| `references/plotting_reference.md` | When writing plotting code — runnable templates for every chart type (§0 quick card → §2/§3 templates) |
+| `references/omicverse_skills_examples.md` | External reference — curated patterns from omicverse-skills repo (marked "absorbed" vs "reference") |
 | `references/story_builder.md` | **After analysis, before drawing/writing** — how to turn results into a biological story (5-step method: findings → causal chain → main message → figure mapping → story arc) |
 | `references/discovery_miner.md` | **Right after analysis** — scan each result type (DE/proportion/CCC/trajectory/niche) for candidate discoveries, score priority, exclude false positives, determine story level |
-| `scripts/cns_style.py` | Import at top of every plotting script |
+| `scripts/cns_style.py` | Import at top of every plotting script (26 functions incl. save_panel / assert_anndata_keys / cohort_params) |
 | `scripts/postcheck.py` | After any analysis (scientific rigor auto-check) |
 | `scripts/api_check.py` | After installing/updating omicverse or pertpy |
 | `scripts/scop_api_check.R` | After installing/updating scop |

@@ -1,11 +1,25 @@
 ---
 name: figure-production
-description: 生信发表级图表——逐张迭代设计（看上一张结果决定下一张画什么）→ 每张独立出图验证 → 最后拼成 composite。当用户要画生信图、做发表级 figure、设计主图、拼图、UMAP/volcano/heatmap/dotplot/空间图时触发。
+description: 生信发表级图表——逐张迭代设计（看上一张结果决定下一张画什么）→ 每张独立出图验证 → 最后拼成 composite。当用户要画生信图、做发表级 figure、设计主图、拼图、UMAP/volcano/heatmap/dotplot/空间图/PAGA/轨迹/细胞通讯图时触发。
 ---
 
 # Figure Production (Iterative Design → Per-Panel Render → Assemble)
 
-**触发词**: 画图 / 出图 / figure / UMAP / volcano / heatmap / dotplot / 拼图 / 主图设计 / composite / 发表级
+**触发词**: 画图 / 出图 / figure / UMAP / tSNE / volcano / heatmap / dotplot / violin / 拼图 / 主图设计 / composite / 发表级 / PAGA / 轨迹 / chord / 细胞通讯 / 空间图
+
+## 何时使用（When to Use）
+
+- 用户要画生信发表级图表（单细胞/空转/bulk 任何图型）
+- 要设计主图、迭代 panel 设计、拼 composite
+- 拿到分析结果要把"发现"变成"figure"
+
+## 画图前：读哪三个文件（顺序很重要）
+
+1. **本文件**（SKILL.md）— 流程：怎么迭代、怎么验证
+2. **`references/plotting_reference.md`** — 代码模板：每种图型的可跑代码（§0 速查卡选图型 → §2/§3 看对应模板）
+3. **`references/figure_guide.md`** — 视觉规格：原则、三铁律、实战教训（需要决定配色/字号/布局时查）
+
+**外部参考**（非必需）：`references/omicverse_skills_examples.md` — omicverse-skills 仓库的优质片段（设计模式参考，非 cns_style 标准）。
 
 ## 核心原则：先定大框架，再逐张迭代
 
@@ -29,7 +43,7 @@ Step N: 所有 panel 验证通过 → 拼成 composite
 
 > **先读 `references/story_builder.md`** —— 它教你从分析结果构建生物学故事（五步法：清点发现 → 找因果链 → 提炼主结论 → 映射 Figure → 写叙事弧）。
 >
-> **快速通道**：如果用户已明确给出结论/故事（"帮我画一张 UMAP，按 cell type 着色"），跳过 story_builder，直接查 `figure_guide.md` §0 速查卡选图型 → 进 Step 2。只有"我有一堆结果，不知道怎么组织成图"时才需要完整的 story_builder 流程。
+> **快速通道**：如果用户已明确给出结论/故事（"帮我画一张 UMAP，按 cell type 着色"），跳过 story_builder，直接查 `plotting_reference.md` §0 速查卡选图型 → 进 Step 2。只有"我有一堆结果，不知道怎么组织成图"时才需要完整的 story_builder 流程。
 
 三件事，定死不随数据摇摆：
 
@@ -64,31 +78,26 @@ Step N: 所有 panel 验证通过 → 拼成 composite
 
 1. **这张 panel 论证什么？**（一句话 take-home）
 2. **上一张的结果改变了我的预期吗？**（如果有，调整这张的设计）
-3. **用什么图型最能讲清楚？**（查 figure_guide.md §0 速查卡）
+3. **用什么图型最能讲清楚？**（查 `plotting_reference.md` §0 速查卡）
 
-### 出图（cns_style.py 工具）
+### 出图（标准流程，代码查 reference）
 
-```python
-import sys; sys.path.insert(0, 'scripts/')
-from cns_style import *
+每个绘图脚本的固定结构（**SKILL.md 不内嵌完整代码**，全部指向 `plotting_reference.md`）：
 
-set_cns_style_journal('nature')
+1. **顶部固定 3 行开头** → `plotting_reference.md` §1（import + set_cns_style_journal）
+2. **绘图前防御校验** → `assert_anndata_keys(adata, obs_cols=[...], obsm_keys=[...])`（新推荐，每张 panel 绘图前调，避免运行到一半 KeyError；报错会带可用选项）
+3. **选图型模板** → `plotting_reference.md` §0 速查卡选图 → §2 核心图型 / §3 新增图型（PAGA/Chord/Pseudotime/tSNE/cellproportion）看对应模板
+4. **大 cohort 联动调参** → `cohort_params(adata.n_obs)` 返回 (point_size, alpha, figsize)，替代只调 size（点太多/太少时用）
+5. **统一保存** → `save_panel(fig, 'A_umap')` 统一入口（强制 finalize_figure → 建目录 → savefig，不要手写 fig.savefig）
 
-# --- Panel A: UMAP ---
-fig, ax = plt.subplots(figsize=recipe_figsize('umap'))
-ov.pl.embedding(adata, color='celltype', frameon='small', ax=ax, show=False)
-add_cluster_labels(ax, adata, groupby='celltype')
-finalize_figure(fig)
-fig.savefig('panels/A_umap.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
-plt.close(fig)
-# → 打开 panels/A_umap.pdf 看效果
-# → 满意？→ 继续 Panel B
-# → 不满意？→ 调整（改配色？改标签？改 figsize？）→ 重画 → 再看
-```
+**示例**：画 UMAP → 查 `plotting_reference.md` §2.1，复制模板，改 color/groupby/输出名即可。
+
+**名称色板（可选）**：需要固定命名色板时用 `ForbiddenCityBridge(label)`（故宫配色）或 `palette_from_names(celltypes, color_names)`，不要逐张手写颜色。
 
 ### 验证（每张存完后必做）
 
 打开 PDF 检查：
+- [ ] `assert_anndata_keys` 已跑过？（确认 obs/obsm 列名存在，不是靠运气）
 - [ ] 比例正确？（UMAP 方形，bar 宽扁）
 - [ ] `finalize_figure()` 过了？（legend 外置 / 无文字重叠 / 比例不畸形）
 - [ ] 配色符合 manifest？字号可读？
@@ -138,13 +147,14 @@ python skills/visualization/figure-production/scripts/main.py \
 
 ## 视觉规格速查
 
-画图时查 `references/figure_guide.md`：
-- §0 速查卡：图型 → 一行 ov.pl 调用 + 必须函数 + 关键参数
-- §5 各图型精确规格（UMAP/volcano/dotplot/violin/heatmap/spatial/bar/富集/bubble/feature 矩阵）
-- §10 Layout 三铁律（legend 右侧外置 / 文字不重叠 / 比例不畸形）
+画图时查：
+- **代码模板** → `references/plotting_reference.md`（§0 速查卡、§2 核心图型、§3 新增图型 PAGA/Chord/Pseudotime/tSNE/cellproportion、§4 统计标注、§5 worked example）
+- **视觉规格/原则** → `references/figure_guide.md`（§5 各图型参数、§10 三铁律、§11 实战教训）
+- **外部参考** → `references/omicverse_skills_examples.md`
 
 ## 工具
 
-- `scripts/cns_style.py` — 一键美学（22 个函数）
-- `references/figure_guide.md` — 视觉规格（唯一参考）
-- `scripts/main.py`（本 skill 下）— 拼图脚本
+- `scripts/cns_style.py` — 一键美学（26 个函数：set_cns_style_journal / polish_axes / clean_umap_axes / finalize_figure / recipe_figsize / cohort_params / assert_anndata_keys / save_panel / ForbiddenCityBridge / palette_from_names / ...）
+- `references/plotting_reference.md` — 代码速查（唯一代码参考）
+- `references/figure_guide.md` — 视觉规格
+- `scripts/main.py`（本 skill 下）— 拼图脚本（函数式 assemble() API，示例见 scripts/example.py）

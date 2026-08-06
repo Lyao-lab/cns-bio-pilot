@@ -6,12 +6,22 @@ cns-bio-pilot cns_style — One-shot CNS-grade matplotlib aesthetics.
 Usage:
     import sys; sys.path.insert(0, 'scripts/')
     from cns_style import set_cns_style, polish_axes, add_elegant_colorbar, \
-                          safe_scanpy_plot, clean_umap_axes, apply_5plus1_palette
+                          safe_scanpy_plot, clean_umap_axes, apply_5plus1_palette, \
+                          assert_anndata_keys, cohort_params, \
+                          ForbiddenCityBridge, palette_from_names, save_panel
 
     set_cns_style()          # call ONCE at the top of every plotting script
     polish_axes(ax)          # apply to each panel after plotting
     add_elegant_colorbar(mappable, ax, label='log2 Expression')
     safe_scanpy_plot(sc.pl.umap, adata, color='ct', ax=ax, show=False)
+
+    # 16-19: defensive validation + cohort-aware plotting + named palette + save
+    assert_anndata_keys(adata, obs_cols=['celltype'], obsm_keys=['X_umap'])
+    p = cohort_params(adata.n_obs)         # size/alpha/figsize 联动
+    sc.pl.umap(adata, size=p['point_size'], alpha=p['alpha'])
+    fig.set_size_inches(*p['figsize'])
+    palette_from_names(['T_cell', 'B_cell'], ['霁蓝', '藤黄'])   # 命名色板
+    save_panel(fig, 'A_umap')              # finalize → panels/A_umap.pdf
 
 Philosophy:
     figure_guide.md = visual specs (the only figure reference needed)
@@ -62,6 +72,21 @@ EXPR_CMAP = LinearSegmentedColormap.from_list('byr_morlandi',
 # Diverging: blue-white-red (0=white midpoint)
 DIVERGING_CMAP = LinearSegmentedColormap.from_list('log2fc',
     ['#2C5F8D', '#88C0D0', '#FFFFFF', '#D08770', '#8B2C2C'], N=256)
+
+# ForbiddenCity 命名色板 fallback（供函数 18 ForbiddenCityBridge 降级使用）
+# fallback hex 为近似值，精确值需安装 omicverse 后 ov.pl.ForbiddenCity
+FORBIDDEN_CITY_FALLBACK = {
+    '凝夜紫': '#3D3B5A',
+    '霁蓝': '#2E5C8A',
+    '石英粉红': '#E8B4B8',
+    '胭脂紫': '#9D5C6D',
+    '藤黄': '#E8B835',
+    '青矾绿': '#5C8D5C',
+    '朱砂': '#C73E3A',
+    '月白': '#B8CCE0',
+    '黛色': '#4A4A4A',
+    '牙色': '#F0E6D2',
+}
 
 
 # ============================================================
@@ -912,6 +937,187 @@ def figure_for_journal(journal='generic', ncols=1, nrows=1, panel_width=1.0,
 
 
 # ============================================================
+# 16. assert_anndata_keys(adata, ...) — defensive validation
+# ============================================================
+def assert_anndata_keys(adata, obs_cols=None, obsm_keys=None, var_names=None):
+    """Defensive validation: assert required keys exist in an AnnData object.
+
+    对标 omicverse-skills 的防御校验模式：缺失即 raise ValueError，
+    报错信息列出可用选项，调用方一眼就能修正。纯校验，成功返回 None。
+
+    Usage:
+        assert_anndata_keys(adata, obs_cols=['celltype'], obsm_keys=['X_umap'])
+    """
+    obs_cols = list(obs_cols or [])
+    obsm_keys = list(obsm_keys or [])
+    var_names = list(var_names or [])
+
+    for col in obs_cols:
+        if col not in adata.obs.columns:
+            raise ValueError(
+                f"Column '{col}' not found in adata.obs. "
+                f"Available: {list(adata.obs.columns)}")
+    for key in obsm_keys:
+        if key not in adata.obsm.keys():
+            raise ValueError(
+                f"Key '{key}' not found in adata.obsm. "
+                f"Available: {list(adata.obsm.keys())}")
+    for name in var_names:
+        if name not in adata.var_names:
+            # var_names 可能很大，只列前 10 个避免刷屏
+            avail = list(adata.var_names[:10]) + ['...'] if len(adata.var_names) > 10 \
+                else list(adata.var_names)
+            raise ValueError(
+                f"Gene '{name}' not found in adata.var_names "
+                f"({len(adata.var_names)} total). Available: {avail}")
+    return None
+
+
+# ============================================================
+# 17. cohort_params(n_cells) — size + alpha + figsize 联动
+# ============================================================
+def cohort_params(n_cells):
+    """Return point size + alpha + figsize for a cohort of n_cells.
+
+    替代仅有 size 的 point_size_for_n()（旧函数保留兼容，不删）：
+    同一映射外加 alpha 与 figsize，避免大 cohort 糊成团或浅到看不见。
+
+    映射表（数值参考 omicverse-skills plot1cell 经验；100k+ 档为梯度推断，
+    按数据微调）:
+        <10k      → point_size=8,   alpha=0.70, figsize=(4.5, 4.5)
+        10k-50k   → point_size=3,   alpha=0.50, figsize=(5.0, 5.0)
+        50k-100k  → point_size=1,   alpha=0.35, figsize=(5.5, 5.5)
+        100k-200k → point_size=0.6, alpha=0.30, figsize=(6.0, 6.0)   # 推断值
+        >200k     → point_size=0.3, alpha=0.25, figsize=(6.5, 6.5)   # 推断值
+
+    Usage:
+        p = cohort_params(adata.n_obs)
+        sc.pl.umap(adata, size=p['point_size'], alpha=p['alpha'])
+        fig.set_size_inches(*p['figsize'])
+    """
+    if n_cells < 10_000:
+        return dict(point_size=8, alpha=0.7, figsize=(4.5, 4.5))
+    elif n_cells < 50_000:
+        return dict(point_size=3, alpha=0.5, figsize=(5, 5))
+    elif n_cells < 100_000:
+        return dict(point_size=1, alpha=0.35, figsize=(5.5, 5.5))
+    elif n_cells < 200_000:
+        # 数值参考 omicverse-skills plot1cell 经验；100k+ 档为梯度推断，按数据微调
+        return dict(point_size=0.6, alpha=0.3, figsize=(6, 6))
+    else:
+        # 同上，推断值
+        return dict(point_size=0.3, alpha=0.25, figsize=(6.5, 6.5))
+
+
+# ============================================================
+# 18. ForbiddenCityBridge + palette_from_names — 命名色板
+# ============================================================
+class ForbiddenCityBridge:
+    """ov.pl.ForbiddenCity() 命名色板桥：omicverse 可用则用精确色，否则降级 fallback。
+
+    设计目标：脚本在最小环境（无 omicverse）中不因色板缺失而崩溃。
+    fallback hex 为近似值，精确值需 ov.pl.ForbiddenCity（omicverse）。
+
+    Usage:
+        b = ForbiddenCityBridge()
+        color = b.get('霁蓝')          # fallback 为 '#2E5C8A'
+        names = b.available_names      # 中文色名列表（优先 ov，否则 fallback）
+    """
+    def __init__(self):
+        self._fb = None
+        try:
+            import omicverse as ov
+            self._fb = ov.pl.ForbiddenCity()
+        except Exception:
+            self._fb = None  # 无 omicverse → 走 FORBIDDEN_CITY_FALLBACK
+
+    def get(self, name):
+        """Return hex (str) for a Chinese color name (ov exact, else fallback).
+
+        ov 2.3.1 的 get_color() 返回 1 行 DataFrame（含 color_html 列），
+        这里统一提取为 hex 字符串；ov 版本 API 差异则降级 fallback。
+        """
+        if self._fb is not None:
+            try:
+                res = self._fb.get_color(name)
+                if hasattr(res, 'iloc'):          # DataFrame → 取 color_html
+                    return str(res['color_html'].iloc[0])
+                if isinstance(res, str):
+                    return res
+            except Exception:
+                pass  # ov 版本 API 差异 → 降级 fallback
+        if name in FORBIDDEN_CITY_FALLBACK:
+            return FORBIDDEN_CITY_FALLBACK[name]
+        raise KeyError(
+            f"Color '{name}' not found. Available: {self.available_names}")
+
+    @property
+    def available_names(self):
+        """List of Chinese color names (ov first, else fallback keys)."""
+        if self._fb is not None:
+            for attr in ('color_pd', 'color'):
+                try:
+                    res = getattr(self._fb, attr)
+                    if hasattr(res, 'iloc') and 'name' in res.columns:
+                        return list(res['name'])
+                    if isinstance(res, dict):
+                        return [v['name'] for v in res.values()]
+                except Exception:
+                    continue
+        return list(FORBIDDEN_CITY_FALLBACK.keys())
+
+
+def palette_from_names(celltypes, color_names):
+    """Map cell types to named-palette hex → {celltype: hex}.
+
+    内部实例化 ForbiddenCityBridge（omicverse 可用则精确色，否则近似 fallback）。
+
+    Usage:
+        palette_from_names(['T_cell', 'B_cell'], ['霁蓝', '藤黄'])
+        # → {'T_cell': '#2E5C8A', 'B_cell': '#E8B835'}   (fallback 近似值)
+    """
+    bridge = ForbiddenCityBridge()
+    if len(color_names) < len(celltypes):
+        print(f"⚠️  palette_from_names: {len(color_names)} colors for "
+              f"{len(celltypes)} cell types — 不足部分未映射，请补齐 color_names.")
+    return {ct: bridge.get(name) for ct, name in zip(celltypes, color_names)}
+
+
+# ============================================================
+# 19. save_panel(fig, name, ...) — 统一 save 入口
+# ============================================================
+def save_panel(fig, name, outdir='panels', journal=True, fmt='pdf'):
+    """Unified save entry: finalize_figure → mkdir → savefig → close → print path.
+
+    流程：强制 finalize_figure（铁律 1 图例 / 铁律 2 文字重叠 / 栅格化检查）
+    → 建目录 → savefig → plt.close → 打印保存路径。
+
+    Args:
+        fig: matplotlib Figure
+        name: 文件名（不含扩展名）
+        outdir: 输出目录（默认 'panels'，自动创建）
+        journal: True → dpi 走 rcParams['savefig.dpi']；False → 固定 300
+        fmt: 'pdf' | 'png' | 'svg'（默认 'pdf'）
+
+    Returns:
+        str: 保存的完整路径
+
+    Usage:
+        save_panel(fig, 'A_umap')   # → 保存到 panels/A_umap.pdf，返回路径
+    """
+    import os
+    finalize_figure(fig)  # 强制 pre-save 检查（铁律 1/2 + 栅格化）
+    os.makedirs(outdir, exist_ok=True)
+    path = f'{outdir}/{name}.{fmt}'
+
+    dpi = plt.rcParams['savefig.dpi'] if journal else 300
+    fig.savefig(path, dpi=dpi, bbox_inches='tight', pad_inches=0.1)
+    plt.close(fig)
+    print(f"Saved: {path} (dpi={dpi})")
+    return path
+
+
+# ============================================================
 # Quick demo (run directly to see the style)
 # ============================================================
 if __name__ == '__main__':
@@ -931,3 +1137,35 @@ if __name__ == '__main__':
     print("  save_cns_mplstyle('cns.mplstyle')        # export as declarative file")
     print("  with cns_style('nature'): ...            # temporary style block")
     print("  fig, axes = figure_for_journal('nature', ncols=3)  # sized panels")
+
+    # --- 16-19: new functions demo ---
+    print("\n--- 16. assert_anndata_keys (fake adata, no anndata needed) ---")
+    import types
+    fake_adata = types.SimpleNamespace(
+        obs=types.SimpleNamespace(columns=['celltype', 'sample']),
+        obsm=types.SimpleNamespace(keys=lambda: ['X_umap', 'X_pca']),
+        var_names=['CD3D', 'CD79A'],
+    )
+    assert_anndata_keys(fake_adata, obs_cols=['celltype'], obsm_keys=['X_umap'])
+    print("  OK: all requested keys present")
+
+    print("\n--- 17. cohort_params ---")
+    for n in (5_000, 30_000, 75_000, 150_000, 300_000):
+        print(f"  n={n:>7} → {cohort_params(n)}")
+
+    print("\n--- 18. ForbiddenCityBridge + palette_from_names ---")
+    b = ForbiddenCityBridge()
+    print("  available[:3]:", b.available_names[:3])
+    print("  get('霁蓝'):", b.get('霁蓝'))
+    print("  palette_from_names:",
+          palette_from_names(['T_cell', 'B_cell'], ['霁蓝', '藤黄']))
+
+    print("\n--- 19. save_panel (to /tmp/agent_out/cns_demo) ---")
+    try:
+        fig, ax = plt.subplots(figsize=(2, 1.5))
+        ax.scatter([0, 1], [0, 1], s=20)
+        path = save_panel(fig, 'demo_save_panel', outdir='/tmp/agent_out/cns_demo',
+                          journal=False, fmt='png')
+        print("  save_panel path:", path)
+    except Exception as e:
+        print(f"  save_panel demo skipped (no renderer): {e}")

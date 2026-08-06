@@ -1,6 +1,6 @@
 # CNS Bio-Pilot
 
-[![version](https://img.shields.io/badge/version-19.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-14-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
+[![version](https://img.shields.io/badge/version-25.0-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-14-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
 
 Single-cell + spatial transcriptomics bioinformatics skill library. Router architecture: read `SKILL.md` → pick ONE sub-skill → execute.
 
@@ -23,16 +23,15 @@ python scripts/api_check.py           # full verification
 SKILL.md (router)
 ├── compat.yaml (package versions — single source of truth)
 ├── references/
-│   ├── figure_guide.md (the ONLY figure reference — specs + recipes)
-│   ├── meta_methodology.md (6 self-check rules)
-│   ├── omicverse_guide.md (ov.* API cheat-sheet)
-│   ├── figure_guide.md (visual specs + recipes)
-│   ├── meta_methodology.md (6 self-check rules)
+│   ├── figure_guide.md (visual specs + three iron rules + real-world lessons)
+│   ├── plotting_reference.md (runnable code templates for every chart type)
+│   ├── omicverse_skills_examples.md (external patterns from omicverse-skills repo)
+│   ├── meta_methodology.md (8 self-check principles + step-gate + hypothesis ledger)
 │   ├── omicverse_guide.md (ov.* API cheat-sheet)
 │   ├── story_builder.md (results → biological narrative)
 │   └── discovery_miner.md (analysis → candidate discoveries)
 ├── scripts/
-│   ├── cns_style.py (one-shot aesthetics: set_cns_style_journal/polish_axes/...)
+│   ├── cns_style.py (one-shot aesthetics: 26 functions incl. save_panel/assert_anndata_keys/cohort_params)
 │   ├── api_check.py (API verification + --diff mode)
 │   ├── postcheck.py (scientific rigor auto-check)
 │   └── scop_api_check.R (scop API verification)

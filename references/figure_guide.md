@@ -1,6 +1,6 @@
 # Figure Guide — 生信发表级图表视觉规格
 
-> 本文件 = 视觉规格 + 原则 + 实战教训（**不含代码**）。
+> 本文件 = 视觉规格 + 原则 + 实战教训 + 数据→图型决策表（**不含代码**）。
 > 代码模板查 `plotting_reference.md`；外部 omicverse-skills 参考查 `omicverse_skills_examples.md`；cns_style.py 函数速查见该文件 docstring。
 
 ---
@@ -25,6 +25,66 @@
 | **Chord/CCC** | §3.2 | §5.12 |
 | **Pseudotime** | §3.3 | §5.11 |
 | **cellproportion** | §3.5 | §5.7 |
+
+---
+
+## 0.1 数据类型 → 图型决策表（选图前先查）
+
+> §0 速查卡是"要画 UMAP → 代码在哪"（图型→代码）。本表是反方向：**我有 DE 结果/比例表/CCC/niche 数据，该用哪种图？**（数据→图型）。
+> 基于 2025-2026 CNS 论文实践与 best-practices 文献（含 Neuro-Oncology Advances 2026 pitfalls 论文原话级建议）。
+> **核心原则：UMAP 只是"地图"不是"证据"**——2026 年审稿趋势要求用 heatmap/定量图做证据，UMAP 降为索引图。
+
+### 决策表（分析输出类型 → 首选图型 + 何时换图）
+
+| 分析输出 | 首选图型 | 何时换备选 | 备选 | 代码模板 |
+|---|---|---|---|---|
+| **细胞类型注释总览** | UMAP 按类型着色 | 仅作"地图"；注释**证据**用 dotplot/heatmap | dotplot（marker 紧凑展示）；heatmap（严谨证据） | §2.1/§2.3/§2.5 |
+| **marker 注释证据** | dotplot（点=%表达，色=均值） | 基因>20 或需展示表达分布 | violin（每基因分布）；heatmap（genes×cells 带 metadata 条） | §2.3/§2.4/§2.5 |
+| **严谨注释证据**（审稿级） | genes×cells heatmap（带类型/样本/condition 注释条） | 细胞太多→按类均值 heatmap | ridge plot | §2.5 |
+| **比例变化（有重复）** | 分组柱/点图（每点=一样本）+ 统计检验 | 条件>3→heatmap（celltype×condition） | 箱线图；Milo beeswarm（无预定义 cluster） | §2.7 |
+| **比例变化（无重复）** | 堆叠柱（100%归一化） | **只能放 supplement**，正文不可做条件比较 | — | §3.5 |
+| **局部丰度变化（无预定义cluster）** | Milo beeswarm（logFC 映射 KNN 图节点） | 需配类型/空间注释才可读 | DA neighborhood heatmap | — |
+| **DE 单一对比** | volcano（pseudobulk 前提！） | per-cell Wilcoxon 做的 DE **禁止**画 volcano | MA plot | §2.2 |
+| **DE 多时点/多条件** | 分组散点（x=组别，y=logFC，每点=一基因） | volcano 无法容纳>1 个对比维度 | logFC×time heatmap | §11.3 |
+| **DE 基因模块/模式** | heatmap（行=基因，列=样本/伪群，带注释条） | — | — | §2.5 |
+| **候选基因验证** | violin/ridge（按类型+condition 分面） | 把 DE 结论落回单细胞层面 | feature plot | §2.4 |
+| **轨迹总览** | UMAP 按 pseudotime 着色 | **禁止用 UMAP 形状论证轨迹方向** | 按 branch 着色 | §2.1 |
+| **轨迹拓扑/分支证据** | PAGA/图抽象 或 branch 树状图 | 拓扑断言用图模型而非 embedding 形状 | fate probability 矩阵 | §3.1 |
+| **轨迹基因动态证据** | gene-along-pseudotime 曲线（带 CI/平滑） | 轨迹论文的"证据图"永远是这个，不是 UMAP | 分 bin heatmap | §3.3 |
+| **CCC 强度+显著性** | bubble/dot plot（LR对×细胞类型对） | 信息密度最高的标准形式 | LR heatmap | §2.9 |
+| **CCC 方向性叙事** | chord/circos（≤8 类型） | chord 丢 LR 细节，只适合"谁给谁收信号" | 聚合网络图 | §3.2 |
+| **CCC 信号角色模式** | outgoing-incoming pattern heatmap | 展示 sender/receiver/mediator 角色 | — | — |
+| **空间单基因表达** | feature plot（spot/细胞着色） | 成像平台用单分子点渲染 | 阈值二值图（低表达基因） | §2.6 |
+| **空间+形态学** | H&E/IF 底图 overlay | 形态学结论必须 overlay 或并排 | 相邻并排面板 | §2.6 |
+| **空间多基因共表达** | RGB 合成图（≤3-4 基因） | 基因>4 换面板网格 | 共表达散点+空间 mask | — |
+| **空间 niche/domain** | 组织 categorical 着色（边界清晰） | **必须配定量面板**："在哪里"+"差多少"成对出现 | domain 边界描线 | §2.6 |
+| **空间 niche 定量** | 每 niche 细胞密度/组成/签名 score（箱线+点） | 着色图负责"在哪里"，此图负责"差多少" | domain×celltype 富集 heatmap | §2.7 |
+| **空间去卷积** | 每关键类型一张比例空间散点图 | 类型>6 时 per-spot pie 不可读 | per-spot 堆叠（≤5-6 类型） | §2.6 |
+| **空间 CCC** | 空间箭头/向量场 + 配受体相邻面板 | 空转 CCC 最低证据=共定位；chord 在空转退潮 | 通讯分-距离曲线 | — |
+| **scRNA+空转联合** | 三件套：scRNA UMAP + 同色系空间投影 + mapping score 图 | 只展示投影结果不做验证=审稿拒点 | 基因级验证散点 | §2.1+§2.6 |
+| **TF/regulon 活性** | TF×cluster 活性 heatmap | 定位→UMAP 着色；定量比较→violin | 二值化 regulon heatmap | §2.5 |
+
+### 证据等级（每个生物学结论至少配一张定量图）
+
+| 等级 | 图型 | 角色 | 2026 趋势 |
+|---|---|---|---|
+| **地图图** | UMAP/tSNE/空间着色 | 索引/定位——"在哪里" | ↓ 降权：不作注释证据，不论证轨迹 |
+| **模式图** | heatmap/streamplot/PAGA/dotplot | 结构/模式——"有什么" | ↑ 升权：heatmap（带注释条）成为注释证据首选 |
+| **定量图** | 曲线/散点+统计/violin/箱线 | 证据——"差多少" | 硬性要求：有重复时必须带样本级点+检验 |
+
+> **纪律**：一个结论如果只有地图图（如"UMAP 上某群分开了"）没有定量图支撑，审稿会被质疑。至少补一张定量图。
+
+### 反模式黑名单（以下组合会被审稿质疑）
+
+| ❌ 反模式 | 为什么错 | 正确做法 |
+|---|---|---|
+| UMAP 形状论证轨迹方向 | UMAP 距离/形状不可解释（Chari & Pachter 2023） | PAGA/gene-along-pseudotime 曲线 |
+| 无重复的堆叠柱做条件比较 | 无统计效力，无法排除抽样偏差 | 带样本级点的分组图+检验 |
+| per-cell Wilcoxon 的 DE 画 volcano | 假阳性膨胀 | pseudobulk DE → volcano |
+| >6 细胞类型的 per-spot pie | 视觉不可读 | 每类型一张比例空间散点图 |
+| 空转 CCC 无共定位证据 | 纯数据库打分正在退潮 | 配空间箭头或配受体相邻面板 |
+| 只有投影结果无 mapping score | 无法评估 label transfer 质量 | 三件套（UMAP+投影+mapping score） |
+| dotplot 做唯一注释证据 | dotplot 夸大特异性偏倚 | 关键结论配 heatmap 交叉验证 |
 
 ---
 

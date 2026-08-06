@@ -11,7 +11,7 @@ metadata:
 - The project is spatial transcriptomics → `spatial/omicverse-spatial` (design + analysis combined); pure design may reference this skill but route to spatial
 - The project is bulk RNA-seq → `general-bio/omicverse-bulk`
 - A perturbation project that must predict unmeasured experiments → `single-cell/perturbation` (this skill does not do predictive modeling)
-- Writing Methods/Results manuscript text → `presentation/manuscript-writing` / `presentation/manuscript-writing` (this skill produces a plan, not a manuscript)
+- Writing Methods/Results manuscript text → `presentation/manuscript-writing` (this skill produces a plan, not a manuscript)
 
 # Single-Cell Research Planner
 

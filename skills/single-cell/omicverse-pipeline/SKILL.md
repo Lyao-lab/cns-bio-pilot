@@ -69,7 +69,7 @@ import omicverse as ov
 ov.pp.qc(
     adata,
     mode='seurat',                       # 'seurat' (tresh dict) | 'mads' (5×MAD auto)
-    doublets_method='scdblfinder',       # DEFAULT (verified; see compat.yaml) — Python port of R scDblFinder
+    doublets_method='scdblfinder',       # DEFAULT (verified; see omicverse docs for current default) — Python port of R scDblFinder
                                          # (xgboost on kNN+cxds). Alt: 'scrublet' / 'doubletfinder' / 'sccomposite'
     batch_key='sample',                  # REQUIRED for multi-sample: detect doublets per sample
     filter_doublets=True,
@@ -312,11 +312,9 @@ Auto-annotation without marker validation = trusting an unverified black box.
 
 > References: Huang et al. 2021 *Genomics Proteomics Bioinformatics* (10-method benchmark); Fu et al. 2024 *Brief Bioinform* (18-method benchmark); [sc-best-practices annotation](https://www.sc-best-practices.org/cellular_structure/annotation.html); [ScPCA nonsense-reference test](https://www.ccdatalab.org/blog/a-behind-the-scenes-look-at-how-we-selected-cell-type-annotation-platforms-for-the-scpca-portal) (annotation tools give confident labels even with wrong references).
 
-## 8.5 Pseudobulk Differential Expression (Core Rule 2 — mandatory for publication DE)
+## 8.5 Pseudobulk DE (Core Rule 2 — see top-level SKILL.md)
 
-> **⚠️ `find_markers` (§8) 只用于 marker 发现（per-cell Wilcoxon/cosg），禁止当 DE 报告。**
-> 发表级 DE 必须走 pseudobulk：聚合到 sample × celltype → DESeq2/edgeR。
-> Per-cell 检验假设细胞独立 → 伪重复 → 系统性低估 p 值 → 假阳性爆炸。
+> Core Rule 2 要求 pseudobulk DE（禁止 per-cell Wilcoxon 当 DE 报告）。以下是可执行代码。
 
 ```python
 import scanpy as sc
@@ -410,6 +408,8 @@ Verified available in omicverse (`sc` env; version in `compat.yaml`). Pick by wh
 | **Milo** (`miloR`) | R | Neighborhood-level DA — does not depend on annotation labels; handles continuous shifts | `install.packages("miloR")` |
 | **scCODA** | Python/R | Bayesian compositional analysis; requires a reference cell type | `pip install scCODA` |
 | **propeller** | R | Cell-type proportion test with sample-level replicate (limma-backed) | `propeller` (GitHub) |
+
+> R 用户可通过 scop 0.8.9 的 `RunMilo`/`RunscCODA`/`RunPropeller` 调用（见 `single-cell/scop`）。
 
 > R-side `scop::RunProportionTest` is a basic proportion test — use it only for quick looks, not publication. For CNS-grade composition claims, **always** use Milo / scCODA / propeller. (Meta-methodology principle ③ — "who is my N"; enforced in `scripts/postcheck.py` C1 check.)
 

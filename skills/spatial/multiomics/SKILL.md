@@ -101,6 +101,7 @@ sq.gr.spatial_autocorr(adata, mode='moran', genes=adata.var_names[:500])
 
 ## When to leave this skill (where to go)
 
+- After segmentation/binning/integration batch — **before downstream** → `single-cell/research-planner` **Phase R** (Review & Re-plan, Core Rule 8): interpret results, discuss with researcher, revise plan
 - Once high-resolution data is segmented into single cells → go to `single-cell/omicverse-pipeline` (analyze as single-cell)
 - Estimate spot/cell type composition → `spatial/deconvolution`
 - Write Methods → `presentation/manuscript-writing`
@@ -109,11 +110,11 @@ sq.gr.spatial_autocorr(adata, mode='moran', genes=adata.var_names[:500])
 ## Key pitfalls
 
 - **Visium HD bin size choice**: start at 8µm (balances resolution vs noise); 2µm only for segmentation (bin2cell) or detail review; raw 2µm for clustering is too noisy
-- **Segmentation method must match platform**: bin2cell for Visium HD, Baysor for image-less transcript data, built-in mask for Xenium — don't apply cellpose blindly to every platform
+- **Segmentation method must match platform**（don't apply cellpose blindly）— 见正文 "Cell Segmentation" 决策表
 - **cellpose segmentation needs H&E/IF registration** — pure transcriptome without image gives poor segmentation (use Baysor instead for image-less)
 - **bin2cell is NOT installed by default** — `ov.space.bin2cell` is a wrapper entry; you need `pip install bin2cell` for the actual algorithm. Same for cellpose (`pip install cellpose`)
 - **Re-segmenting Xenium/Stereo-seq is usually worse** than the platform's built-in cell mask — only re-segment if you have a superior custom stain
-- **Cell count sanity check is mandatory**: too few cells = under-segmentation; too many = debris/over-segmentation. Compare to H&E morphology.
+- **Cell count sanity check is mandatory** — 见正文 "Segmentation quality assessment" 段
 - **Stereo-seq V2 FFPE vs total RNA** use different pipelines; confirm SAW version
 - **SpatialData multimodal alignment** requires coordinate registration first (ground-truth check, meta-methodology principle ①)
 - After finishing, run `scripts/postcheck.py` (repo root) to verify spatial-coordinate integrity

@@ -8,7 +8,7 @@ All verbs operate on a Seurat object `srt` (or SpatialExperiment for some spatia
 
 > Companion to `SKILL.md`. SKILL keeps `standard_scop()` (one-call pipeline), Python interop, decision tables, and pitfalls; this file enumerates the verified scop API.
 
-## QC & Preprocessing (7)
+## QC & Preprocessing
 
 ```r
 srt <- RunCellQC(srt, batch = "orig.ident",
@@ -27,7 +27,7 @@ srt <- RunATACQC(srt, ...)
 
 > Cell cycle scoring now wrapped: `RunCellCycle(srt, method="Seurat"|"cyclone"|"tricycle")` (NEW — see Annotation section).
 
-## Dimensionality Reduction (13)
+## Dimensionality Reduction
 
 ```r
 srt <- RunDimsEstimate(srt, ...)          # elbow/JackStraw-style dims estimation (NEW, replaces manual)
@@ -88,7 +88,7 @@ srt <- RunCCA(srt, ...)                          # direct CCA
 
 > **Integration-method ranking (2024-2026 benchmarks)**: **Harmony / scVI / scANVI** are SOTA defaults. BBKNN only for ultra-fast >500k-cell alignment. fastMNN acceptable but no longer first-choice. **ComBat is for bulk only.** WNN for multi-modal (RNA+ATAC/protein).
 
-## Cell Annotation (11)
+## Cell Annotation
 
 ```r
 srt <- RunSingleR(srt, ref = "HumanPrimaryCellAtlas")        # celldex references
@@ -118,7 +118,7 @@ de <- RunDEtest(srt, group.by = "condition",
 de <- RunRareQ(srt, ...)                      # rare-population DE (NEW)
 ```
 
-## Trajectory & Pseudotime (11)
+## Trajectory & Pseudotime
 
 ```r
 srt <- RunMonocle3(srt); srt <- RunMonocle2(srt)
@@ -141,7 +141,7 @@ srt <- RunSecActVelocity(srt, ...)           # SecAct-based velocity (NEW)
 VelocityPlot(srt)
 ```
 
-## Cell-Cell Communication (13)
+## Cell-Cell Communication
 
 ```r
 srt <- RunCellChat(srt, group.by = "cell_type")               # classic
@@ -161,7 +161,7 @@ srt <- RunSecActSignalingPattern(srt, ...)
 srt <- RunSpatialCellChat(srt, ...)                           # NEW (was NOT wrapped in 0.8.0)
 ```
 
-## Enrichment & Pathway (10)
+## Enrichment & Pathway
 
 ```r
 srt <- RunGSEA(srt, geneset = "H")
@@ -178,7 +178,7 @@ srt <- RunFWP(srt, ...)            # functional whole-population
 srt <- RunscFEA(srt, ...)          # metabolic flux (NEW)
 ```
 
-## Composition / Differential Abundance (7)
+## Composition / Differential Abundance
 
 ```r
 srt <- RunProportionTest(srt)                  # basic proportion test
@@ -202,7 +202,7 @@ srt <- RunKNNMap(srt);      srt <- RunSeuratMap(srt)
 srt <- RunSymphonyMap(srt); srt <- RunCSSMap(srt)
 ```
 
-## GRN / Regulome (7) — ALL NEW
+## GRN / Regulome — ALL NEW
 
 ```r
 srt <- RunSCENIC(srt, ...)        # classic SCENIC (pySCENIC wrapper)
@@ -216,7 +216,7 @@ srt <- RunscTenifoldKnk(srt, ...) # GRN KO ranking (perturbation prediction Rout
 srt <- RunscTenifoldNet(srt, ...) # GRN construction
 ```
 
-## Spatial domains / SVG / network (15) — ALL NEW (most were NOT wrapped in 0.8.0)
+## Spatial domains / SVG / network — ALL NEW (most were NOT wrapped in 0.8.0)
 
 ```r
 srt <- RunBANKSY(srt, assay=NULL, layer="data", features=NULL, ...)   # BANKSY domain
@@ -239,7 +239,7 @@ srt <- RunSemlaSpatialNetwork(srt, ...)
 srt <- RunSpatialEcoTyper(srt, ...)                                    # spatial EcoTyper
 ```
 
-## Spatial deconvolution (8) — ALL NEW (were NOT wrapped in 0.8.0)
+## Spatial deconvolution — ALL NEW (were NOT wrapped in 0.8.0)
 
 ```r
 srt <- RunDeconvolution(srt, method=..., ...)    # unified dispatcher

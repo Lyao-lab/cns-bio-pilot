@@ -114,7 +114,7 @@ srt <- standard_scop(
 - Perturbation prediction (unmeasured experiments; GRN-based virtual KO) → `single-cell/perturbation`; measured-perturbation analysis → `single-cell/perturbation`
 - Move Seurat results back to Python for plotting → `srt_to_adata`, then `visualization/figure-production`
 - Assemble publication-grade multi-panel figures → `visualization/figure-production`
-- Write Methods / figure legends → `presentation/manuscript-writing` / `presentation/manuscript-writing`
+- Write Methods / figure legends → `presentation/manuscript-writing`
 
 ## Key pitfalls
 

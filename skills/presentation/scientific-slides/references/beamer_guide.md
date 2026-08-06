@@ -1,6 +1,6 @@
 # LaTeX Beamer Guide (Beamer-specific only)
 
-> Beamer = LaTeX document class for presentations. This file covers **only what is unique to Beamer**: theme/color selection, Chinese support (xelatex + ctex), compile commands, common errors, and template variables. For general design/color/layout/aesthetics, see `references/figure_guide.md` + `figure_guide.md` + `figure_guide.md`. Assumes you know basic LaTeX.
+> Beamer = LaTeX document class for presentations. This file covers **only what is unique to Beamer**: theme/color selection, Chinese support (xelatex + ctex), compile commands, common errors, and template variables. For general design/color/layout/aesthetics, see top-level `references/figure_guide.md`. Assumes you know basic LaTeX.
 
 ## When to use Beamer
 - Heavy math/equations, code listings, algorithm pseudocode

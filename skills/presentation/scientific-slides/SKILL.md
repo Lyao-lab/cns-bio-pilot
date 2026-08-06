@@ -34,7 +34,7 @@ This skill generates research presentation slides with **python-pptx** (default)
 
 ## Talk Arc（汇报叙事弧模板）
 
-> **先读 `references/discovery_miner.md` + `references/story_builder.md`** —— 发现挖掘 + 故事构建（含逻辑漏洞扫描 + 补缺分析）。
+> **先读 top-level `references/discovery_miner.md` + `references/story_builder.md`** —— 发现挖掘 + 故事构建（含逻辑漏洞扫描 + 补缺分析）。
 > 构建汇报前必须先完成 story_builder Step 2b（逻辑漏洞扫描）：**因果链里有跳步或缺证据的地方，先补分析再组织汇报**——不要带着漏洞做 PPT。
 > 然后按以下弧组织幻灯片。**标题必须是结论句**（assertion-evidence 模型，Naegle 2021 Rule 3），禁止 "Results"/"Analysis" 式标签标题。
 
@@ -152,23 +152,6 @@ This skill generates research presentation slides with **python-pptx** (default)
     {"variant": "bullets", "title": "3 key findings",
      "arc_role": "takehome",
      "bullets": ["Fibro quiescent rewiring (not myofibroblast)", "CXCL12-CXCR4 connects fibrosis-inflammation", "Spatial niche validates the loop"]}
-  ]
-}
-```
-     "notes": "Fibro 比例 44%→57%（+13pp, padj<1e-40），M2 巨噬 +16.7%。其余细胞类型无显著变化。"},
-    {"variant": "figure-hero", "title": "Differential expression",
-     "image": "figures/volcano.png",
-     "caption": "Fig 3. Volcano (Padj<0.05 & |log2FC|>1, BH-FDR)",
-     "notes": "602 个显著差异基因。上调 top: CXCL12, COL1A1, PDGFRB（纤维化通路）。下调 top: LDHB, RPS12（代谢转换）。"},
-    {"variant": "figure-grid", "title": "Fibroblast subtype analysis",
-     "images": ["figures/fibro_umap.png","figures/fibro_dotplot.png","figures/fibro_violin.png","figures/fibro_heatmap.png"],
-     "caption": "Fig 4. Fibro subtypes: UMAP / dotplot / violin / heatmap",
-     "notes": "Quiescent_1→2/3 内部重塑。CXCL12 在 Quiescent_2/3 特异高表达。轨迹分析显示静息态向活化态转换。"},
-    {"variant": "figure-hero", "title": "Spatial validation: CXCL12 + M2",
-     "image": "figures/spatial_cxcl12.png",
-     "caption": "Fig 5. CXCL12 spatial expression + M2 macrophage co-localization",
-     "notes": "CXCL12+ Fibro 与 M2 巨噬在纤维化区域空间共定位（距离 <50μm）。支持 CXCL12-CXCR4 轴驱动纤维化-免疫正反馈的假说。"},
-    {"variant": "methods-flow", "title": "Pipeline", "steps": ["QC","Cluster","Annotate","DE","CCC","Spatial"]}
   ]
 }
 ```

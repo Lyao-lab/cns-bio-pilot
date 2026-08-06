@@ -3,6 +3,14 @@ name: perturbation
 description: 扰动分析全流程——两条路径：(A) 实测 Perturb-seq 数据分析（Mixscape/pseudobulk DE/pertpy）；(B) 未测扰动的 in silico 预测（GEARS/CPA/scGPT 或 GRN-based CellOracle/SCENIC+/scTenifoldKnk）。当用户要做 CRISPR screen 分析、perturbation prediction、gene KO 预测、扰动响应、Mixscape、GEARS、CellOracle 时触发。
 ---
 
+## When NOT to use this skill
+- Only need a single-KO signature without screen design → `single-cell/omicverse-pipeline` (pseudobulk DE + enrichment)
+- Perturbation via RNA-velocity in-silico blockade (RegVelo) → `single-cell/rna-velocity` (`v.regvelo_perturb`)
+- GRN construction only (no perturbation readout) → standalone pySCENIC / GRNBoost2, or scop `RunSCENIC`/`RunGRNBoost2`/`RunscTenifoldKnk`
+- R/Seurat environment → `single-cell/scop` (`RunSCENICPlus` / `RunscTenifoldKnk` for Path B)
+
+> **Iteration reminder (Core Rule 8)**: This pipeline is run in batches. After each perturbation-analysis batch (e.g., Mixscape signature; or pseudobulk DE + enrichment), return to `research-planner` Phase R to review results with the researcher before the next batch. Do not auto-run end-to-end.
+
 # Perturbation Analysis (Measured + Predicted)
 
 **两条路径**（按数据可用性选）：
@@ -41,13 +49,17 @@ ms.perturbation_signature(adata, pert_key='target_gene', control='non-targeting'
 # Enrichment (decoupler, NOT pertpy's removed module)
 import decoupler as dc
 sig_genes = de[(de['adj_p_value']<0.05) & (de['log_fc'].abs()>0.5)]['variable'].tolist()
-ora = dc.get_ora_df(sig_genes, dc.get_resource('MSigDB'),
+# get_ora_df expects the DE DataFrame (genes × FC/p-value), not a bare gene list;
+# pass the DataFrame and restrict the foreground via mask=sig_genes.
+# verify signature against installed decoupler version (meta §6)
+ora = dc.get_ora_df(de, dc.get_resource('MSigDB'), mask=sig_genes,
     source='geneset', target='genesymbol')
 ```
 
-**R/Seurat 路径**（scop 0.8.9 包装了 Mixscape）：
+**R/Seurat 路径**（scop 0.8.9 未包装 Mixscape，用 Seurat 原生）：
 ```r
-srt <- RunMixscape(srt, ...)  # Seurat-native, scop wraps it
+# Mixscape via Seurat native (scop 0.8.9 does not wrap Mixscape as of this version)
+srt <- RunMixscape(srt, ...)  # Seurat 原生，非 scop 包装
 ```
 
 ---
@@ -99,3 +111,9 @@ oracle.simulate_shift(perturb_condition={'GeneX': 0.0})
 - `scripts/cns_style.py` — 出图美学
 - `references/figure_guide.md` — 视觉规格
 - pertpy 1.0+ / decoupler / CellOracle / scop 0.8.9
+
+## When to leave this skill (where to go)
+
+- After perturbation analysis batch — **before downstream** → `single-cell/research-planner` **Phase R** (Review & Re-plan, Core Rule 8): interpret results, discuss with researcher, revise plan
+- Plotting perturbation effects → `visualization/figure-production`
+- Writing Methods/Results → `presentation/manuscript-writing`

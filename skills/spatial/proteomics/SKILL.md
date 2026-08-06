@@ -56,10 +56,10 @@ sm.pp.combat(adata, batch_key='fov')
 ```python
 # Manual gating approach
 phenotype_markers = {
-    'T_cell': ['CD3', 'CD45'],
-    'B_cell': ['CD20', 'CD45'],
-    'Macrophage': ['CD68', 'CD163'],
-    'Tumor': ['panCK', 'Ki67']
+    'T_cell': ['CD3+', 'CD45+'],
+    'B_cell': ['CD20+', 'CD45+'],
+    'Macrophage': ['CD68+', 'CD163+'],
+    'Tumor': ['panCK+', 'Ki67+']
 }
 
 sm.tl.phenotype_cells(adata, phenotype=phenotype_markers,
@@ -73,7 +73,7 @@ sm.tl.cluster(adata, method='leiden', resolution=1.0)
 
 ```python
 # Build spatial neighbors graph
-sm.tl.spatial_distance(adata, x_coordinate='X', y_coordinate='Y')
+sm.tl.spatial_distance(adata, x_coordinate='X_centroid', y_coordinate='Y_centroid')
 
 # Neighborhood enrichment
 sm.tl.spatial_interaction(adata, phenotype='phenotype',
@@ -88,7 +88,7 @@ sm.tl.spatial_cluster(adata, phenotype='phenotype')
 ```python
 # Spatial scatter plot
 sm.pl.spatial_scatterPlot(adata, colorBy='phenotype',
-                          x='X', y='Y', s=5)
+                          x='X_centroid', y='Y_centroid', s=5)
 
 # Heatmap of spatial interactions
 sm.pl.spatial_interaction(adata)
@@ -99,11 +99,14 @@ sm.pl.image_viewer(adata, markers=['CD3', 'CD20', 'panCK'])
 
 ## Integration with Transcriptomics
 
+> **Placeholder**: Integration with transcriptomics requires matched spatial coordinates. TODO: add worked example when matched dataset available.
+
 ```python
 import squidpy as sq
 
-# If matched spatial transcriptomics available
-# Transfer labels or integrate modalities
+# adata_protein = ...  # load your protein data (see Data Loading above)
+# adata_rna = ...      # load matched spatial transcriptomics (see spatial/omicverse-spatial)
+# Requires matched spatial coordinates across modalities:
 sq.gr.spatial_neighbors(adata_protein)
 sq.gr.spatial_neighbors(adata_rna)
 
@@ -131,6 +134,7 @@ sq.gr.spatial_neighbors(adata_rna)
 
 ## When to leave this skill (where to go)
 
+- After phenotyping/spatial-analysis batch — **before downstream** → `single-cell/research-planner` **Phase R** (Review & Re-plan, Core Rule 8): interpret results, discuss with researcher, revise plan
 - Write Methods describing protein gating/phenotyping → `presentation/manuscript-writing`
 - Multi-panel protein-expression spatial figures → `visualization/figure-production`
 - Paired spatial transcriptomics integration → `spatial/multiomics`

@@ -104,6 +104,7 @@ for ct, markers in marker_genes.items():
 
 ```python
 # one spatial section per cell type
+import scanpy as sc
 for ct in ['T_cell','Macrophage','Epithelial']:
     adata_sp.obs[f'{ct}_prop'] = proportions[:, cell_types.index(ct)]
     sc.pl.spatial(adata_sp, color=f'{ct}_prop', cmap='Reds', vmin=0, vmax=1)
@@ -115,10 +116,12 @@ Different methods can diverge sharply. **For key findings (cell-fate conclusions
 
 ```python
 import numpy as np
+# 真实输出 key（见 Output keys quick-reference）：cell2location → q05_cell_abundance_w_sf，Tangram → tangram_ct_pred
+# 注意：两种方法的列序需与 cell_types 对齐（先核对 adata_sp.obsm[key].columns）
+c2l = np.asarray(adata_sp.obsm['q05_cell_abundance_w_sf'])  # cell2location abundance (per-spot × cell_type)
+tg = np.asarray(adata_sp.obsm['tangram_ct_pred'])           # Tangram proportion (per-spot × cell_type)
 for i, ct in enumerate(cell_types):
-    c2l = adata_sp.obsm['c2l_prop'][:, i]
-    tg = adata_sp.obsm['tg_prop'][:, i]
-    r = np.corrcoef(c2l, tg)[0,1]
+    r = np.corrcoef(c2l[:, i], tg[:, i])[0, 1]
     print(f'{ct}: cell2location vs tangram r={r:.3f}')
 ```
 
@@ -167,6 +170,7 @@ If you prefer R/spacexr (RCTD's native env): **since scop 0.8.9, RCTD/SPOTlight/
 
 ## When to leave this skill (where to go)
 
+- After deconvolution batch — **before downstream** → `single-cell/research-planner` **Phase R** (Review & Re-plan, Core Rule 8): interpret results, discuss with researcher, revise plan
 - Deconvolution result visualization → `spatial/omicverse-spatial` (`ov.pl.plot_spatial`) or `visualization/figure-production`
 - Compose publication-grade figure → `visualization/figure-production`
 - Cross-sample cell-type proportion comparison → standalone `miloR` / `scCODA` / `propeller` (compositional DA — scop `RunProportionTest` is basic; Milo/scCODA/propeller are NOT in scop, install standalone)

@@ -15,7 +15,7 @@ description: 空间转录组全流程（IO→空间邻域→QC→空间域→SVG
 
 `pip install omicverse` (V2). Built on scanpy/squidpy/anndata.
 
-> **Iteration reminder (Core Rule 8)**: This pipeline is run in batches. After each major step batch (e.g., QC+cluster+annotation; or DE+enrichment), return to `research-planner` Phase R to review results with the researcher before the next batch. Do not auto-run end-to-end.
+> **Iteration reminder**: Run in batches; after each batch return to `research-planner` Phase R (Core Rule 8). Do not auto-run end-to-end.
 
 ## 0. Initialization
 
@@ -71,9 +71,9 @@ ov.space.spatial_neighbors(adata, n_neighbors=6, method='knn')
 # outputs adata.obsp['spatial_connectivities'] / ['distances']
 ```
 
-> **API correction (v12.5)**: was previously written as `ov.pp.spatial_neighbors` — that does NOT exist. The correct location is **`ov.space.spatial_neighbors`** (verified; see `compat.yaml`). `ov.pp` only has `neighbors` (non-spatial).
+> **API correction**: was previously written as `ov.pp.spatial_neighbors` — that does NOT exist. The correct location is **`ov.space.spatial_neighbors`** (verified; see `compat.yaml`). `ov.pp` only has `neighbors` (non-spatial).
 
-All downstream SVG / spatial domain / communication methods depend on this graph.
+（spatial_neighbors 必须先跑，见 Prerequisites）
 
 ## 4. Spatial domains / tissue regions
 
@@ -130,7 +130,7 @@ svg = adata.var.query('moranI > 0.3').index
 
 ## 6. Spatial cell-cell communication
 
-> **API correction (v12.5)**: `ov.space.COMMOT` does **not** exist as a public method (only `_commot` private + `create_communication_anndata` helper). For spatial CCC, use the **COMMOT standalone package** or **squidpy.gr.nhood_enrichment / liana spatial mode**.
+> **API correction (see compat.yaml)**: `ov.space.COMMOT` does **not** exist as a public method (only `_commot` private + `create_communication_anndata` helper). For spatial CCC, use the **COMMOT standalone package** or **squidpy.gr.nhood_enrichment / liana spatial mode**.
 
 ```python
 # Build spatial LR network (this helper IS available)
@@ -172,7 +172,7 @@ H&E / IF image analysis: ov V2 integrates basic registration; complex registrati
 
 ## Key pitfalls
 
-- `ov.space.spatial_neighbors` must run before spatial domains/SVG/communication — all spatial methods consume this graph (note: it's in `ov.space`, not `ov.pp`).
+- **spatial_neighbors 必须先跑** — 见 Prerequisites（在 `ov.space`，不在 `ov.pp`）。
 - Default n_neighbors differs by platform: Visium hex grid uses 6; Xenium/HD try 4-8.
 - SVG uses Moran's I, threshold starts at 0.3; too strict misses weak-spatial-pattern genes.
 - Before deconvolution, confirm `adata.layers['counts']` was not overwritten by normalization.

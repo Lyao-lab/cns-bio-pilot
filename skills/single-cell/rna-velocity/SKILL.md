@@ -9,6 +9,8 @@ description: RNA velocity 全家桶。基于 OmicVerse V2 的 ov.single.Velo（�
 - R/Seurat environment and no deep velocity tool → `single-cell/scop` (`RunSCVELO`)
 - Assemble a publication-grade velocity figure → finish the plot first, then `visualization/figure-production`
 
+> **Iteration reminder (Core Rule 8)**: This pipeline is run in batches. After velocity computation + fate inference, return to `research-planner` Phase R to review results with the researcher before downstream analysis. Do not auto-run end-to-end.
+
 # OmicVerse RNA Velocity
 
 `pip install omicverse` (V2). OmicVerse unifies 5 velocity engines under `ov.single.Velo`; downstream fate inference integrates CellRank 2 natively.
@@ -63,7 +65,7 @@ Source-checked ([omicverse/single/_velo.py](https://github.com/Starlitnightly/om
 ```python
 import omicverse as ov
 v = ov.single.Velo(adata)
-v.preprocess(recipe='monocle', n_neighbors=30, n_pcs=30)   # verified signature (scop-style)
+v.preprocess(recipe='monocle', n_neighbors=30, n_pcs=30)   # verified signature (omicverse)
 v.cal_velocity(method='scvelo', n_top_genes=2000)          # NOTE: n_top_genes lives here, not in preprocess.
                                                             # omicverse default method='dynamo'; 'scvelo' is the recommended baseline.
 # results: adata.layers['velocity'], adata.obsm['velocity_umap']
@@ -144,9 +146,9 @@ estimator.plot_fate_probabilities()         # probabilistic fate map (not hard c
 ```python
 # cellDancer fallback example (>50K cells)
 import celldancer as cd
-cd.tl.estimation_ucd(adata_cd, ...)             # native API (see its tutorial)
-cd.tl.velocity_cell_dancer(adata_cd, n_jobs=8)
-adata.layers['velocity'] = adata_cd.layers['velocity'].copy()  # write back
+cd.tl.estimation_ucd(adata, ...)             # native API (see its tutorial)
+cd.tl.velocity_cell_dancer(adata, n_jobs=8)
+adata.layers['velocity'] = adata.layers['velocity'].copy()  # write back
 # then run cellrank_fate or scv.pl.velocity_embedding for plotting
 ```
 
@@ -201,7 +203,7 @@ v.velocity_streamplot(basis='umap', velocity_key='velocity_S_umap')  # streamlin
 |---|---|---|
 | Routine 10x S/U, exploratory | **`method='scvelo'`** | UniTVelo |
 | With 4sU/SLAM metabolic labels | **`method='dynamo'`** | CellRank RealTimeKernel |
-| Strong batch effects | **`method='latentvelo'`** (batch_key) | VeloVGI |
+| Strong batch effects | **`method='latentvelo'`** (batch_key) | veloVI |
 | Multi-lineage / fate bifurcation | `method='graphvelo'` or DeepVelo(GCN) | cellDancer |
 | >50K large samples | **cellDancer** (fallback) | veloVI |
 | Quantify uncertainty | **pyro-Velocity** (fallback) | veloVI |
@@ -222,6 +224,8 @@ v.velocity_streamplot(basis='umap', velocity_key='velocity_S_umap')  # streamlin
 - **Velocity ≠ real time**: unless calibrated by metabolic labels, latent_time is only for ordering, not duration inference.
 
 ## Decision aid: when to leave this skill
+
+- After velocity computation + fate inference batch — **before downstream** → `single-cell/research-planner` **Phase R** (Review & Re-plan, Core Rule 8): interpret results, discuss with researcher, revise plan
 
 | Need | Go to |
 |---|---|

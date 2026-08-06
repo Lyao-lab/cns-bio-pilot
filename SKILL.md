@@ -51,6 +51,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 4. **Postcheck is mandatory.** After any quantitative analysis (DE/deconvolution/CCC/composition), run `python scripts/postcheck.py`. FAIL must be resolved before proceeding.
 5. **Save checkpoints.** After each major step (QC/cluster/annotation/DE), save `adata.write_h5ad('checkpoints/XX_step.h5ad')`. Upstream changes → re-run from last valid checkpoint.
 6. **Runtime API self-adaptation.** Do NOT trust hardcoded version numbers or assume API signatures. Before calling any ov.*/pt.*/sc.* function for the first time, verify with `inspect.signature(func)` — parameter names may differ from documentation or training data. If a function signature doesn't match expectations, adapt the call rather than failing. Run `python scripts/api_check.py --diff` after any package upgrade to detect breaking changes.
+7. **Analysis discipline loop.** Every analysis follows meta_methodology §7 (step-gate sanity checks after each step) and §8 (hypothesis ledger + provenance contract + conclusion grading). This is not optional — the planner-verifier loop is the proven-optimal pattern for bioinformatics agents (K-Dense Analyst outperforms single-model by 6 points on BixBench precisely via per-step verification).
 
 ## Key Files
 
@@ -64,5 +65,5 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 | `scripts/postcheck.py` | After any analysis (scientific rigor auto-check) |
 | `scripts/api_check.py` | After installing/updating omicverse or pertpy |
 | `scripts/scop_api_check.R` | After installing/updating scop |
-| `references/meta_methodology.md` | Self-check after each analysis step (6 rules) |
+| `references/meta_methodology.md` | Self-check after each analysis step (8 rules + step-gate + hypothesis ledger) |
 | `references/omicverse_guide.md` | When using ov.* APIs (task → API cheat-sheet) |

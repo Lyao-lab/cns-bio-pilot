@@ -29,3 +29,5 @@ desktop.ini
 *.loom
 *.mtx
 *.h5seurat
+
+.tmp/

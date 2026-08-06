@@ -98,6 +98,9 @@
 | **通讯轴**：检查是否仅基于一种方法（CellChat only） | 单方法 → 可能是方法特异性假阳性 | 跑 LIANA consensus 多方法对比 |
 | **轨迹**：检查是否有独立方向性证据（velocity / 实验数据） | 无 → pseudotime 可能是 artifact | 需 velocity 或 clone tracing 验证 |
 | **空间 niche**：检查跨样本出现频率 | <20% 样本 → 可能是个体特异而非通用结构 | 增加样本或标注为"初步发现" |
+| **生存/临床关联**：Cox 比例风险假设是否满足？事件数/变量数 ≥ 10？多重比较是否校正？ | 比例风险违反 / 过拟合 / 多重比较未校正 → 假关联 | 检验 Schoenfeld 残差；限制变量数；FDR 校正 |
+| **CNV 推断**：参考核型是 normal 还是 tumor-derived？阈值是否敏感？ | normal 参考污染信号 / 阈值微调结果翻转 → 推断不稳 | 用 normal adjacent 或 immune 细胞做参考；跑阈值敏感性 ±0.05 |
+| **in silico 扰动预测**：预测是否落在训练数据覆盖的基因/细胞空间外？ | 外推（extrapolation）→ 预测不可信 | 标注预测点的 OOD 程度；仅报告训练域内的预测 |
 
 ---
 

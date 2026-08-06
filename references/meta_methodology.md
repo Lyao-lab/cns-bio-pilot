@@ -108,9 +108,82 @@
 
 ---
 
-## How to Use the Six Principles
+## 7. Step-Gate Sanity Checks (borrowed from planner-verifier loop)
 
-After each analysis step, run the **Six Self-Check Questions**:
+**Root cause**: A long pipeline (QC → cluster → DE → enrichment → CCC → trajectory) silently accumulates errors. By the time results look wrong at the end, the failing step is buried upstream. LLM-driven analysis is especially prone: it emits "shortest-path-to-result" code and never looks back.
+
+**Discipline**: After each key step, pass an automatic sanity check **before** proceeding to the next. A failed check → stop and debug that step; do not carry garbage downstream. This is the bioinformatics concretization of the planner-verifier dual loop (K-Dense Analyst outperforms single-model by 6 points on BixBench precisely because of per-step verification).
+
+| Step | Sanity check | Red flag (stop) |
+|---|---|---|
+| **After QC** | mt% distribution per sample; doublet rate; cell count per sample | Any sample loses >50% cells vs others; doublet rate >30% |
+| **After clustering** | Known marker expression per cluster (e.g., CD3D in T cell cluster only, not spread); are expected cell-type markers split across clusters or collapsed into one? | Marker expressed everywhere or nowhere; one cluster = mixed lineages (e.g., CD3D+ and CD79a+ in same cluster) |
+| **After DEG** | Housekeeping genes (ACTB/GAPDH/HPRT1) not in top DEG; logFC magnitude reasonable; up/down gene counts roughly balanced | Housekeeping gene is "significantly DE"; all genes up-regulated (normalization artifact); abs(logFC) > 10 for many genes |
+| **After enrichment** | Gene-set overlap is not "the entire gene list"; no anti-biological pathways top-ranked (e.g., apoptosis pathway top in a proliferation analysis) | Same 200 genes appear in every pathway; ribosomal/mitochondrial terms dominate |
+| **After CCC** | Known ligand-receptor direction correct (ligand in sender, receptor in receiver); not single-method-only (see discovery_miner §3) | Ligand and receptor both expressed in the same side; CCC score driven by one rare cell pair |
+| **After trajectory / pseudotime** | Root cell expresses known root marker; trajectory direction matches known biology or independent velocity | Root cell has no biological justification; pseudotime contradicts known developmental order |
+
+> This check is **per-step**, not just at the end. meta_methodology §1-§6 are principles; §7 is the **operational gate** that enforces them mid-pipeline.
+
+---
+
+## 8. Hypothesis Ledger + Provenance Contract (borrowed from hypothesis-driven science agents)
+
+**Root cause**: Running a pipeline without explicit hypotheses produces "data dredging" — every significant result is post-hoc framed as if intended. Without provenance records, results are irreproducible and reviewers cannot audit the path.
+
+**Discipline**:
+
+### 8a. Hypothesis Ledger
+
+Before analysis begins, output a **hypothesis ledger** — an ordered list of falsifiable hypotheses, each with a calibrated confidence:
+
+```
+H1: [main biological hypothesis, e.g., "VIC-to-myofibroblast transition drives valve fibrosis"]
+    confidence: high | med | low
+    basis: [prior literature / pilot data / biological reasoning]
+    falsification criterion: [what result would refute it]
+    status: [pending | supported | refuted | inconclusive]  ← filled in after analysis
+
+H2: [secondary hypothesis]
+    confidence: ...
+    ...
+```
+
+- `confidence` is calibrated against the strength of the basis, not the desirability of the hypothesis
+- After analysis, **fill in `status`** for each: `supported` (data + significance + biology coherent) / `refuted` (data contradicts) / `inconclusive` (insufficient evidence)
+- Conclusions not in the ledger = post-hoc / exploratory; label them as such (see 8c)
+
+### 8b. Provenance Contract
+
+Every analysis run must record, in an `analysis_log.md` (or `step.params.json` per checkpoint):
+
+| Record | Example |
+|---|---|
+| **Random seed** | `np.random.seed(42); torch.manual_seed(42)` set in §0 Init; scVI `seed=42` |
+| **Key parameters per step** | `§2: mt_threshold=0.15 (from diagnostic knee); §5: resolution=0.6 (chosen from candidate comparison, see Step 5b); §7: integration=harmony (batch separable, lightweight sufficient)` |
+| **Data hash** | `md5sum` of input h5ad/matrix at project start |
+| **Versions** | from `compat.yaml` + `pip freeze` + `sessionInfo()` (meta §5) |
+| **Total attempts** | `§5 clustering: tried res=0.3/0.6/1.0 → chose 0.6 (ARI stability 0.82)` — not just the one that worked |
+
+The checkpoint h5ad (Core Rule 5) stores **data state**; the provenance log stores **decision state**. Both are needed for reproducibility.
+
+### 8c. Conclusion Confidence Grading
+
+Every conclusion in the final report gets a grade:
+
+| Grade | Criterion | Wording allowed |
+|---|---|---|
+| **Verified** | Data support + literature grounding (PubMed/DOI cited) + passes §7 sanity gate | "we show / demonstrates" |
+| **Data-supported, literature gap** | Data support + passes §7, but no prior literature to contextualize | "we observe / suggests, consistent with our data" |
+| **Speculative** | Plausible biology but data insufficient or no orthogonal validation | "may / hypothesized / warrants further study" |
+
+Conclusions without any grade = not reportable. This three-tier system (borrowed from PaperQA2's evidence grading and Co-Scientist's calibrated confidence) prevents overclaiming.
+
+---
+
+## How to Use the Eight Principles
+
+After each analysis step, run the **Eight Self-Check Questions**:
 
 1. Did I **verify a precondition**? (API / method assumption / LLM output — at least one)
 2. When I changed data use, did I **ask about semantics**?
@@ -118,12 +191,14 @@ After each analysis step, run the **Six Self-Check Questions**:
 4. Am I reporting the **destination or the path**? Did I do sensitivity analysis?
 5. After an upstream change, did I **recompute downstream**? Is this my **third** retry? If yes → stop for root cause.
 6. Did I do the **design / environment prechecks**?
+7. Did I pass the **step-gate sanity check** (§7) for the step I just completed? Is the next step built on a verified step?
+8. Is this conclusion in my **hypothesis ledger** (§8a)? What grade does it earn (§8c)?
 
 If any answer is "no" or a circuit-breaker triggers, **do not proceed**.
 
 ---
 
-## Negative Reference: Real Failures Matching These Six (not part of the skill — for recognition only)
+## Negative Reference: Real Failures Matching These Eight (not part of the skill — for recognition only)
 
 > Typical counter-examples distilled from GitHub / Biostars / POP projects. **Not written into the skill body** — they exist only to help you recognize "which principle was violated".
 
@@ -137,4 +212,4 @@ If any answer is "no" or a circuit-breaker triggers, **do not proceed**.
 - **LLM-written NB-DESeq2 fed normalized input** (long-standing Biostars consensus) → violates 2 (semantics)
 - **CellChat single-tool conclusion taken as truth** (LIANA: 16 resources × 7 methods, very low consensus) → violates 1 (confidence ≠ evidence)
 
-> When recognizing a failure, **map it to one of the six first** — it tells you "where the thinking went wrong", which beats "how to fix this bug".
+> When recognizing a failure, **map it to one of the eight first** — it tells you "where the thinking went wrong", which beats "how to fix this bug".

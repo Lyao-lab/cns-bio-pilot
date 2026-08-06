@@ -22,6 +22,9 @@ description: 单细胞全流程（ambient 去除→QC→doublet→降维聚类�
 import omicverse as ov
 ov.plot_set()  # unified global plotting style (font/palette/dpi)
 import scanpy as sc   # ov is built on scanpy/anndata; a few ops still need sc
+import numpy as np, torch
+np.random.seed(42); torch.manual_seed(42)   # provenance: fixed seed (meta §8b)
+# ov.pp steps mostly use numpy internally → covered; scVI needs seed=42 passed at train time
 ```
 
 > **Dependency:** `ov.single.*` (find_markers, annotation, etc.) requires `ipywidgets`. If you hit `ModuleNotFoundError: No module named 'ipywidgets'`, run `pip install ipywidgets` first. Without a GPU, ov auto-falls back to CPU mode (works, but scVI/scGPT finetune is slow).
@@ -128,6 +131,29 @@ QC thresholds are **experimental design choices, not universal defaults**. A thr
 
 > References: Heumos et al. 2023 *Nat Rev Genet* 24:550 (sc-best-practices.org QC chapter); Luecken & Theis 2019 *Mol Syst Biol* (foundational best-practices); [10x Genomics QC considerations](https://www.10xgenomics.com/analysis-guides/common-considerations-for-quality-control-filters-for-single-cell-rna-seq-data).
 
+## 2.5 Metadata EDA (mandatory — this is where meta §6 "batch-condition separability" gets executed)
+
+Before preprocessing, check the **design**, not just the cells:
+
+```python
+import pandas as pd
+# batch × condition cross-tab — is the design separable? (meta §6 precheck)
+print(pd.crosstab(adata.obs['batch'], adata.obs['condition']))
+# If batch1 = all control, batch2 = all treated → CONFOUNDED. No algorithm rescues this.
+# If balanced (each batch has both conditions) → separable, proceed.
+
+# Sample-level overview — spot outliers before they become artifacts
+sample_stats = adata.obs.groupby('sample').agg(
+    n_cells=('n_genes_by_counts', 'count'),
+    median_genes=('n_genes_by_counts', 'median'),
+    median_mt=('pct_counts_mt', 'median')
+)
+print(sample_stats)
+# Any sample with <1/3 median cell count or >2× median mt% → flag, investigate before pooling
+```
+
+> **Why here, not later**: metadata problems (confounded design, outlier samples) are design problems (meta §6) — they must be caught before they propagate into integration, DE, and CCC. Running this check after batch correction is too late.
+
 ## 3. Preprocess (normalize + HVG + scale)
 
 ```python
@@ -162,6 +188,24 @@ ov.pp.leiden(adata, resolution='auto')   # auto invokes ov.single.auto_resolutio
 > - Resolution sensitivity (does the main conclusion hold at resolution ±1 step?)
 > - Optional statistical significance of clusters: `scSHC` (Python/R) tests cluster separation rigorously
 > Reporting a single clustering at a single resolution without stability check = hidden fork-in-the-path.
+
+### Step 5b — Candidate comparison for resolution (borrowed from referee-panel pattern)
+
+Clustering resolution is a **subjective** decision. Don't pick one resolution and move on — run 2-3 candidates and compare stability:
+
+```python
+from sklearn.metrics import adjusted_rand_score
+resolutions = [0.3, 0.6, 1.0]
+# Cluster at each resolution, compare pairwise ARI on shared cells
+# (full code in figure-production or analysis_log; here is the decision logic)
+# 1. For your key cell population (the one anchoring your conclusion):
+#    - does it appear as a distinct cluster at ALL three resolutions?
+#    - is its marker expression consistent across resolutions?
+# 2. Choose the resolution where the key population is most stable (ARI > 0.7 across subsamples)
+# 3. Record the choice + reason in analysis_log.md: "chose res=0.6: target population stable (ARI 0.82), res=0.3 merges it with X, res=1.0 over-fragments"
+```
+
+> This is the lightweight version of HypoGeneAgent's referee panel: instead of one LLM judgment, compare candidates on an objective stability metric. See meta §4 (report the path, including alternatives considered).
 
 ## 6. Cell cycle scoring
 

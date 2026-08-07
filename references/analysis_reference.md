@@ -12,9 +12,9 @@
 | 数据加载 + counts 保留 | `sc.read_*` + `layers['counts']=X.copy()` | §1 | counts 必须在 QC 前存 |
 | QC + doublet | `ov.pp.qc` | §2 | 先诊断后过滤；`tresh` 不是 `mt_thresh` |
 | Ambient RNA 去除 | `ov.pp.ambient.remove_ambient` | §2.1 | 在 QC 前跑 |
-| 预处理 | `ov.pp.preprocess` + `ov.pp.scale` | §3 | shiftlog vs pearson |
+| 预处理 | `ov.pp.preprocess` 或 scanpy 三步 | §3 | ⚠️ ov.preprocess 可能崩，有 scanpy 兜底 |
 | 降维 + UMAP | `ov.pp.pca` + `ov.pp.neighbors` + `ov.pp.umap` | §4 | neighbors 依赖 pca |
-| 聚类 | `ov.pp.leiden(resolution='auto')` | §5 | 依赖 neighbors |
+| 聚类 | `ov.pp.leiden(resolution=0.6)` | §5 | ⚠️ 'auto' 报错，用固定值；依赖 neighbors |
 | 细胞周期 | `ov.pp.score_genes_cell_cycle` | §6 | species 参数 |
 | 批次校正 | `ov.single.batch_correction` | §7 | `methods`(复数)！scVI 后重建邻居 |
 | Marker + 注释 | `ov.single.find_markers` + `ov.single.pySCSA` | §8 | 层级注释（先 lineage 后 subtype） |
@@ -86,8 +86,22 @@ ov.pp.ambient.remove_ambient(adata, method='soupx', raw=raw_adata)
 ### 2.4 预处理
 ```python
 # 来源：omicverse-pipeline §3
-ov.pp.preprocess(adata, mode='shiftlog', n_HVGs=2000)  # shiftlog=classic log1p | pearson=残差
-ov.pp.scale(adata)   # 结果存 adata.layers['scaled']
+# ov.pp.preprocess 是首选（一步到位 normalize+HVG+scale），但在某些数据上
+# 可能触发内部 IndexError（ov 2.3.1 已知问题）。以下两种路径都给：
+
+# 路径A：omicverse 一步式（首选，但可能崩）
+try:
+    ov.pp.preprocess(adata, mode='shiftlog', n_HVGs=2000)  # shiftlog=classic log1p | pearson=残差
+    ov.pp.scale(adata)
+except Exception:
+    # 路径B：scanpy 标准三步（兜底，稳定）
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+    sc.pp.highly_variable_genes(adata, n_top_genes=2000, flavor='seurat_v3', layer='counts')
+    adata.raw = adata                    # ⚠️ 在 HVG 子集化前存 raw（LIANA/注释需要）
+    adata = adata[:, adata.var.highly_variable].copy()
+    sc.pp.scale(adata, max_value=10)
+    adata.layers['scaled'] = adata.X.copy()  # 给 ov.pp.pca 的 layer= 参数用
 ```
 
 ### 2.5 降维 + UMAP
@@ -102,8 +116,10 @@ ov.pp.umap(adata)
 ### 2.6 聚类
 ```python
 # 来源：omicverse-pipeline §5
-ov.pp.leiden(adata, resolution='auto')   # auto 调用 ov.single.auto_resolution
+# ⚠️ resolution='auto' 在 ov 2.3.1 上报 "must be real number, not str"——用固定值
+ov.pp.leiden(adata, resolution=0.6)   # 0.4-1.0 常用范围；0.6 适合 2k-50k 细胞
 # 结果在 adata.obs['leiden']
+# 候选对比：跑 res=[0.3,0.6,1.0]，选目标群体最稳定的（ARI>0.7）
 # ⚠️ 依赖 neighbors 图（§2.5 必须先完成）
 ```
 
@@ -185,6 +201,7 @@ ov.bulk.geneset_plot(adata)
 ### 4.1 细胞通讯（CCC）
 ```python
 # 来源：omicverse-pipeline §9
+# ⚠️ LIANA 需要 adata.raw（含所有基因的归一化表达），HVG 子集化前必须设 adata.raw=adata
 ov.single.run_liana(adata, groupby='celltype')   # LIANA+ consensus（推荐）
 ov.single.run_cellphonedb_v5(adata)               # CellPhoneDB v5（备选）
 ov.pl.ccc_heatmap(adata)
@@ -313,6 +330,9 @@ ov.bulk.pyWGCNA(adata, method='signed')   # 'signed'|'unsigned'
 | 比例数据禁 chi-square | 违反 compositional 约束 | dispatch_cheatsheet A7 |
 | `tresh` 不是 `mt_thresh` | 参数被静默吞掉 | omicverse-pipeline §2 |
 | `methods`(复数) 不是 `method` | 参数被静默吞掉 | omicverse-pipeline §7 |
+| `resolution='auto'` 报错 | ov 2.3.1 不支持 auto | 用固定值 0.4-1.0 |
+| `ov.pp.preprocess` 可能崩 | IndexError（ov 2.3.1 已知） | scanpy 三步兜底 |
+| LIANA 需要 `adata.raw` | ".raw is not initialized" | HVG 子集化前设 raw |
 | scVI 后重建 neighbors(use_rep='X_scVI') | 聚类用错空间 | omicverse-pipeline §7 |
 | 空间分析前置 spatial_neighbors | 所有空间方法崩溃 | omicverse-spatial §3 |
 | 每步后跑 postcheck | 错误传到下游 | Core Rule 4 |

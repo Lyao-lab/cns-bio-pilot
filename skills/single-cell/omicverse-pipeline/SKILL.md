@@ -195,9 +195,7 @@ ov.pp.tsne(adata)   # optional, on demand
 ## 5. Clustering (auto resolution)
 
 ```python
-ov.pp.leiden(adata, resolution='auto')   # auto invokes ov.single.auto_resolution
-# manual equivalent:
-# ov.single.auto_resolution(adata); ov.pp.leiden(adata, resolution=res)
+ov.pp.leiden(adata, resolution=0.6)   # ⚠️ 'auto' 报错 in ov 2.3.1，用固定值；0.4-1.0 常用范围
 # result in adata.obs['leiden']
 ```
 
@@ -469,7 +467,7 @@ ov.pl.violin(adata, keys=['CD3D'], groupby='celltype')
 - **`tresh` not `mt_thresh`**: `ov.pp.qc` has NO `mt_thresh` parameter — passing it is silently swallowed by `**kwargs`. Use `tresh={'mito_perc': <frac>, ...}` (seurat mode) or `mode='mads', nmads=5` (auto).
 - **Default doublet method is `scdblfinder`** (not scrublet) in omicverse — requires `pyscdblfinder` (auto-falls back to `scrublet` if missing). No need to specify unless you want a different method.
 - After scVI integration, recompute every neighbors/umap/leiden on `use_rep='X_scVI'`.
-- `ov.pp.leiden(resolution='auto')` depends on an existing neighbors graph — make sure step 4 is done.
+- `ov.pp.leiden(resolution=0.6)` depends on an existing neighbors graph — make sure step 4 is done. `resolution='auto'` reports "must be real number, not str" in ov 2.3.1 — use a fixed value (0.4-1.0).
 - For multi-sample doublet detection always pass `batch_key`, otherwise cross-sample false doublets explode.
 
 ## Resources

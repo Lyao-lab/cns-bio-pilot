@@ -1118,8 +1118,15 @@ def save_panel(fig, name, outdir='panels', journal=True, fmt='pdf', show=None):
         except Exception:
             show = False
     finalize_figure(fig)  # 强制 pre-save 检查（铁律 1/2 + 栅格化）
-    os.makedirs(outdir, exist_ok=True)
-    path = f'{outdir}/{name}.{fmt}'
+    # name 含路径分隔符 → 视为完整路径（不再拼 outdir）；否则拼 outdir/name
+    if '/' in name or '\\' in name:
+        path = f'{name}.{fmt}'
+        out_dir = os.path.dirname(path)
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
+    else:
+        os.makedirs(outdir, exist_ok=True)
+        path = f'{outdir}/{name}.{fmt}'
 
     dpi = plt.rcParams['savefig.dpi'] if journal else 300
     fig.savefig(path, dpi=dpi, bbox_inches='tight', pad_inches=0.1)
@@ -1243,10 +1250,10 @@ def plot_umap(adata, color='celltype', basis='X_umap', ax=None, figsize=None,
 
 def _umap_mpl(adata, color, basis, ax, p, labels, **kwargs):
     """mpl UMAP: scatter by category + optional on-plot labels."""
-    coords = adata.obsm[basis]
+    coords = np.asarray(adata.obsm[basis])
     cats = adata.obs[color].astype('category')
     for i, cat in enumerate(cats.cat.categories):
-        mask = cats == cat
+        mask = (cats == cat).values
         ax.scatter(coords[mask, 0], coords[mask, 1], s=p['point_size'],
                    alpha=p['alpha'], color=MORLANDI[i % len(MORLANDI)],
                    edgecolor='none', rasterized=True, label=str(cat))
@@ -1270,7 +1277,8 @@ def plot_volcano(de, pval_name='padj', fc_name='log2FC', ax=None, figsize=None,
         try:
             import omicverse as ov
             ov.pl.volcano(de, pval_name=pval_name, fc_name=fc_name,
-                         sig_pvalue=sig_pval, sig_fc=sig_fc, annotate_top=annotate_top)
+                         pval_max=sig_pval, FC_max=sig_fc,
+                         plot_genes_num=annotate_top)
             fig_ov = plt.gcf()
             fig_ov.set_size_inches(*recipe_figsize('volcano'))
             ax = fig_ov.axes[0] if fig_ov.axes else ax
@@ -1333,9 +1341,8 @@ def plot_dotplot(adata, var_names, groupby='celltype', ax=None, figsize=None,
     if _check_ov():
         try:
             import omicverse as ov
-            fig_ov = plt.gcf()
             ov.pl.dotplot(adata, var_names=var_names, groupby=groupby,
-                          standard_scale=standard_scale, dendrogram=False)
+                          standard_scale=standard_scale, dendrogram=False, show=False)
             fig_ov = plt.gcf()
             fig_ov.set_size_inches(*recipe_figsize('dotplot'))
             ax = fig_ov.axes[0] if fig_ov.axes else ax
@@ -1728,7 +1735,7 @@ def plot_feature_matrix(adata, genes, basis='X_umap', ax=None, figsize=None,
 def _feature_matrix_mpl(adata, genes, basis, ncols, save, show):
     """mpl feature matrix: multi-subplot scatter, shared vmax=99th pct."""
     import math
-    coords = adata.obsm[basis]
+    coords = np.asarray(adata.obsm[basis])
     nrows = math.ceil(len(genes) / ncols)
     fig, axes = plt.subplots(nrows, ncols, figsize=(ncols*3, nrows*3),
                              constrained_layout=True)
@@ -1961,7 +1968,8 @@ def plot_cellproportion(adata, groupby='condition', celltype_col='celltype',
     if _check_ov():
         try:
             import omicverse as ov
-            ov.pl.cellproportion(adata, groupby=groupby, **kwargs)
+            ov.pl.cellproportion(adata, celltype_clusters=celltype_col,
+                                 groupby=groupby, **kwargs)
             fig_ov = plt.gcf()
             if save:
                 save_panel(fig_ov, save, show=show)

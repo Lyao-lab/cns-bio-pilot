@@ -104,6 +104,8 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 | `references/discovery_miner.md` | **Right after analysis** — scan each result type (DE/proportion/CCC/trajectory/niche) for candidate discoveries, score priority, exclude false positives, determine story level |
 | `scripts/cns_style.py` | Import at top of every plotting script (26 helpers + 18 smart_plot entry points: plot_umap/volcano/dotplot/...) |
 | `scripts/postcheck.py` | After any analysis (scientific rigor auto-check) |
+| `references/analysis_reference.md` | Analysis code templates (QC/DE/CCC/spatial/bulk) — the plotting_reference equivalent for analysis |
+| `references/plotting_reference.md` | Plotting code templates (18 chart types) |
 | `scripts/api_check.py` | After installing/updating omicverse or pertpy |
 | `scripts/scop_api_check.R` | After installing/updating scop |
 | `references/meta_methodology.md` | Self-check after each analysis step (8 rules + step-gate + hypothesis ledger) |

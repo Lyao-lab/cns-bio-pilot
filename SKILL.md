@@ -29,7 +29,7 @@ Read this file → pick ONE sub-skill → read that sub-skill's SKILL.md → exe
 | Cell-type proportion / differential abundance (Milo/scCODA/propeller) | `single-cell/omicverse-pipeline` §9c (or scop RunMilo/RunscCODA) | omicverse / scop |
 | CNV inference / inferCNV / copykat | `single-cell/omicverse-pipeline` (or scop RunCNV) | omicverse / scop |
 | **Figures** (iterative: design A → look → adjust B → ... → assemble) | `visualization/figure-production` | cns_style.py + ov.pl |
-| Schematics / mechanism diagrams / graphical abstract | `visualization/scientific-schematics` | AI + matplotlib |
+| Schematics / mechanism diagrams / graphical abstract | `visualization/scientific-schematics` | matplotlib + networkx (纯代码模板) |
 | **Manuscript writing** (Methods / Results / Figure Legends) | `presentation/manuscript-writing` | LLM |
 | Slides (lab meeting / conference / defense) | `presentation/scientific-slides` | python-pptx / Beamer |
 

@@ -1,6 +1,6 @@
 ---
 name: scientific-schematics
-description: 自动生成发表级科学示意图（机制图/流程图/架构图/路径图/图形摘要 Graphical Abstract）。从自然语言描述或论文 abstract 出发，经 AI 生成→视觉审查→精炼循环产出 journal/poster 级图片。当用户要画机制图、流程图、神经网络架构、信号通路、论文图形摘要/TOC 图时触发。
+description: 纯代码（matplotlib+networkx）生成科学示意图模板库：分析流程图、信号通路、反馈环路、对比图、图形摘要。JSON 参数驱动，无需 AI API。当用户要画机制图、流程图、通路图、反馈环路、图形摘要时触发。
 license: MIT
 metadata:
   author: AIPOCH
@@ -14,133 +14,194 @@ metadata:
 # Scientific Schematics Skill
 
 ## When to Use
-- Creating **journal-ready** figures (clean typography, consistent styling, high resolution) from a short textual description.
+- Creating **journal-ready** mechanism/flow/pathway figures (clean typography, consistent styling, high resolution) directly from structured JSON parameters.
 - Producing **poster-friendly** diagrams that prioritize readability at distance (larger labels, stronger contrast).
-- Drafting **neural network architecture** schematics (e.g., Transformer blocks, attention modules) for papers or slides.
-- Generating **biological pathway** visuals (e.g., Krebs cycle) with iterative quality review.
-- **Graphical Abstract / TOC figure**: recommend layout + elements + AI prompts from a paper abstract (see "Mode: Graphical Abstract" below).
-- Rapidly iterating on a diagram concept when you need **AI-assisted refinement loops** instead of manual redraws.
+- Drafting **signal pathway** visuals (e.g., CXCL12 → CXCR4 → macrophage activation) for papers or slides.
+- Drawing **feedback loops** (positive/negative regulatory circuits) for mechanism figures.
+- Building **left-right comparison** figures (Normal vs Disease, Control vs Treatment).
+- **Graphical Abstract / TOC figure**: assemble an Input → Process → Output three-column summary from a paper abstract (see "Mode: Graphical Abstract" below).
+- Rapidly iterating on a diagram concept by editing JSON parameters — no API calls, no waiting.
 
 ## Key Features
-- **Text-to-diagram automation**: Converts a natural-language prompt into a publication-quality schematic.
-- **Iterative generate → review → refine loop**: Automatically improves the figure until a quality threshold is met.
-- **Document-type aware critique**: Reviewer feedback adapts to `journal` vs `poster` requirements.
-- **Model-configurable pipeline**: Choose separate LLMs for generation and vision-based review.
-- **Output validation**: Performs final checks (e.g., resolution/accessibility considerations) before saving to `figures/`.
+- **Pure code, no AI API**: matplotlib + networkx render everything locally; zero network calls, zero API keys.
+- **JSON-parameter driven**: every template reads its layout/content from a `params` dict, so edits are one-line JSON changes.
+- **5 ready-made templates**: flow diagram, pathway cascade, feedback loop, left-right comparison, three-column graphical abstract.
+- **Consistent styling**: Morlandi palette + Navy titles, 300 DPI output, `.png/.pdf/.svg` auto-selected by output suffix.
 - Reference guidance (inline sections below):
   - Best practices: see §Best Practices below
-  - Supported diagram categories: see §Supported Diagram Categories below
+  - Template params: see §5 Templates below
+  - Graphical abstract layout: see `references/graphical_abstract_layout.md`
 
 ## Dependencies
 - Python 3.10+ (recommended)
-- Python packages:
-  - `pillow` (PIL)
+- Python packages (all present in the `sc` conda env):
   - `matplotlib`
-  - `requests`
-- Environment:
-  - `OPENROUTER_API_KEY` (required)
+  - `networkx`
+  - `numpy`
+- No environment variables required.
 
 ## Example Usage
-### 1) Set the OpenRouter API key
-**Windows (PowerShell)**
-```powershell
-$env:OPENROUTER_API_KEY="your_key_here"
+
+### 1) Run a template with default example params (see what a template looks like first)
+```bash
+python scripts/generate_schematic.py --template flow
 ```
 
-**Linux/macOS**
+### 2) Run with inline JSON params
 ```bash
-export OPENROUTER_API_KEY="your_key_here"
+python scripts/generate_schematic.py --template feedback_loop \
+  --params '{"loop_type":"positive","nodes":[{"id":"F","label":"Fibroblast","color":0},{"id":"M","label":"Macrophage","color":2}],"edges":[{"from":"F","to":"M","label":"CXCL12"},{"from":"M","to":"F","label":"TGFb"}],"title":"Feedback loop"}' \
+  -o figures/feedback_loop.png
 ```
 
-### 2) Run the generator (journal/poster)
+### 3) Run with a params JSON file
 ```bash
-python scripts/generate_schematic.py "Transformer architecture with attention mechanism" --doc-type journal
+python scripts/generate_schematic.py --template pathway \
+  --params params/pathway.json -o figures/pathway.pdf
 ```
 
-### 3) Override the generation model
+### 4) Adjust resolution / output format
 ```bash
-python scripts/generate_schematic.py "Krebs cycle" --doc-type journal --generator anthropic/claude-3.5-sonnet
+python scripts/generate_schematic.py --template comparison \
+  --params '{"left":{"title":"Normal","items":["Low fibrosis","Quiescent FB"]},"right":{"title":"Disease","items":["High fibrosis","Activated FB"]},"title":"Normal vs Disease"}' \
+  -o figures/comparison.svg --dpi 300
 ```
 
-### 4) (Optional) Override both generator and reviewer
-```bash
-python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment pipeline" \
-  --doc-type poster \
-  --generator google/gemini-2.0-flash-001 \
-  --reviewer google/gemini-2.0-flash-001
+## CLI
+
+```
+python scripts/generate_schematic.py --template TEMPLATE [--params PARAMS] [-o OUTPUT] [--dpi DPI]
+
+  TEMPLATE  flow | pathway | feedback | comparison | graphical_abstract
+            （兼容别名：flow_diagram, pathway_diagram, feedback_loop, loop,
+              comparison_diagram, graphical, abstract）
+  PARAMS    JSON 文件路径，或内联 JSON 字符串；省略 → 用模板默认示例参数
+  OUTPUT    输出路径，按后缀自动选择 .png/.pdf/.svg（默认 schematic.png）
+  DPI       输出分辨率，默认 300
+```
+
+## 5 Templates
+
+所有模板统一配色（Morlandi 色板 + Navy 标题 `#1F3A5F`），默认 `figsize=(10,6)`（graphical_abstract 用 `(12,5)`），背景白色、无坐标轴。每个模板的参数都有合理默认值——只传部分字段时其余沿用默认。
+
+### 1. flow — 分析流程图
+水平箭头流，每步一个圆角矩形；**steps > 6 时自动换行成 2 行蛇形**。
+```json
+{
+  "steps": ["QC", "Cluster", "Annotate", "DE", "CCC", "Spatial"],
+  "title": "Analysis pipeline"
+}
+```
+
+### 2. pathway — 信号通路级联
+节点自动布局（有向无环则按拓扑层次水平推进），带 edge label 的箭头。`color` 为 MORLANDI 色板索引（0-5）。
+```json
+{
+  "nodes": [
+    {"id": "A", "label": "CXCL12+ Fibro", "color": 0},
+    {"id": "B", "label": "CXCR4+ Mac", "color": 2},
+    {"id": "C", "label": "M2 activation", "color": 1}
+  ],
+  "edges": [
+    {"from": "A", "to": "B", "label": "CXCL12-CXCR4"},
+    {"from": "B", "to": "C", "label": "activates"}
+  ],
+  "title": "Signaling pathway"
+}
+```
+
+### 3. feedback — 反馈环路
+节点环形排列（极坐标算位置），弧形箭头；中心标记正反馈 `+`（红）/ 负反馈 `⊖`（蓝）。
+```json
+{
+  "loop_type": "positive",
+  "nodes": [
+    {"id": "F", "label": "Fibroblast", "color": 0},
+    {"id": "M", "label": "Macrophage", "color": 2}
+  ],
+  "edges": [
+    {"from": "F", "to": "M", "label": "CXCL12"},
+    {"from": "M", "to": "F", "label": "TGFb"}
+  ],
+  "title": "Feedback loop"
+}
+```
+
+### 4. comparison — 左右对比图
+左右两个面板（标题框 + 条目列表），中间虚线分隔；右栏可加浅红底色突出差异。
+```json
+{
+  "left":  {"title": "Normal",  "items": ["Low fibrosis", "Quiescent FB", "Few immune"]},
+  "right": {"title": "Disease", "items": ["High fibrosis", "Activated FB", "Mac infiltrate"]},
+  "title": "Normal vs Disease"
+}
+```
+
+### 5. graphical_abstract — 三栏图形摘要
+Input → Method → Finding 三栏并列，每栏标题框（带 icon）+ 条目列表，栏间箭头，顶部统一标题。icon 默认用 DejaVu Sans 可渲染符号（▷/⚙/★）；若系统装有 emoji 字体也可传 emoji。
+```json
+{
+  "columns": [
+    {"title": "Input",   "icon": "▷", "items": ["Patient samples"]},
+    {"title": "Method",  "icon": "⚙", "items": ["scRNA-seq", "Spatial"]},
+    {"title": "Finding", "icon": "★", "items": ["FB subtypes", "CXCL12 axis"]}
+  ],
+  "title": "Graphical Abstract"
+}
 ```
 
 ## Implementation Details
-### Pipeline Stages
-1. **Generation**
-   - A code-capable LLM converts the prompt into a diagram image.
-   - Default generator model: `google/gemini-2.0-flash-001`.
-
-2. **Review**
-   - A vision-capable LLM evaluates the generated image against the target `--doc-type`.
-   - Default reviewer model: `google/gemini-2.0-flash-001`.
-   - The reviewer returns actionable critique and a numeric quality score.
-
-3. **Refinement Loop**
-   - If the score is below the acceptance threshold (e.g., **8.5/10**), the system re-enters generation using the reviewer's feedback as constraints.
-   - This repeats until the threshold is met or the run terminates by internal stopping conditions.
-
-4. **Finalization**
-   - Performs final checks such as **resolution suitability** and **accessibility-oriented considerations** (e.g., legibility).
-   - Saves the final artifact to the `figures/` directory.
+### Pipeline
+1. **Parse**: `--template` 定位模板函数，`--params` 解析 JSON（文件路径或内联字符串）。
+2. **Render**: 模板函数在 matplotlib axes 上绘制（FancyBboxPatch 节点 / FancyArrowPatch 箭头 / 文本标签）。
+3. **Save**: 按 `-o` 后缀（`.png/.pdf/.svg`）调用 `fig.savefig`，默认 dpi=300。
 
 ### Key Parameters
-- `--doc-type <journal|poster>`: Controls review criteria (e.g., density/precision for journals vs readability/scale for posters).
-- `--generator <model_id>`: Model used to produce the diagram.
-- `--reviewer <model_id>`: Model used to critique the diagram.
-- **Quality threshold**: A numeric cutoff (example: `8.5/10`) that determines whether refinement continues.
+- `--template <flow|pathway|feedback|comparison|graphical_abstract>`: 选择模板。
+- `--params <json|file>`: 模板内容与布局参数；省略时用模板默认示例。
+- `-o <path>`: 输出路径（后缀决定格式）。
+- `--dpi <int>`: 输出分辨率（默认 300）。
 
 ## Prerequisites (where inputs come from)
 
-- **Natural-language description** → text describing the mechanism/flow/architecture (from `presentation/manuscript-writing` method narrative, or directly from the user)
-- **Optional reference figure** → existing sketch/schematic (to assist generation)
-- **Environment**: `OPENROUTER_API_KEY` (required); Python 3.10+, deps `pillow`/`matplotlib`/`requests`
-- Reference docs: see §Best Practices and §Supported Diagram Categories below
+- **Structured JSON params** → template content (steps / nodes+edges / loop type / comparison panels / abstract columns), typically derived from the analysis narrative or manuscript text
+- **Environment**: no API keys; Python 3.10+ with `matplotlib` / `networkx` / `numpy` (all in `sc` env)
+- Reference docs: see §Best Practices and §5 Templates above
 - Script entry `scripts/generate_schematic.py`
 
 ## Pre-Output Checklist (core rules in **top-level** `references/meta_methodology.md` + skill-specific)
 
 - [ ] Core rules passed (fact-based / pseudobulk / search-first / postcheck / checkpoint — see `SKILL.md` Core Rules)
 - [ ] No fake/placeholder data in schematic (pure mechanism, no bars/plots)
-- [ ] OPENROUTER_API_KEY set; quality score ≥8.5/10
+- [ ] Template chosen and params JSON validated (no missing keys — each missing field falls back to a sane default)
+- [ ] Output rendered and opened (non-empty, labels legible, colors from Morlandi palette)
 
 ## Best Practices
 
 ### Design Guidelines
-1.  **Colorblind Safety**: Use palettes that are distinguishable by colorblind individuals (e.g., Viridis, Cividis).
-2.  **Whitespace**: Maintain adequate whitespace to avoid clutter.
-3.  **Typography**: Use sans-serif fonts (Arial, Helvetica) for legibility at small sizes.
-4.  **Consistency**: Ensure arrowheads and line weights are consistent throughout the diagram.
+1.  **Colorblind Safety**: The Morlandi palette is low-saturation and colorblind-safe; do not introduce raw red/green juxtaposition.
+2.  **Whitespace**: Keep node/box spacing generous; the snake line-wrap in `flow` (>6 steps) prevents crowding.
+3.  **Typography**: Titles Navy 16pt bold, nodes 10pt, edge labels 8pt italic — consistent hierarchy.
+4.  **Consistency**: Arrowheads and line weights are fixed globally (FancyArrowPatch `->` style); keep custom params content-only.
 
 ### Journal vs. Poster
-- **Journal**: Focus on high resolution (300+ DPI) and compact layout.
-- **Poster**: Focus on readability from a distance, larger fonts, and bold colors.
+- **Journal**: Keep default 300 DPI; compact labels.
+- **Poster**: Increase `--dpi` and/or pass longer labels in params for readability at distance.
 
 ## Supported Diagram Categories
 
-### Neural Networks
-- Architecture diagrams (CNN, RNN, Transformer)
-- Layer visualizations
-- Data flow graphs
+### Analysis Pipelines
+- Preprocessing / clustering / annotation / DE / CCC / spatial workflows (6 steps single row, >6 two-row snake)
 
 ### Biological Pathways
-- Metabolic pathways
-- Signal transduction
-- Gene regulatory networks
+- Signal transduction cascades (A → B → C with mechanism labels)
+- Positive / negative feedback regulatory loops
 
-### Circuit Diagrams
-- Electronic schematics
-- Logic gates
+### Comparisons
+- Normal vs Disease, Control vs Treatment, before vs after panels
 
-### Flowcharts
-- Algorithm steps
-- Decision trees
-- Process workflows
+### Graphical Abstracts
+- Three-column Input → Method → Finding summaries for papers / TOC figures
 
 ## When to leave this skill (where to go)
 
@@ -151,28 +212,25 @@ python scripts/generate_schematic.py "Flowchart of a clinical trial enrollment p
 
 ## Mode: Graphical Abstract (merged from former graphical-abstract skill)
 
-When the task is **generating a Graphical Abstract / TOC figure for a paper**, follow the 4-step workflow in `references/graphical_abstract_layout.md`:
+When the task is **generating a Graphical Abstract / TOC figure for a paper**, use `references/graphical_abstract_layout.md` as the layout reference, then render with the `graphical_abstract` template:
 
 1. **Parse the abstract** → extract topic / methods / findings / implications
-2. **Map visual elements** → for each concept choose a symbol + palette + position (palette follows **top-level** `references/figure_guide.md` dual-track)
-3. **Recommend a layout grid** → choose by the abstract's narrative structure (three-column horizontal / vertical flow / left-right comparison / central radial)
-4. **Generate AI prompts** → produce both Midjourney-style and DALL-E-style versions
-
-After producing the blueprint, **use this skill's `generate_schematic.py` main loop to actually generate the image** (generate→review→refine, threshold 8.5/10) — this is the key improvement from merging graphical-abstract: the former skill only produced half-finished prompts, now it closes the loop to image generation.
+2. **Map visual elements** → for each concept choose an icon + color index + items list (palette follows the Morlandi palette above)
+3. **Choose the layout** → three-column horizontal (Input → Process → Output) is the default; `comparison` template covers left-right narrative; `flow`/`pathway` cover vertical/multi-step mechanisms
+4. **Render with the template** → write the abstract-derived content into the `columns` JSON and run:
 
 ```bash
-# Example: generate a graphical abstract from an abstract
-python scripts/generate_schematic.py "Graphical abstract: [central element + flow inferred from abstract]" \
-  --doc-type journal
+python scripts/generate_schematic.py --template graphical_abstract \
+  --params '{"columns":[{"title":"Input","icon":"▷","items":["..."]},{"title":"Method","icon":"⚙","items":["..."]},{"title":"Finding","icon":"★","items":["..."]}],"title":"..."}' \
+  -o figures/abstract.png
 ```
 
-For detailed layout rules, grid templates, and AI prompt templates, see `references/graphical_abstract_layout.md`.
+For detailed layout rules and grid templates, see `references/graphical_abstract_layout.md`.
 
 ## Key pitfalls
 
-- **Depends on OPENROUTER_API_KEY**: without the env var, generate_schematic.py fails — run `export OPENROUTER_API_KEY=...` first
-- **Quality threshold 8.5/10**: the refine loop is capped at MAX_RETRIES=3 in `generate_schematic.py`; adjust the constant if needed
-- **AI-generated figures ≠ accurate figures**: the model may draw biological facts incorrectly (e.g., labeling a T-cell marker as a B-cell) — **manually verify the mechanism/labels**; don't blindly trust AI output
-- **graphical-abstract mode only produces prompts**: the former graphical-abstract skill's abstract→layout capability has been merged in, but Midjourney/DALL-E still need external image-generation tools
-- **scientific-schematics is for non-data figures**: pure mechanism/flow; data-driven plots (UMAP/volcano) go to `visualization/figure-production`
-- **AI "fake data" risk**: the model sometimes draws placeholder elements that look like bar charts — during review confirm there is no quantitative data, purely schematic
+- **JSON syntax errors**: `--params` inline strings must be valid JSON (double quotes); if in doubt write params to a file and pass the path
+- **Template name typos**: use the canonical names or listed aliases; arbitrary names exit with an error listing available templates
+- **Emoji icons**: DejaVu Sans (matplotlib default) cannot render emoji — use the built-in symbols (▷/⚙/★) unless your system has an emoji font installed
+- **Schematic ≠ data figure**: pure mechanism/flow only; data-driven plots (UMAP/volcano) go to `visualization/figure-production`
+- **No quantitative data invented**: the templates draw labels/boxes only — never fabricate numbers in params

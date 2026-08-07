@@ -1968,6 +1968,8 @@ def plot_cellproportion(adata, groupby='condition', celltype_col='celltype',
     if _check_ov():
         try:
             import omicverse as ov
+            # ov.pl.cellproportion 的 legend 默认 False —— 堆叠柱必须显式开图例
+            kwargs.setdefault('legend', True)
             ov.pl.cellproportion(adata, celltype_clusters=celltype_col,
                                  groupby=groupby, **kwargs)
             fig_ov = plt.gcf()

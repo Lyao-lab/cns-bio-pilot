@@ -18,8 +18,8 @@
 | 细胞周期 | `ov.pp.score_genes_cell_cycle` | §6 | species 参数 |
 | 批次校正 | `ov.single.batch_correction` | §7 | `methods`(复数)！scVI 后重建邻居 |
 | Marker + 注释 | `ov.single.find_markers` + `ov.single.pySCSA` | §8 | 层级注释（先 lineage 后 subtype） |
-| Pseudobulk DE | `sc.get.aggregate` + `ov.bulk.pyDEG` | §9 | **Core Rule 2**：禁 per-cell Wilcoxon |
-| 富集 | `ov.bulk.geneset_enrichment` + `ov.bulk.pyGSEA` | §9.1 | GO/KEGG/Reactome |
+| Pseudobulk DE | `sc.get.aggregate` + `ov.bulk.pyDEG(count_df)` | §9 | ⚠️ pyDEG 只接受 DataFrame（行=基因列=样本） |
+| 富集 | `ov.bulk.geneset_enrichment` + pathways_dict | §9.1 | ⚠️ 需 pathways_dict + organism（不是 org） |
 | 细胞比例/丰度 | Milo/scCODA/propeller（standalone） | §9.2 | 禁 chi-square/Fisher |
 | 细胞通讯 | `ov.single.run_liana` | §10 | 措辞用"associated with" |
 | 轨迹 | `ov.single.cellrank_fate` / `ov.single.Monocle` | §10.1 | 需 velocity 前置 |
@@ -157,27 +157,36 @@ ov.single.AnnotationRef(adata, adata_ref=ref_adata, celltype_key='celltype')
 
 ### 3.2 Pseudobulk DE（Core Rule 2 必须）
 ```python
-# 来源：omicverse-pipeline §8.5
+# 来源：omicverse-pipeline §8.5（API 签名以 ov 2.3.1 实测为准）
 # Step 1: 聚合到 pseudobulk（sample × celltype）
 pb = sc.get.aggregate(adata, by=['sample', 'celltype'], func='sum', layer='counts')
 # ⚠️ 必须用 raw counts layer（不是 normalized .X）
 
-# Step 2: DE（omicverse 包装的 pyDESeq2）
-de = ov.bulk.pyDEG(pb, groupby='condition', vs='ctrl',
-                   celltype_key='celltype', method='DESeq2')
+# Step 2: 转成 pyDEG 需要的格式（行=基因, 列=样本, 值=整数 counts）
+from scipy.sparse import issparse
+import pandas as pd, numpy as np
+X = pb.X.toarray() if issparse(pb.X) else np.asarray(pb.X)
+count_df = pd.DataFrame(X.T, index=pb.var_names, columns=pb.obs['sample'].values)
 
-# Step 3: 过滤
-sig = de[(de['padj'] < 0.05) & (de['log2FC'].abs() > 1.0)]
+# Step 3: DE（pyDEG 是 pyDESeq2 底层封装，只接受 count DataFrame）
+deg = ov.bulk.pyDEG(count_df)
+# ⚠️ pyDEG 不接受 groupby/vs/celltype_key 参数——它是底层接口
+# 如需按 condition 对比，用 pyDESeq2 原生 API + design matrix
+
 # ⚠️ 禁止 per-cell Wilcoxon 当 DE 报告（Core Rule 2）
 # 必须有 ≥3 biological replicates per condition
 ```
 
 ### 3.3 富集分析
 ```python
-# 来源：omicverse-bulk §4
-ov.bulk.geneset_enrichment(gene_list=up_genes, org='human')   # GO/KEGG/Reactome
-ov.bulk.pyGSEA(rank_series=rank, org='human')
-# rank_series: pd.Series(index=gene, values=-log10(p)*sign(FC))
+# 来源：omicverse-bulk §4（API 签名以 ov 2.3.1 实测为准）
+# ⚠️ geneset_enrichment 需要 pathways_dict（基因集字典）
+# 用 ov.utils.geneset_prepare 获取，或传字符串用 Enrichr 内置库
+pathway_dict = ov.utils.geneset_prepare('GO_Biological_Process_2023', organism='Human')
+# 或直接传 Enrichr 库名字符串
+result = ov.bulk.geneset_enrichment(gene_list=up_genes,
+                                     pathways_dict=pathway_dict,
+                                     organism='Human')  # ⚠️ organism 不是 org
 ov.bulk.geneset_plot(adata)
 ```
 
@@ -252,8 +261,9 @@ ov.pp.scale(adata); ov.pp.pca(adata, n_pcs=50)
 ### 5.3 空间邻居图（所有空间分析前置）
 ```python
 # 来源：omicverse-spatial §3
-ov.space.spatial_neighbors(adata, n_neighbors=6, method='knn')
-# method='delaunay' 用于坐标（Visium hex grid 用 knn）
+# ⚠️ 参数名是 n_neighs（不是 n_neighbors）；method→coord_type
+ov.space.spatial_neighbors(adata, spatial_key='spatial', n_neighs=6, coord_type='generic')
+# delaunay=True 用于三角剖分；Visium hex grid 用默认 generic
 # 输出 adata.obsp['spatial_connectivities']
 # ⚠️ 是 ov.space 不是 ov.pp（ov.pp.spatial_neighbors 不存在）
 ```
@@ -261,13 +271,14 @@ ov.space.spatial_neighbors(adata, n_neighbors=6, method='knn')
 ### 5.4 空间 domain
 ```python
 # 来源：omicverse-spatial §4
-ov.space.pySTAGATE(adata)   # 最常用（graph autoencoder）
+# ⚠️ pySTAGATE 必填 num_batch_x/num_batch_y（切片网格划分，单切片填 1,1）
+ov.space.pySTAGATE(adata, num_batch_x=1, num_batch_y=1, spatial_key=[0,1])
+# spatial_key 指向 obsm 列索引（如 obsm['spatial'] 的第0/1列）
 ov.pp.neighbors(adata, use_rep='X_STAGATE'); ov.pp.umap(adata)
-ov.pp.leiden(adata, resolution='auto')
+ov.pp.leiden(adata, resolution=0.6)
 
-ov.space.pySTAligner(adata_list)   # 多切片对齐
-ov.space.pySpaceFlow(adata)         # spatial flow embedding
-
+# ov.space.pySTAligner(adata_list)   # 多切片对齐
+# ov.space.pySpaceFlow(adata)         # spatial flow embedding
 # 非 ov 包装（standalone）：BANKSY / BINARY / GraphST / MENDER / SpatialGlue
 ```
 
@@ -301,16 +312,20 @@ ov.space.create_communication_anndata(adata)        # 格式化通讯数据
 
 ### 6.1 Batch correction + DE
 ```python
-# 来源：omicverse-bulk §2-3
+# 来源：omicverse-bulk §2-3（API 以 ov 2.3.1 实测为准）
 ov.bulk.batch_correction(adata, batch_key='batch')
-de = ov.bulk.pyDEG(adata, groupby='condition', method='DESeq2')
+# pyDEG 接受 count DataFrame（行=基因, 列=样本）
+count_df = adata.to_df().T  # AnnData → DataFrame 转置
+deg = ov.bulk.pyDEG(count_df)
 ```
 
 ### 6.2 富集 + GSEA
 ```python
-# 来源：omicverse-bulk §4
-ov.bulk.geneset_enrichment(gene_list=up_genes, org='human')
-ov.bulk.pyGSEA(rank_series=rank, org='human')
+# 来源：omicverse-bulk §4（API 以 ov 2.3.1 实测为准）
+pathway_dict = ov.utils.geneset_prepare('GO_Biological_Process_2023', organism='Human')
+ov.bulk.geneset_enrichment(gene_list=up_genes, pathways_dict=pathway_dict, organism='Human')
+# GSEA: gene_rnk 是 ranked DataFrame
+ov.bulk.pyGSEA(gene_rnk=rank_df, pathways_dict=pathway_dict, organism='Human')
 ov.bulk.geneset_plot(adata)
 ```
 
@@ -333,6 +348,10 @@ ov.bulk.pyWGCNA(adata, method='signed')   # 'signed'|'unsigned'
 | `resolution='auto'` 报错 | ov 2.3.1 不支持 auto | 用固定值 0.4-1.0 |
 | `ov.pp.preprocess` 可能崩 | IndexError（ov 2.3.1 已知） | scanpy 三步兜底 |
 | LIANA 需要 `adata.raw` | ".raw is not initialized" | HVG 子集化前设 raw |
+| `pyDEG` 只接受 DataFrame | "unexpected keyword argument 'groupby'" | 转成 行=基因列=样本 的 count_df |
+| `geneset_enrichment` 需 pathways_dict + organism | "unexpected keyword argument 'org'" | 先 geneset_prepare，organism 不是 org |
+| `spatial_neighbors` 参数是 n_neighs | "unexpected keyword argument 'n_neighbors'" | n_neighs 不是 n_neighbors |
+| `pySTAGATE` 必填 num_batch_x/num_batch_y | "missing required positional arguments" | 单切片传 1,1 |
 | scVI 后重建 neighbors(use_rep='X_scVI') | 聚类用错空间 | omicverse-pipeline §7 |
 | 空间分析前置 spatial_neighbors | 所有空间方法崩溃 | omicverse-spatial §3 |
 | 每步后跑 postcheck | 错误传到下游 | Core Rule 4 |

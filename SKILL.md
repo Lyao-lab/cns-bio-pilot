@@ -12,6 +12,16 @@ metadata:
 
 Read this file → pick ONE sub-skill → read that sub-skill's SKILL.md → execute (honoring Core Rule 8 batch checkpoints — do not auto-run a pipeline end-to-end). Never load multiple sub-skills at once.
 
+## ⚠️ Dispatch Injection (read before delegating ANY sub-task)
+
+When you delegate any analysis/plotting/API-calling work to a sub-agent (worker/researcher/explore), the sub-agent does NOT load this skill and cannot see this conversation. **Rules not written into the dispatch prompt do not exist for the sub-agent.** Before every dispatch, append one of:
+
+- **(default)** `开工前读 <skill根目录>/references/dispatch_cheatsheet.md 并遵守 A-D 全部硬规则。特别注意：[本任务最相关的 2-3 条编号]。`
+- **(narrow task)** paste the 2-3 relevant rules directly (e.g. `[A2] pseudobulk DE; [A4] 批次校正后禁 DE`)
+- **(needs decision table)** `开工前读 <skill根目录>/references/figure_guide.md §0.1 数据→图型决策表`
+
+`dispatch_cheatsheet.md` condenses the 26 hard rules (A 分析严谨性 9 / B 绘图 7 / C API 4 / D 迭代 6) from 7 reference files into 75 lines — one reference replaces hand-writing 30 rules every time. **Skipping injection = the sub-agent will violate rules it never saw.**
+
 ## Routing Table
 
 | Task | Sub-skill | Engine |

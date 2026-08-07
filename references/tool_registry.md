@@ -185,6 +185,14 @@
 - **相关规则**: 模式化示意图生成
 - **机检**: 无（输出可人工目检）
 
+### build_report.py | category: rendering | verified ✅
+- **inputs**: report.json（含 title/subtitle/sections[]，6 种 section type: summary/findings/figure/table/ledger/methods）
+- **outputs**: 自包含 report.html（base64 内联图片，CSS 内联，无 JS，双击打开）
+- **路由**: `python build_report.py report.json -o report.html`
+- **依赖**: Python 标准库 + pymupdf（PDF→PNG，与 build_deck.py 一致）
+- **相关规则**: Core Rule 10（交付门）+ 溯源标签 [实测]/[文献]/[推断]（meta §8c）
+- **机检**: 无（浏览器打开目检）
+
 ## 辅助函数（scripts/cns_style.py）
 
 ### save_panel | category: helper | verified ✅

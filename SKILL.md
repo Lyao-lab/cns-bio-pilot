@@ -44,6 +44,7 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (worker/
 | 画图 / 绘图 / figure / panel / 拼图 | `visualization/figure-production` |
 | 机制图 / 流程图 / schematic / 图形摘要 | `visualization/scientific-schematics` |
 | PPT / 汇报 / 幻灯片 / slides / 答辩 | `presentation/scientific-slides` |
+| 网页报告 / HTML / report / 在线分享 / web report | `presentation/web-report` |
 | 论文 / manuscript / methods / 写作 | `presentation/manuscript-writing` |
 | 研究设计 / 规划 / study design | `single-cell/research-planner` |
 
@@ -67,6 +68,7 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (worker/
 | Schematics / mechanism diagrams / graphical abstract | `visualization/scientific-schematics` | matplotlib + networkx (纯代码模板) |
 | **Manuscript writing** (Methods / Results / Figure Legends) | `presentation/manuscript-writing` | LLM |
 | Slides (lab meeting / conference / defense) | `presentation/scientific-slides` | python-pptx / Beamer |
+| **Web report** / HTML report / 在线分享结果 | `presentation/web-report` | Python 标准库（自包含 HTML）|
 
 ## Environments
 
@@ -91,6 +93,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 8. **Result-driven iteration** *(human gate, per-batch)*. Biology is evidence-driven, NOT linear like software. After each analysis batch: review results → **discuss direction with researcher** → revise plan → next batch. Pause for researcher input on decisions that need human judgment (cell-type naming, which signal to chase, threshold calibration). Full procedure: `research-planner` Phase R. **Autopilot exception**: if the user explicitly authorizes "just run it through, don't stop at every step", agent may merge batches into a continuous run, but MUST do one full Phase R review (R1 ledger update + R2 decision-point retro) before final delivery, and record the authorization in `analysis_log.md`.
    > *Rationale*: A pipeline that auto-runs QC→cluster→DE→CCC→figures without pausing to interpret results produces data dredging, not science. But a rule that ignores real usage ("跑完别停") gets silently bypassed — the autopilot exception keeps the ledger alive while respecting user autonomy.
 9. **Notebook-organized workflow** *(ipynb per task)*. Analysis and plotting code lives in Jupyter notebooks (.ipynb), one task per notebook. Structure: Cell 1 = shared setup (imports + `set_cns_style` + load data, run once); subsequent cells = one logical step each (one QC step, one panel, one DE round). Re-run only the cell you change — data stays in memory across cells. `save_panel` auto-displays figures in notebook output (`show=None` detects Jupyter → figure shows in cell + PDF saved to disk). **CLI fallback** (no Jupyter kernel): save double format — `save_panel(fig, name, fmt='png')` for self-inspection (Read the PNG to check before next panel) + `fig.savefig(name + '.pdf')` for vector delivery. Checkpoints (Rule 5) and `analysis_log` (meta §8b) are the persistence layer; notebooks are the workflow layer.
+10. **Deliverable gate** *(mandatory, post-convergence)*. When the analysis story converges (Phase R loop done + researcher agrees, Rule 8), the agent MUST produce at least one deliverable package — not just leave figures on disk. Default outputs: PPT (`scientific-slides`, for meeting/defense) or HTML report (`web-report`, for online sharing — no PowerPoint needed to view). Choose based on audience: lab meeting → PPT; remote collaborator → HTML; both if the user wants. The deliverable embeds real figures + key findings (with source labels `[实测]/[文献]/[推断]`) + hypothesis ledger + method/reproducibility info. **Skipping this = analysis done but nothing delivered.**
 
 ## Key Files
 

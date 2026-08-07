@@ -131,6 +131,44 @@ Panel C (Volcano): CXCL12 显著上调
 
 ---
 
+## Notebook 工作流（推荐：一个大 Figure 一个 .ipynb）
+
+一个 Figure 的所有 panel 放在同一个 notebook 里，每 panel 一个 cell。改某张图只重跑对应 cell，adata 在内存里不重跑。
+
+```python
+# === Cell 1: Shared setup（只跑一次）===
+import sys; sys.path.insert(0, 'scripts/')
+from cns_style import *
+import scanpy as sc, pandas as pd
+set_cns_style_journal('nature')
+adata = sc.read_h5ad('checkpoints/05_annotated.h5ad')
+
+# === Cell 2: Panel A — UMAP ===
+fig, ax = plot_umap(adata, color='celltype', save='A_umap')
+# → PDF 落盘到 panels/A_umap.pdf + 图在 cell 输出显示（save_panel 自动检测 notebook）
+
+# === Cell 3: Panel B — Volcano ===
+de = pd.read_csv('de_results.csv')  # 或 pseudobulk_de(adata, ...)
+fig, ax = plot_volcano(de, save='B_volcano')
+
+# === Cell 4: Panel C — Dotplot ===
+fig, ax = plot_dotplot(adata, var_names=markers, groupby='celltype', save='C_dotplot')
+
+# === Cell 5: Panel D — Spatial ===
+fig, ax = plot_spatial(adata_sp, color='Cxcl12', save='D_spatial')
+
+# === Cell 6: Assemble composite（命令行或 notebook 里调）===
+# python main.py --input panels/A_umap.pdf panels/B_volcano.pdf panels/C_dotplot.pdf panels/D_spatial.pdf --output figure1.pdf
+```
+
+**规则**：
+- Cell 1 只跑一次（load adata）；改某 panel 只重跑对应 cell
+- 每个 panel cell 调 `plot_xxx(save='X_name')` → 自动存 PDF 到 `panels/` + 在 cell 输出显示（溯源）
+- `show=False` 可强制不显示（脚本批处理）；`show=True` 强制显示
+- 拼图在最后一个 cell（命令行 `main.py`）或 `nbconvert --execute` 一键重跑
+
+---
+
 ## Step Final: 拼图
 
 所有 panel 独立验证通过后：

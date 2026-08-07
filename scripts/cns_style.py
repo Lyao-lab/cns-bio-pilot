@@ -1086,11 +1086,11 @@ def palette_from_names(celltypes, color_names):
 # ============================================================
 # 19. save_panel(fig, name, ...) — 统一 save 入口
 # ============================================================
-def save_panel(fig, name, outdir='panels', journal=True, fmt='pdf'):
-    """Unified save entry: finalize_figure → mkdir → savefig → close → print path.
+def save_panel(fig, name, outdir='panels', journal=True, fmt='pdf', show=None):
+    """Unified save entry: finalize_figure → mkdir → savefig → close/display → print path.
 
     流程：强制 finalize_figure（铁律 1 图例 / 铁律 2 文字重叠 / 栅格化检查）
-    → 建目录 → savefig → plt.close → 打印保存路径。
+    → 建目录 → savefig → 按 show 决定是否 close → 打印保存路径。
 
     Args:
         fig: matplotlib Figure
@@ -1098,6 +1098,10 @@ def save_panel(fig, name, outdir='panels', journal=True, fmt='pdf'):
         outdir: 输出目录（默认 'panels'，自动创建）
         journal: True → dpi 走 rcParams['savefig.dpi']；False → 固定 300
         fmt: 'pdf' | 'png' | 'svg'（默认 'pdf'）
+        show: None（默认）→ 自动检测：Jupyter notebook 中为 True（savefig 后不 close，
+              figure 在 cell 输出显示）；纯脚本中为 False（savefig 后 close）。
+              True → 强制保留显示（notebook 场景）；
+              False → 强制 close（脚本批处理场景）
 
     Returns:
         str: 保存的完整路径
@@ -1106,14 +1110,22 @@ def save_panel(fig, name, outdir='panels', journal=True, fmt='pdf'):
         save_panel(fig, 'A_umap')   # → 保存到 panels/A_umap.pdf，返回路径
     """
     import os
+    if show is None:
+        try:
+            from IPython import get_ipython
+            ip = get_ipython()
+            show = ip is not None and 'ZMQ' in type(ip).__name__
+        except Exception:
+            show = False
     finalize_figure(fig)  # 强制 pre-save 检查（铁律 1/2 + 栅格化）
     os.makedirs(outdir, exist_ok=True)
     path = f'{outdir}/{name}.{fmt}'
 
     dpi = plt.rcParams['savefig.dpi'] if journal else 300
     fig.savefig(path, dpi=dpi, bbox_inches='tight', pad_inches=0.1)
-    plt.close(fig)
-    print(f"Saved: {path} (dpi={dpi})")
+    if not show:
+        plt.close(fig)
+    print(f"Saved: {path} (dpi={dpi})" + (" [figure displayed in notebook]" if show else ""))
     return path
 
 
@@ -1202,7 +1214,7 @@ def _lighten_color(hex_color, amount=0.8):
 # ============================================================
 
 def plot_umap(adata, color='celltype', basis='X_umap', ax=None, figsize=None,
-              save=None, labels=True, **kwargs):
+              save=None, labels=True, show=None, **kwargs):
     """UMAP/tSNE：ov.pl.embedding 优先，mpl scatter 兜底。"""
     if ax is None:
         p = cohort_params(adata.n_obs)
@@ -1226,7 +1238,7 @@ def plot_umap(adata, color='celltype', basis='X_umap', ax=None, figsize=None,
     clean_umap_axes(ax)
     optical_margin(ax, 0.12)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 def _umap_mpl(adata, color, basis, ax, p, labels, **kwargs):
@@ -1248,7 +1260,7 @@ def _umap_mpl(adata, color, basis, ax, p, labels, **kwargs):
 # ============================================================
 
 def plot_volcano(de, pval_name='padj', fc_name='log2FC', ax=None, figsize=None,
-                 save=None, annotate_top=10, sig_pval=0.05, sig_fc=1.0, **kwargs):
+                 save=None, annotate_top=10, sig_pval=0.05, sig_fc=1.0, show=None, **kwargs):
     """Volcano：ov.pl.volcano 优先，mpl 三色兜底（优化版：up+down 都标注）。"""
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or recipe_figsize('volcano'))
@@ -1264,14 +1276,14 @@ def plot_volcano(de, pval_name='padj', fc_name='log2FC', ax=None, figsize=None,
             ax = fig_ov.axes[0] if fig_ov.axes else ax
             fig = fig_ov
             if save:                          # 修复：ov 路径也要走 save_panel
-                save_panel(fig, save)
+                save_panel(fig, save, show=show)
             return fig, ax  # ov 自建 figure，直接返回
         except Exception as e:
             print(f"[smart_plot] ov.pl.volcano failed ({e}), mpl fallback")
     _volcano_mpl(de, pval_name, fc_name, ax, annotate_top, sig_pval, sig_fc)
     polish_axes(ax)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 def _volcano_mpl(de, pval_name, fc_name, ax, annotate_top, sig_pval, sig_fc):
@@ -1316,7 +1328,7 @@ def _volcano_mpl(de, pval_name, fc_name, ax, annotate_top, sig_pval, sig_fc):
 # ============================================================
 
 def plot_dotplot(adata, var_names, groupby='celltype', ax=None, figsize=None,
-                 save=None, standard_scale='var', **kwargs):
+                 save=None, standard_scale='var', show=None, **kwargs):
     """Dotplot：ov.pl.dotplot 优先，mpl scatter 矩阵兜底（含 size legend）。"""
     if _check_ov():
         try:
@@ -1328,7 +1340,7 @@ def plot_dotplot(adata, var_names, groupby='celltype', ax=None, figsize=None,
             fig_ov.set_size_inches(*recipe_figsize('dotplot'))
             ax = fig_ov.axes[0] if fig_ov.axes else ax
             if save:
-                save_panel(fig_ov, save)
+                save_panel(fig_ov, save, show=show)
             return fig_ov, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.dotplot failed ({e}), mpl fallback")
@@ -1340,7 +1352,7 @@ def plot_dotplot(adata, var_names, groupby='celltype', ax=None, figsize=None,
     _dotplot_mpl(adata, var_names, groupby, ax, standard_scale)
     polish_axes(ax, subtle_grid=False)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 def _dotplot_mpl(adata, var_names, groupby, ax, standard_scale):
@@ -1397,7 +1409,7 @@ def _dotplot_mpl(adata, var_names, groupby, ax, standard_scale):
 # ============================================================
 
 def plot_violin(adata, keys, groupby='celltype', ax=None, figsize=None,
-                save=None, **kwargs):
+                save=None, show=None, **kwargs):
     """Violin：ov.pl.violin 优先（交替背景+wilcox），mpl 兜底。"""
     groups = adata.obs[groupby].astype('category').cat.categories
     n_genes = len(keys) if isinstance(keys, list) else 1
@@ -1423,7 +1435,7 @@ def plot_violin(adata, keys, groupby='celltype', ax=None, figsize=None,
             fig_ov = plt.gcf()
             fig_ov.set_size_inches(len(groups)*0.6+1, 2.8)
             if save:
-                save_panel(fig_ov, save)
+                save_panel(fig_ov, save, show=show)
             return fig_ov, axes[0]
         except Exception as e:
             print(f"[smart_plot] ov.pl.violin failed ({e}), mpl fallback")
@@ -1432,7 +1444,7 @@ def plot_violin(adata, keys, groupby='celltype', ax=None, figsize=None,
     fig = axes[0].figure
     polish_axes(axes[-1])
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, axes if n_genes > 1 else axes[0]
 
 def _violin_mpl(adata, gene, groupby, ax):
@@ -1479,7 +1491,7 @@ def _violin_mpl(adata, gene, groupby, ax):
 # ============================================================
 
 def plot_heatmap(adata, var_names, groupby='celltype', ax=None, figsize=None,
-                 save=None, z_score=0, cmap=None, **kwargs):
+                 save=None, z_score=0, cmap=None, show=None, **kwargs):
     """Heatmap：sns/scanpy（ov 无独立函数），Z-score per row + 注释条。"""
     if ax is None:
         n_groups = adata.obs[groupby].nunique()
@@ -1509,7 +1521,7 @@ def plot_heatmap(adata, var_names, groupby='celltype', ax=None, figsize=None,
     add_elegant_colorbar(im, ax, label='Scaled expression (z-score)')
     polish_axes(ax, subtle_grid=False)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 
@@ -1518,7 +1530,7 @@ def plot_heatmap(adata, var_names, groupby='celltype', ax=None, figsize=None,
 # ============================================================
 
 def plot_spatial(adata_sp, color, ax=None, figsize=None, save=None,
-                 alpha_img=1.0, spot_alpha=0.85, **kwargs):
+                 alpha_img=1.0, spot_alpha=0.85, show=None, **kwargs):
     """Spatial：ov.pl.plot_spatial / sq.pl.spatial_scatter 优先，mpl scatter 兜底。"""
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or recipe_figsize('spatial'))
@@ -1546,7 +1558,7 @@ def plot_spatial(adata_sp, color, ax=None, figsize=None, save=None,
         _spatial_mpl(adata_sp, color, ax, spot_alpha)
     clean_umap_axes(ax, xlabel='', ylabel='')
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 def _spatial_mpl(adata_sp, color, ax, spot_alpha):
@@ -1582,7 +1594,7 @@ def _spatial_mpl(adata_sp, color, ax, spot_alpha):
 # ============================================================
 
 def plot_bar(props, ax=None, figsize=None, save=None, groupby=None, celltype_col='celltype',
-             **kwargs):
+             show=None, **kwargs):
     """Bar (proportions)：mpl（ov 无），带 95% CI error bars + per-sample dots。
 
     可直接传 adata（AnnData）+ groupby 自动算比例，或传已算好的 props DataFrame。
@@ -1617,7 +1629,7 @@ def plot_bar(props, ax=None, figsize=None, save=None, groupby=None, celltype_col
     ax.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', frameon=False)
     polish_axes(ax)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 
@@ -1626,7 +1638,7 @@ def plot_bar(props, ax=None, figsize=None, save=None, groupby=None, celltype_col
 # ============================================================
 
 def plot_enrichment(enr, ax=None, figsize=None, save=None, top_n=15,
-                    term_col='Term', fdr_col='FDR', count_col='Gene_count', **kwargs):
+                    term_col='Term', fdr_col='FDR', count_col='Gene_count', show=None, **kwargs):
     """Enrichment barh：-log10(FDR) 降序，条右标 gene count，通路名截断。"""
     terms = enr.nsmallest(top_n, fdr_col)
     if ax is None:
@@ -1645,7 +1657,7 @@ def plot_enrichment(enr, ax=None, figsize=None, save=None, top_n=15,
                 va='center', fontsize=6, color=GREY)
     polish_axes(ax, subtle_grid=False)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 
@@ -1654,7 +1666,7 @@ def plot_enrichment(enr, ax=None, figsize=None, save=None, top_n=15,
 # ============================================================
 
 def plot_lr_bubble(pair_labels, pathway_labels, sizes, mean_expr,
-                   x_idx=None, y_idx=None, ax=None, figsize=None, save=None, **kwargs):
+                   x_idx=None, y_idx=None, ax=None, figsize=None, save=None, show=None, **kwargs):
     """L-R Bubble：size=-log10(p), color=mean expr，pair×pathway 矩阵。"""
     n_pairs = len(pair_labels); n_path = len(pathway_labels)
     if x_idx is None:
@@ -1685,7 +1697,7 @@ def plot_lr_bubble(pair_labels, pathway_labels, sizes, mean_expr,
     add_elegant_colorbar(scatter, ax, label='Mean expression')
     polish_axes(ax, subtle_grid=False)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 
@@ -1694,7 +1706,7 @@ def plot_lr_bubble(pair_labels, pathway_labels, sizes, mean_expr,
 # ============================================================
 
 def plot_feature_matrix(adata, genes, basis='X_umap', ax=None, figsize=None,
-                        save=None, ncols=3, **kwargs):
+                        save=None, ncols=3, show=None, **kwargs):
     """Feature matrix：ov.pl.embedding 多 color 优先，mpl 多 subplot 兜底。"""
     if _check_ov():
         try:
@@ -1706,14 +1718,14 @@ def plot_feature_matrix(adata, genes, basis='X_umap', ax=None, figsize=None,
                 clean_umap_axes(a)
             fig = plt.gcf()
             if save:
-                save_panel(fig, save)
+                save_panel(fig, save, show=show)
             return fig, list(axs)
         except Exception as e:
             print(f"[smart_plot] ov.pl.embedding failed ({e}), mpl fallback")
-    return _feature_matrix_mpl(adata, genes, basis, ncols, save)
+    return _feature_matrix_mpl(adata, genes, basis, ncols, save, show)
 
 
-def _feature_matrix_mpl(adata, genes, basis, ncols, save):
+def _feature_matrix_mpl(adata, genes, basis, ncols, save, show):
     """mpl feature matrix: multi-subplot scatter, shared vmax=99th pct."""
     import math
     coords = adata.obsm[basis]
@@ -1743,7 +1755,7 @@ def _feature_matrix_mpl(adata, genes, basis, ncols, save):
     for j in range(len(genes), len(axes)):
         axes[j].set_visible(False)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, list(axes)
 
 
@@ -1752,7 +1764,7 @@ def _feature_matrix_mpl(adata, genes, basis, ncols, save):
 # ============================================================
 
 def plot_paga(adata, ax=None, figsize=None, save=None, threshold=0.05,
-              color=None, **kwargs):
+              color=None, show=None, **kwargs):
     """PAGA：sc.pl.paga 优先，mpl+networkx 兜底。"""
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or recipe_figsize('paga'))
@@ -1771,7 +1783,7 @@ def plot_paga(adata, ax=None, figsize=None, save=None, threshold=0.05,
         _paga_mpl(adata, ax, threshold)
     polish_axes(ax)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 
@@ -1817,7 +1829,7 @@ def _paga_mpl(adata, ax, threshold):
 # 20.12 plot_chord — Chord/CCC 细胞通讯弦图（ov 优先，networkx 兜底）
 # ============================================================
 
-def plot_chord(weight_matrix, ax=None, figsize=None, save=None, **kwargs):
+def plot_chord(weight_matrix, ax=None, figsize=None, save=None, show=None, **kwargs):
     """Chord/CCC：ov.pl.CellChatViz 优先，mpl+networkx 兜底。"""
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or recipe_figsize('chord'))
@@ -1836,7 +1848,7 @@ def plot_chord(weight_matrix, ax=None, figsize=None, save=None, **kwargs):
             else:
                 raise AttributeError("No chord method found in CellChatViz")
             if save:
-                save_panel(fig, save)
+                save_panel(fig, save, show=show)
             return fig, ax
         except Exception as e:
             print(f"[smart_plot] ov chord failed ({e}), mpl+networkx fallback")
@@ -1844,7 +1856,7 @@ def plot_chord(weight_matrix, ax=None, figsize=None, save=None, **kwargs):
     ax.set_aspect('equal')
     ax.axis('off')
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 
@@ -1887,7 +1899,7 @@ def _chord_mpl(weight_matrix, ax):
 # ============================================================
 
 def plot_pseudotime(adata, genes, pseudotime_col='pseudotime', ax=None,
-                    figsize=None, save=None, frac=0.3, **kwargs):
+                    figsize=None, save=None, frac=0.3, show=None, **kwargs):
     """Pseudotime：mpl LOESS 平滑 + 95% CI 带。"""
     if isinstance(genes, str):
         genes = [genes]
@@ -1930,7 +1942,7 @@ def plot_pseudotime(adata, genes, pseudotime_col='pseudotime', ax=None,
         polish_axes(a)
     axes[-1].set_xlabel('Pseudotime')
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, axes if len(genes) > 1 else axes[0]
 
 
@@ -1939,7 +1951,7 @@ def plot_pseudotime(adata, genes, pseudotime_col='pseudotime', ax=None,
 # ============================================================
 
 def plot_cellproportion(adata, groupby='condition', celltype_col='celltype',
-                        ax=None, figsize=None, save=None, **kwargs):
+                        ax=None, figsize=None, save=None, show=None, **kwargs):
     """Cell proportion stacked bar：ov.pl.cellproportion 优先，mpl 兜底。"""
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or
@@ -1952,14 +1964,14 @@ def plot_cellproportion(adata, groupby='condition', celltype_col='celltype',
             ov.pl.cellproportion(adata, groupby=groupby, **kwargs)
             fig_ov = plt.gcf()
             if save:
-                save_panel(fig_ov, save)
+                save_panel(fig_ov, save, show=show)
             return fig_ov, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.cellproportion failed ({e}), mpl fallback")
     _cellproportion_mpl(adata, groupby, celltype_col, ax)
     polish_axes(ax)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 
@@ -1989,7 +2001,7 @@ def _cellproportion_mpl(adata, groupby, celltype_col, ax):
 
 def plot_de_scatter(de_dict, ax=None, figsize=None, save=None,
                     pval_name='padj', fc_name='log2FC', sig_pval=0.05, sig_fc=1.0,
-                    annotate_top=3, **kwargs):
+                    annotate_top=3, show=None, **kwargs):
     """DE 分组散点（多时点/多条件）：x=组别, y=logFC, 每点=一个基因。
 
     火山图在多时点/多组比较时不可读（标注重叠、灰点密集）；分组散点直接可比。
@@ -2039,7 +2051,7 @@ def plot_de_scatter(de_dict, ax=None, figsize=None, save=None,
     ax.set_ylabel(r'log$_2$(Fold Change)', fontsize=10, labelpad=10)
     polish_axes(ax)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 
@@ -2048,7 +2060,7 @@ def plot_de_scatter(de_dict, ax=None, figsize=None, save=None,
 # ============================================================
 
 def plot_spatial_ccc(adata_sp, ligand, receptor, ax=None, figsize=None, save=None,
-                     niche_col=None, **kwargs):
+                     niche_col=None, show=None, **kwargs):
     """空间 CCC：配体/受体空间共表达面板（空转 CCC 最低证据）。
 
     左面板=ligand 空间表达，右面板=receptor 空间表达，共享 colorscale。
@@ -2098,7 +2110,7 @@ def plot_spatial_ccc(adata_sp, ligand, receptor, ax=None, figsize=None, save=Non
     fig.colorbar(sc, cax=cbar_ax, label='Expression')
     add_scale_bar(ax1, length_um=200, px_per_um=1.0)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, (ax1, ax2)
 
 
@@ -2108,7 +2120,7 @@ def plot_spatial_ccc(adata_sp, ligand, receptor, ax=None, figsize=None, save=Non
 
 def plot_milo(milo_result, ax=None, figsize=None, save=None,
               test_col='SpatialFDR', logfc_col='logFC', label_col='Population',
-              sig_threshold=0.1, **kwargs):
+              sig_threshold=0.1, show=None, **kwargs):
     """Milo beeswarm：KNN 节点 logFC 按 population 分组，SpatialFDR 着色。
 
     ov 无，直接 mpl（需 milo_result DataFrame，列含 Population/logFC/SpatialFDR）。
@@ -2136,7 +2148,7 @@ def plot_milo(milo_result, ax=None, figsize=None, save=None,
     ax.legend(loc='upper right', frameon=False, fontsize=7)
     polish_axes(ax)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax
 
 
@@ -2145,7 +2157,7 @@ def plot_milo(milo_result, ax=None, figsize=None, save=None,
 # ============================================================
 
 def plot_signaling_heatmap(comm_scores, ax=None, figsize=None, save=None,
-                           mode='outgoing', **kwargs):
+                           mode='outgoing', show=None, **kwargs):
     """CCC signaling-role heatmap：每细胞类型的 outgoing/incoming 通讯强度。
 
     ov 无，直接 mpl。
@@ -2179,5 +2191,5 @@ def plot_signaling_heatmap(comm_scores, ax=None, figsize=None, save=None,
     add_elegant_colorbar(im, ax, label='Strength (scaled)')
     polish_axes(ax, subtle_grid=False)
     if save:
-        save_panel(fig, save)
+        save_panel(fig, save, show=show)
     return fig, ax

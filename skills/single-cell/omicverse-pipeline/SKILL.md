@@ -33,6 +33,18 @@ np.random.seed(42); torch.manual_seed(42)   # provenance: fixed seed (meta §8b)
 
 > **Dependency:** `ov.single.*` (find_markers, annotation, etc.) requires `ipywidgets`. If you hit `ModuleNotFoundError: No module named 'ipywidgets'`, run `pip install ipywidgets` first. Without a GPU, ov auto-falls back to CPU mode (works, but scVI/scGPT finetune is slow).
 
+> **Notebook workflow (Core Rule 9)**: 每个 pipeline 跑在一个 .ipynb 里，关键节点分 cell。改某一步只重跑对应 cell 及下游，前面的 QC/preprocess 不重跑：
+> ```
+> Cell 1: §0 Init + §1 Load + §2 QC（diagnose→filter→save checkpoint 01_qc.h5ad）
+> Cell 2: §2.5 Metadata EDA + §3-§4 Preprocess + PCA + UMAP（save 02_processed.h5ad）
+> Cell 3: §5-§6 Clustering + cell cycle（save 03_clustered.h5ad）
+> Cell 4: §7 Integration（如需）（save 04_integrated.h5ad）
+> Cell 5: §8 Annotation（save 05_annotated.h5ad）
+> Cell 6: §8.5 Pseudobulk DE
+> Cell 7: §9 Downstream (CCC / trajectory)
+> ```
+> 每 cell 结束存 checkpoint（Core Rule 5）→ kernel 重启后 `sc.read_h5ad('checkpoints/XX.h5ad')` 直接恢复。每个 checkpoint 同时是 Phase R 复盘的交接点。
+
 ## 1. Load data (keep `layers['counts']`)
 
 ```python

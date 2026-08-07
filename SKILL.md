@@ -55,6 +55,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
    > *Rationale*: The planner-verifier dual loop is the proven-optimal pattern for bioinformatics agents (K-Dense Analyst outperforms single-model by 6 points on BixBench via per-step verification).
 8. **Result-driven iteration** *(human gate, per-batch)*. Biology is evidence-driven, NOT linear like software. After each analysis batch: review results → **discuss direction with researcher** → revise plan → next batch. Pause for researcher input on decisions that need human judgment (cell-type naming, which signal to chase, threshold calibration). Full procedure: `research-planner` Phase R.
    > *Rationale*: A pipeline that auto-runs QC→cluster→DE→CCC→figures without pausing to interpret results produces data dredging, not science.
+9. **Notebook-organized workflow** *(ipynb per task)*. Analysis and plotting code lives in Jupyter notebooks (.ipynb), one task per notebook. Structure: Cell 1 = shared setup (imports + `set_cns_style` + load data, run once); subsequent cells = one logical step each (one QC step, one panel, one DE round). Re-run only the cell you change — data stays in memory across cells. `save_panel` auto-displays figures in notebook output (`show=None` detects Jupyter → figure shows in cell + PDF saved to disk). Checkpoints (Rule 5) and `analysis_log` (meta §8b) are the persistence layer; notebooks are the workflow layer.
 
 ## Key Files
 

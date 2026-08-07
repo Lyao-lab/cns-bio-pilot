@@ -17,6 +17,8 @@ description: Bulk RNA-seq / 表达矩阵全流程（差异表达→富集→WGCN
 
 > **Iteration reminder (Core Rule 8)**: This pipeline is run in batches. After each major step batch (e.g., QC+cluster+annotation; or DE+enrichment), return to `research-planner` Phase R to review results with the researcher before the next batch. Do not auto-run end-to-end.
 
+> **Hypothesis ledger** (Core Rule 7): If you did NOT come from `research-planner`, create a mini `hypothesis_ledger.md` now (H1 + status:pending + unexpected-finding slot). Phase R R1 will update it.
+
 ## 0. Initialization
 
 ```python

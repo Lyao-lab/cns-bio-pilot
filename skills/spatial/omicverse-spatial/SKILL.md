@@ -17,6 +17,8 @@ description: 空间转录组全流程（IO→空间邻域→QC→空间域→SVG
 
 > **Iteration reminder**: Run in batches; after each batch return to `research-planner` Phase R (Core Rule 8). Do not auto-run end-to-end.
 
+> **Hypothesis ledger** (Core Rule 7): If you did NOT come from `research-planner`, create a mini `hypothesis_ledger.md` now (H1 + status:pending + unexpected-finding slot). Phase R R1 will update it.
+
 ## 0. Initialization
 
 ```python

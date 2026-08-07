@@ -31,6 +31,8 @@ np.random.seed(42); torch.manual_seed(42)   # provenance: fixed seed (meta §8b)
 
 > **Provenance**: Create `analysis_log.md` in the project directory at init (meta §8b). After each major step (QC/cluster/annotation/DE/integration), append the key parameters and choices (thresholds, resolution, method, seed). This file is consumed by Phase R (decision records) and manuscript-writing (Methods parameters).
 
+> **Hypothesis ledger** (Core Rule 7): If you did NOT come from `research-planner` (data-first entry), create a mini hypothesis ledger now — write `hypothesis_ledger.md` in the project directory with at least H1 (your main biological question, even if vague) + one `status: pending` + one "unexpected-finding slot". This is what Phase R R1 will update. Without it, the result-driven iteration loop (Core Rule 8) has nothing to consume. Even a one-line "H1: what cell types are in this tissue? status: pending" is enough to start.
+
 > **Dependency:** `ov.single.*` (find_markers, annotation, etc.) requires `ipywidgets`. If you hit `ModuleNotFoundError: No module named 'ipywidgets'`, run `pip install ipywidgets` first. Without a GPU, ov auto-falls back to CPU mode (works, but scVI/scGPT finetune is slow).
 
 > **Notebook workflow (Core Rule 9)**: 每个 pipeline 跑在一个 .ipynb 里，关键节点分 cell。改某一步只重跑对应 cell 及下游，前面的 QC/preprocess 不重跑：
@@ -358,6 +360,8 @@ adata.write_h5ad('checkpoints/08_annotation.h5ad')
 pb.write_h5ad('checkpoints/08_pseudobulk.h5ad')
 ```
 
+> **Postcheck (Core Rule 4)**: DE 完成后必须跑 `python scripts/postcheck.py` —— 检查 DE 列名一致性、housekeeping 基因异常富集、logFC 量级、per-cell vs pseudobulk 误用。FAIL 必须解决才能进下游。
+
 **关键判据**：
 - 必须有 ≥3 biological replicates per condition（否则 DESeq2 无法估计离散度）
 - `layer='counts'`（不是 normalized）——DESeq2 内部做 size factor 标准化
@@ -381,6 +385,8 @@ ov.single.Fate(adata, pseudotime='dpt_pseudotime')       # pseudotime-based fate
 # classic py-monocle2 still available (simple pseudotime)
 ov.single.Monocle(adata)
 ```
+
+> **Postcheck (Core Rule 4)**: CCC 完成后跑 `python scripts/postcheck.py` —— 检查单方法依赖、ligand-receptor 方向、background expression。
 
 > **Trajectory choice:**
 > - **CellRank 2** (Nat Methods 2024) is the default for **continuous fate mapping** (velocity / pseudotime / metabolic-labeling kernels unified). Velocity-driven trajectory → `single-cell/rna-velocity` (incl. `cellrank_fate`).
@@ -426,6 +432,8 @@ Verified available in omicverse (`sc` env; version in `compat.yaml`). Pick by wh
 > R 用户可通过 scop 0.8.9 的 `RunMilo`/`RunscCODA`/`RunPropeller` 调用（见 `single-cell/scop`）。
 
 > R-side `scop::RunProportionTest` is a basic proportion test — use it only for quick looks, not publication. For CNS-grade composition claims, **always** use Milo / scCODA / propeller. (Meta-methodology principle ③ — "who is my N"; enforced in `scripts/postcheck.py` C1 check.)
+
+> **Postcheck (Core Rule 4)**: Composition analysis 完成后跑 `python scripts/postcheck.py` —— 检查 compositional 方法误用（chi-square/Fisher）、sample-level replicate 缺失。
 
 ## 10. Visualization (see visualization/figure-production)
 

@@ -30,17 +30,35 @@ import numpy as np
 
 
 def load_image(path):
-    """Load image as numpy array. PNG/JPG/TIFF native; PDF via pdf2image."""
+    """Load image as numpy array. PNG/JPG/TIFF native; PDF via pymupdf (preferred) or pdf2image.
+
+    PDF 转换库优先级：pymupdf (fitz) > pdf2image (需 poppler)。
+    与 build_deck.py 保持一致（都用 pymupdf），避免同一 skill 库依赖两个 PDF 库。
+    """
     path = Path(path)
     if path.suffix.lower() == '.pdf':
+        # 优先 pymupdf（与 build_deck.py 一致）
+        try:
+            import fitz  # pymupdf
+            doc = fitz.open(str(path))
+            page = doc[0]
+            zoom = 300 / 72  # 300dpi
+            pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom))
+            arr = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+            doc.close()
+            # 取 RGB（丢弃 alpha 通道）
+            return arr[:, :, :3] if pix.n >= 3 else arr
+        except ImportError:
+            pass
+        # 备选 pdf2image（需 poppler）
         try:
             from pdf2image import convert_from_path
             pages = convert_from_path(str(path), dpi=300)
             if pages:
                 return np.array(pages[0])
         except ImportError:
-            print(f"WARNING: pdf2image not installed, cannot read {path}. "
-                  f"Export as PNG, or: pip install pdf2image")
+            print(f"WARNING: 无法读取 PDF {path}。需要 pymupdf (pip install pymupdf) "
+                  f"或 pdf2image (pip install pdf2image)。建议用 pymupdf。")
             return None
     try:
         img = Image.open(path)
@@ -51,18 +69,33 @@ def load_image(path):
 
 
 def compute_layout(n, layout_str=None):
-    """Compute (nrows, ncols). Prefer wider than tall."""
+    """Compute (nrows, ncols). Prefer wider than tall, minimize empty cells.
+
+    启发式：理想列数 = ceil(sqrt(n))，然后微调使空格最少且列≥行。
+    例如 n=4 → 2x2，n=5 → 2x3（1空格），n=6 → 2x3，n=8 → 2x4。
+    """
     if layout_str:
         parts = layout_str.lower().split('x')
         if len(parts) == 2:
             return int(parts[0]), int(parts[1])
-    ncols = math.ceil(math.sqrt(n * 1.5))
-    nrows = math.ceil(n / ncols)
-    return nrows, ncols
+    if n <= 1:
+        return 1, max(n, 1)
+    target = math.sqrt(n)
+    best = None
+    for ncols in range(1, n + 1):
+        nrows = math.ceil(n / ncols)
+        if nrows > ncols:
+            continue  # prefer wider (ncols >= nrows)
+        empty = nrows * ncols - n
+        # 评分：空格数主权重 + 列数偏离 target 的惩罚
+        score = empty * 3 + abs(ncols - target)
+        if best is None or score < best[0]:
+            best = (score, nrows, ncols)
+    return best[1], best[2]
 
 
 def assemble(inputs, output, layout=None, dpi=300, label_size=12,
-             label_bold=True, padding=0.02, bg_color='white'):
+             label_bold=True, padding=0.04, bg_color='white'):
     """Assemble N panels into composite. Preserves aspect ratio — no forced resize."""
     images = []
     for path in inputs:
@@ -127,7 +160,7 @@ def main():
     ap.add_argument("--label-size", type=int, default=12)
     ap.add_argument("--label-bold", action="store_true", default=True)
     ap.add_argument("--no-label-bold", dest="label_bold", action="store_false")
-    ap.add_argument("--padding", type=float, default=0.02)
+    ap.add_argument("--padding", type=float, default=0.04)
     args = ap.parse_args()
 
     ok = assemble(args.input, args.output, args.layout, args.dpi,

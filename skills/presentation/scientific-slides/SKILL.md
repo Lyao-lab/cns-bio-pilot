@@ -93,7 +93,7 @@ This skill generates research presentation slides with **python-pptx** (default)
 | 2 | **两页讲同一件事** | S4 空间架构 + S5 基因梯度 = 重复空间差异 | 合并成一页；或一页定量一页定性（不重叠） |
 | 3 | **机制页与架构页脱节** | ECM 来源（S6）与空间架构（S5）隔了几页 | 机制紧跟发现（架构→来源解释→通讯） |
 | 4 | **缺 model 页** | 从发现直接跳结论，无整合模型 | Talk Arc 必须有 model 页（三轴整合图/总结） |
-| 5 | **标题字号太大换行** | 28pt 标题在 13.3" 宽 slide 上换两行 | 标题 20pt + 全宽 12.7" + 确保一行 |
+| 5 | **标题字号太大换行** | 旧版 28pt 标题在窄 slide 上换两行；后改为 20pt 但违反 readability contract | **24pt + 标题区高 0.7"（容两行）+ 全宽 12.7"**：24pt 在 12.7" 宽上单行可放约 85 英文字符 / 38 汉字，覆盖绝大多数结论式标题；超长自动 word_wrap 到第二行（标题区 0.7" 容纳 24pt×2） |
 | 6 | **figure-hero 覆盖率低** | 图只占 slide 40%（大量留白） | 图宽高比匹配 slide（2:1）；非宽图用 `max_h` 突破 |
 | 7 | **硬编码 spec 值** | 图上标 ρ=-0.877（旧值），实际算出 -0.80 | 永远用 computed 值，print 对照 |
 | 8 | **Panel B 空/被挤压** | Panel A legend 移位 → Panel B 变空 | 去掉冗余 Panel B（如果 Panel A 已含信息） |

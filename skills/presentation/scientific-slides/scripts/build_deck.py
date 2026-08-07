@@ -100,16 +100,21 @@ def _add_bullets(s, left, top, width, height, bullets, size, color, font_name=No
 # ---- 安全区域（防重叠）----
 SLIDE_W, SLIDE_H = 13.333, 7.5
 SAFE_GAP = 0.3  # inch, 图片与文字之间的最小安全间距
-TITLE_TOP, TITLE_H = 0.25, 0.55   # 标题区（压缩，给图更多空间）
-CONTENT_TOP = 0.95                # 内容区起点（上移）
-CAPTION_TOP = 6.85                # 图注区起点（下移）
-CONTENT_H = CAPTION_TOP - CONTENT_TOP - 0.1  # 可用内容高度 = 5.80
+# 标题区给 24pt 单行足够高度（0.7inch）；内容区起点下移到 1.05 给标题让位
+TITLE_TOP, TITLE_H = 0.3, 0.7    # 标题区：24pt 单行约需 0.45"，留 0.25 padding
+CONTENT_TOP = 1.05               # 内容区起点（标题下方 + 0.05 间距）
+CAPTION_TOP = 6.85               # 图注区起点
+CONTENT_H = CAPTION_TOP - CONTENT_TOP - 0.1  # 可用内容高度 = 5.70
 
 def _add_title(s, title, preset):
-    """统一标题放置：顶部，绝不与内容区重叠"""
+    """统一标题放置：24pt（满足 readability contract），顶部，绝不与内容区重叠。
+
+    24pt 单行在 12.7" 宽（13.333-0.6 边距）上约可放 50-60 英文字符——
+    覆盖绝大多数结论式标题。超长标题自动 word_wrap 到第 2 行（标题区 0.7" 容纳）。
+    """
     if title:
         _add_text(s, Inches(0.3), Inches(TITLE_TOP), Inches(SLIDE_W-0.6), Inches(TITLE_H),
-                  title, 20, preset["title"], bold=True, font_name=preset["font_name"])
+                  title, 24, preset["title"], bold=True, font_name=preset["font_name"])
 
 def _add_caption(s, caption, preset, left=0.5, width=None):
     """统一图注放置：底部 6.7-7.2inch"""
@@ -183,11 +188,9 @@ def _figure_hero(s, d, preset):
         except Exception:
             aspect = 1.8
         max_w = SLIDE_W - 1.0
-        # wide images (aspect >= 1.8) keep caption room; narrower images expand toward bottom
-        if aspect >= 1.8:
-            max_h = CONTENT_H
-        else:
-            max_h = SLIDE_H - CONTENT_TOP - 0.25   # expand to near-bottom (skip caption for non-wide)
+        # 所有图都遵守 CONTENT_H 上限——不区分 wide/narrow，确保 caption 区不被图片覆盖
+        # 窄图靠横向居中 + 纵向居中在 content 区内自然展示，不需要纵向突破到 caption
+        max_h = CONTENT_H
         pic = s.shapes.add_picture(img, Inches(0.5), Inches(CONTENT_TOP))
         w_in = pic.width / 914400; h_in = pic.height / 914400
         ratio = min(max_w / w_in, max_h / h_in)
@@ -206,14 +209,17 @@ def _figure_dual(s, d, preset):
     _add_title(s, d.get("title",""), preset)
     img1 = d.get("image"); img2 = d.get("image2")
     half_w = (SLIDE_W - 1.0 - SAFE_GAP) / 2  # 每半宽度
+    # 子图 caption 在图片正下方，图片高度需留出 caption 空间（0.4inch）
+    img_max_h = CONTENT_H - 0.4
+    sub_caption_top = CONTENT_TOP + img_max_h + 0.05
     if img1 and Path(img1).exists():
-        _place_image(s, img1, left=0.5, top=CONTENT_TOP, max_w=half_w, max_h=CONTENT_H)
-        _add_text(s, Inches(0.5), Inches(CAPTION_TOP - 0.4), Inches(half_w), Inches(0.35),
+        _place_image(s, img1, left=0.5, top=CONTENT_TOP, max_w=half_w, max_h=img_max_h)
+        _add_text(s, Inches(0.5), Inches(sub_caption_top), Inches(half_w), Inches(0.3),
                   d.get("caption_left",""), 9, preset["caption"], italic=True, font_name=preset["font_name"])
     if img2 and Path(img2).exists():
         left2 = 0.5 + half_w + SAFE_GAP
-        _place_image(s, img2, left=left2, top=CONTENT_TOP, max_w=half_w, max_h=CONTENT_H)
-        _add_text(s, Inches(left2), Inches(CAPTION_TOP - 0.4), Inches(half_w), Inches(0.35),
+        _place_image(s, img2, left=left2, top=CONTENT_TOP, max_w=half_w, max_h=img_max_h)
+        _add_text(s, Inches(left2), Inches(sub_caption_top), Inches(half_w), Inches(0.3),
                   d.get("caption_right",""), 9, preset["caption"], italic=True, font_name=preset["font_name"])
     _add_caption(s, d.get("caption"), preset)
 
@@ -276,26 +282,32 @@ def _figure_slide(s, d, preset, max_panels=4):
 def _split_compare(s, d, preset):
     _add_title(s, d.get("title",""), preset)
     half_w = (SLIDE_W - 1.0 - SAFE_GAP) / 2
+    sub_title_h = 0.4   # 子标题高度
+    bullets_h = 1.0     # bullets 区域高度
+    # 图片在 sub-title 下方，bullets 上方；为两者留出空间 + 安全间距
+    img_top = CONTENT_TOP + sub_title_h + 0.05
+    img_max_h = CONTENT_H - sub_title_h - bullets_h - 0.2  # 减去上下两块 + 间距
+    bullets_top = CONTENT_TOP + sub_title_h + 0.05 + img_max_h + 0.1
     # 左半
     left_d = d.get("left", {})
     if left_d.get("title"):
-        _add_text(s, Inches(0.5), Inches(CONTENT_TOP), Inches(half_w), Inches(0.4),
+        _add_text(s, Inches(0.5), Inches(CONTENT_TOP), Inches(half_w), Inches(sub_title_h),
                   left_d["title"], 16, preset["accent"], bold=True, font_name=preset["font_name"])
     if left_d.get("image") and Path(left_d["image"]).exists():
-        _place_image(s, left_d["image"], left=0.5, top=CONTENT_TOP+0.5, max_w=half_w, max_h=CONTENT_H-1.5)
+        _place_image(s, left_d["image"], left=0.5, top=img_top, max_w=half_w, max_h=img_max_h)
     if left_d.get("bullets"):
-        _add_bullets(s, Inches(0.5), Inches(CAPTION_TOP-1.2), Inches(half_w), Inches(1.0),
+        _add_bullets(s, Inches(0.5), Inches(bullets_top), Inches(half_w), Inches(bullets_h),
                      left_d["bullets"], 11, preset["body"], font_name=preset["font_name"])
     # 右半
     right_d = d.get("right", {})
     right_left = 0.5 + half_w + SAFE_GAP
     if right_d.get("title"):
-        _add_text(s, Inches(right_left), Inches(CONTENT_TOP), Inches(half_w), Inches(0.4),
+        _add_text(s, Inches(right_left), Inches(CONTENT_TOP), Inches(half_w), Inches(sub_title_h),
                   right_d["title"], 16, preset["accent"], bold=True, font_name=preset["font_name"])
     if right_d.get("image") and Path(right_d["image"]).exists():
-        _place_image(s, right_d["image"], left=right_left, top=CONTENT_TOP+0.5, max_w=half_w, max_h=CONTENT_H-1.5)
+        _place_image(s, right_d["image"], left=right_left, top=img_top, max_w=half_w, max_h=img_max_h)
     if right_d.get("bullets"):
-        _add_bullets(s, Inches(right_left), Inches(CAPTION_TOP-1.2), Inches(half_w), Inches(1.0),
+        _add_bullets(s, Inches(right_left), Inches(bullets_top), Inches(half_w), Inches(bullets_h),
                      right_d["bullets"], 11, preset["body"], font_name=preset["font_name"])
 
 def _table_slide(s, d, preset):

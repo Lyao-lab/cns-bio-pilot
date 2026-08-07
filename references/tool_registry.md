@@ -4,7 +4,7 @@
 > verified = 已用真实数据测试通过；unverified = 未测试或依赖外部环境。
 > 思路借鉴 OmicOS Beacon（工具契约标准化），但不做运行时探针验证（太重）。
 
-## 绘图工具（scripts/cns_style.py，18 个统一入口）
+## 绘图工具（scripts/cns_style.py，22 个统一入口）
 
 ### plot_umap | category: plotting | verified ✅
 - **inputs**: adata(AnnData), color(str, obs列), basis='X_umap'
@@ -129,6 +129,34 @@
 - **inputs**: comm_scores(DataFrame, 行=cell type, 列=pathway), mode='outgoing'
 - **outputs**: PDF 到 panels/
 - **路由**: mpl（ov 无），outgoing/incoming 通讯强度热图
+- **相关规则**: B1 B2 B3
+- **机检**: finalize_figure 内置
+
+### plot_distance_distribution | category: plotting | verified ⚠️
+- **inputs**: adata_sp(AnnData spatial), group_a/group_b(str 或 bool mask), groupby, spatial_key, n_perm=100
+- **outputs**: PDF 箱线图 + 置换检验 p 值标注
+- **路由**: mpl + scipy cKDTree（最近邻距离），置换检验双侧经验 p
+- **相关规则**: B1 B2 B3
+- **机检**: finalize_figure 内置
+
+### plot_nhood_enrichment | category: plotting | verified ⚠️
+- **inputs**: adata_sp(AnnData spatial, 需 obsp['spatial_connectivities']), cluster_key='celltype'
+- **outputs**: PDF 邻域富集热图（z-score, */** 显著标注）
+- **路由**: squidpy.gr.nhood_enrichment 优先 → mpl 手动共邻计数兜底
+- **相关规则**: B1 B2 B3
+- **机检**: finalize_figure 内置
+
+### plot_colocalization | category: plotting | verified ⚠️
+- **inputs**: adata_sp(AnnData spatial), var_x/var_y(基因名或 obs 比例列), method='spearman', groupby
+- **outputs**: PDF 共定位散点（ρ + p 标注，>5000 点自动 hexbin）
+- **路由**: mpl（ov 无），scipy.stats spearmanr/pearsonr
+- **相关规则**: B1 B2 B3
+- **机检**: finalize_figure 内置
+
+### plot_enrichment_scatter | category: plotting | verified ⚠️
+- **inputs**: enr_df(DataFrame, GO/KEGG/GSEA), x='GeneRatio', y='FDR', size='Count', color='FDR', top_n=15
+- **outputs**: PDF 富集气泡散点（5 维：x/y/size/color/term 标注）
+- **路由**: mpl（ov 无），-log10(FDR) 降序取 top_n 标通路名
 - **相关规则**: B1 B2 B3
 - **机检**: finalize_figure 内置
 

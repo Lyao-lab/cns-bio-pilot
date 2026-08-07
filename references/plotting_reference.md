@@ -331,6 +331,49 @@ fig, ax = plot_signaling_heatmap(comm_scores, save='R_signaling_heatmap', mode='
 # comm_scores: DataFrame, 行=cell type, 列=pathway, 值=通讯分数
 ```
 
+### 3.10 Distance distribution（细胞间距离分布——空转标配）
+
+**统一入口**（mpl + scipy cKDTree）：组 A 每个 spot 到组 B 最近邻的欧氏距离箱线图 + 置换检验 p 值。A/B 距离偏近 = 共定位，偏远 = 互斥。
+
+```python
+from cns_style import plot_distance_distribution
+plot_distance_distribution(adata_sp, group_a='Macrophage', group_b='Fibroblast',
+                           groupby='condition', save='S_distance_mac_fib')
+# 需 obsm['spatial']；groupby=None 时不分组合一个箱线图；p 值标在图上方（置换 n 次）
+```
+
+### 3.11 Neighborhood enrichment（邻域富集热图）
+
+**统一入口**（squidpy.gr.nhood_enrichment → mpl 手动共邻兜底）：哪些细胞类型显著共邻。
+
+```python
+from cns_style import plot_nhood_enrichment
+plot_nhood_enrichment(adata_sp, cluster_key='celltype', save='T_nhood_enrich')
+# 需先跑 ov.space.spatial_neighbors / sq.gr.spatial_neighbors（obsp['spatial_connectivities']）
+```
+z-score 方形热图（cluster × cluster），|z|>1.96 标 *、|z|>2.58 标 **，DIVERGING_CMAP。
+
+### 3.12 Colocalization score（空间共定位散点）
+
+**统一入口**（mpl）：per-spot 双信号相关散点（基因名或去卷积比例列），>5000 点自动转 hexbin。
+
+```python
+from cns_style import plot_colocalization
+plot_colocalization(adata_sp, var_x='CD68', var_y='Macrophage_frac', save='U_coloc')
+# var_x/var_y 可为基因（var_names）或 obs 比例列；图上标注 ρ + p（Spearman 默认）
+```
+
+### 3.13 Enrichment scatter（富集气泡散点）
+
+**统一入口**（mpl）：富集结果 5 维气泡图（x=GeneRatio, y=-log10(FDR), 点大小=Count, 颜色=FDR），比条形图信息密度高。
+
+```python
+from cns_style import plot_enrichment_scatter
+plot_enrichment_scatter(enr_df, x='GeneRatio', y='FDR', size='Count',
+                        color='FDR', top_n=15, save='V_enrich_bubble')
+# enr_df: GO/KEGG/GSEA 输出 DataFrame；top_n 条通路名标注在点旁
+```
+
 ## 4. 统计标注（add_significance_bracket）
 
 **规则**：

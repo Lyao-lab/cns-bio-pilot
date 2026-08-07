@@ -2205,3 +2205,334 @@ def plot_signaling_heatmap(comm_scores, ax=None, figsize=None, save=None,
     if save:
         save_panel(fig, save, show=show)
     return fig, ax
+
+
+# ============================================================
+# 20.19 plot_distance_distribution — 细胞间最近邻距离分布（空转标配）
+# ============================================================
+
+def _resolve_group_mask(adata_sp, group):
+    """把 obs 列值或布尔 mask 解析为布尔数组（plot_distance_distribution 内部用）。"""
+    import numpy as np
+    if isinstance(group, str):
+        # 优先常见类别列，找不到再全列扫描
+        candidates = [c for c in ('celltype', 'cell_type', 'cluster', 'leiden', 'ctype')
+                      if c in adata_sp.obs.columns]
+        candidates += [c for c in adata_sp.obs.columns if c not in candidates]
+        for col in candidates:
+            vals = adata_sp.obs[col]
+            if vals.dtype.name in ('object', 'category', 'string'):
+                if (vals.astype(str) == group).any():
+                    return (vals.astype(str) == group).to_numpy()
+        raise ValueError(f"group '{group}' not found in any obs category column")
+    mask = np.asarray(group, dtype=bool)
+    if mask.ndim != 1 or mask.shape[0] != adata_sp.n_obs:
+        raise ValueError(f"group mask must be 1D bool with length n_obs={adata_sp.n_obs}")
+    return mask
+
+
+def plot_distance_distribution(adata_sp, group_a, group_b, groupby=None,
+                                spatial_key='spatial', ax=None, figsize=None,
+                                save=None, n_perm=100, show=None, **kwargs):
+    """两种细胞在组织中的空间距离分布——空转标配证据图。
+
+    计算组 A 每个 spot 到组 B 最近邻的欧氏距离，画箱线图（按 groupby 分组）。
+    置换检验（n_perm 次随机打乱标签）给出 p 值。
+
+    Args:
+        adata_sp: 空转 AnnData（有 obsm[spatial_key]）
+        group_a/group_b: obs 列值（如 celltype=='FB'）或布尔 mask——指定两组 spot
+        groupby: 按 condition 分组的列名（None=不分组合在一个箱线图）
+        spatial_key: obsm 里的坐标 key
+        n_perm: 置换检验次数（0=跳过）
+    """
+    import numpy as np
+    from scipy.spatial import cKDTree
+    if spatial_key not in adata_sp.obsm:
+        raise ValueError(f"adata_sp.obsm has no '{spatial_key}' (run spatial_neighbors first?)")
+    coords = np.asarray(adata_sp.obsm[spatial_key], dtype=float)
+    if coords.ndim != 2 or coords.shape[1] < 2:
+        raise ValueError(f"obsm['{spatial_key}'] must be 2D coordinates array")
+    ma = _resolve_group_mask(adata_sp, group_a)
+    mb = _resolve_group_mask(adata_sp, group_b)
+    if ma.sum() == 0 or mb.sum() == 0:
+        raise ValueError("group_a/group_b 都至少要有 1 个 spot")
+    # A 每个 spot → B 最近邻的欧氏距离
+    tree = cKDTree(coords[mb])
+    d, _ = tree.query(coords[ma])
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (5.2, 4.0))
+    else:
+        fig = ax.figure
+    # 箱线图：按 groupby 分组（只含组 A 的 spot）
+    if groupby is not None:
+        if groupby not in adata_sp.obs.columns:
+            raise ValueError(f"groupby '{groupby}' not in obs")
+        g = adata_sp.obs[groupby].loc[ma].astype(str)
+        cats = [c for c in g.cat.categories if (g == c).any()] if g.dtype.name == 'category' \
+            else sorted(g.unique())
+        data = [d[g.values == c] for c in cats]
+        bp = ax.boxplot(data, tick_labels=cats, patch_artist=True,
+                        widths=0.55, showfliers=False)
+    else:
+        bp = ax.boxplot([d], patch_artist=True, widths=0.45, showfliers=False)
+        cats = None
+    for patch, i in zip(bp['boxes'], range(len(bp['boxes']))):
+        patch.set_facecolor(MORLANDI[i % len(MORLANDI)])
+        patch.set_alpha(0.75)
+        patch.set_edgecolor(NEAR_BLACK)
+        patch.set_linewidth(0.8)
+    for part in ('whiskers', 'caps'):
+        for el in bp[part]:
+            el.set_color(NEAR_BLACK)
+            el.set_linewidth(0.8)
+    for md in bp['medians']:
+        md.set_color(NEAR_BLACK)
+        md.set_linewidth(1.2)
+    ax.set_ylabel(f'Distance to {group_b} (nearest, µm)', fontsize=10, labelpad=10)
+    if groupby is not None:
+        ax.set_xlabel(groupby, fontsize=10, labelpad=10)
+    else:
+        ax.set_xticks([])
+    ax.set_title(f'{group_a} vs {group_b} spatial distance', fontsize=12, pad=8)
+    # 置换检验：随机重抽 n_a 个 spot 作组 A，重算到 B 的最近邻均距
+    n_obs = adata_sp.n_obs
+    n_a = int(ma.sum())
+    observed = d.mean()
+    p = None
+    if n_perm > 0:
+        rng = np.random.default_rng(0)
+        below = 0
+        for _ in range(n_perm):
+            pick = rng.permutation(n_obs)[:n_a]
+            dp, _ = tree.query(coords[pick])
+            if dp.mean() <= observed:
+                below += 1
+        above = n_perm - below
+        p = (min(below, above) + 1) / (n_perm + 1)  # 双侧经验 p（+1 校正避免 0）
+        star = 'ns' if p >= 0.05 else ('*' if p >= 0.01 else '**')
+        ax.text(0.5, 1.03, f'{star} p={p:.2e} (permutation n={n_perm})',
+                transform=ax.transAxes, ha='center', fontsize=8, color=GREY)
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+# ============================================================
+# 20.20 plot_nhood_enrichment — 空间邻域富集热图（squidpy → mpl 兜底）
+# ============================================================
+
+def plot_nhood_enrichment(adata_sp, cluster_key='celltype',
+                           spatial_key='spatial', ax=None, figsize=None,
+                           save=None, show=None, **kwargs):
+    """空间邻域富集热图——哪些细胞类型显著共邻。
+
+    需要 adata_sp.obsp['spatial_connectivities']（先跑 ov.space.spatial_neighbors）。
+    优先 squidpy.gr.nhood_enrichment 计算 z-score 矩阵；squidpy 不可用时 mpl 兜底
+    （手动计数共邻频率 → 置换 z-score）。
+
+    输出：方形热图（cluster × cluster），颜色=z-score，显著格子（|z|>2）标 *。
+    """
+    import numpy as np
+    if cluster_key not in adata_sp.obs.columns:
+        raise ValueError(f"cluster_key '{cluster_key}' not in obs")
+    if 'spatial_connectivities' not in adata_sp.obsp:
+        raise ValueError("adata_sp.obsp 没有 'spatial_connectivities'，请先跑 "
+                         "ov.space.spatial_neighbors(adata_sp) 或 sq.gr.spatial_neighbors")
+    cats = adata_sp.obs[cluster_key].astype('category')
+    k = len(cats.cat.categories)
+    zscore = np.zeros((k, k))
+    try:
+        import squidpy as sq
+        sq.gr.nhood_enrichment(adata_sp, cluster_key=cluster_key)
+        zscore = np.asarray(adata_sp.uns['nhood_enrichment']['zscore'], dtype=float)
+    except Exception:
+        # mpl 兜底：手动共邻计数 → 置换 z-score
+        adj = adata_sp.obsp['spatial_connectivities']
+        if hasattr(adj, 'toarray'):
+            adj = adj.toarray()
+        adj = np.asarray(adj, dtype=float)
+        labels = cats.cat.codes.to_numpy()
+        n_obs = adata_sp.n_obs
+        counts = np.zeros((k, k))
+        for i in range(n_obs):
+            nbrs = np.nonzero(adj[i])[0]
+            if nbrs.size == 0:
+                continue
+            li = labels[i]
+            uniq, cnt = np.unique(labels[nbrs], return_counts=True)
+            for u, c in zip(uniq, cnt):
+                counts[li, u] += c
+        counts = counts + counts.T
+        np.fill_diagonal(counts, counts.diagonal() / 2)
+        # 置换：随机打乱邻居归属，经验均值/标准差 → z-score
+        rng = np.random.default_rng(0)
+        perm = np.stack([rng.permutation(labels) for _ in range(200)])
+        exp = np.zeros((k, k))
+        se = np.zeros((k, k))
+        for i in range(n_obs):
+            nbrs = np.nonzero(adj[i])[0]
+            if nbrs.size == 0:
+                continue
+            li = labels[i]
+            uniq, cnt = np.unique(perm[:, nbrs[0]] if nbrs.size == 1 else perm[:, nbrs].flatten(),
+                                  return_counts=True)
+            for u, c in zip(uniq, cnt):
+                exp[li, u] += c / 200
+        exp = exp + exp.T
+        np.fill_diagonal(exp, exp.diagonal() / 2)
+        # 简化：以 counts 的 sqrt 作为尺度的 z-score 近似
+        zscore = np.where(exp > 0, (counts - exp) / np.sqrt(exp + 1e-9), 0.0)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (5.5, 4.8))
+    else:
+        fig = ax.figure
+    im = ax.imshow(zscore, cmap=DIVERGING_CMAP, vmin=-6, vmax=6,
+                   interpolation='nearest', aspect='auto')
+    ax.set_xticks(range(k))
+    ax.set_xticklabels(cats.cat.categories, fontsize=7, rotation=45, ha='right')
+    ax.set_yticks(range(k))
+    ax.set_yticklabels(cats.cat.categories, fontsize=7)
+    ax.set_xlabel(cluster_key, fontsize=10, labelpad=10)
+    ax.set_ylabel(cluster_key, fontsize=10, labelpad=10)
+    ax.set_title('Neighborhood enrichment (z-score)', fontsize=12, pad=8)
+    # 显著性标注：|z|>1.96 → *，|z|>2.58 → **
+    for i in range(k):
+        for j in range(k):
+            z = zscore[i, j]
+            if abs(z) > 2.58:
+                ax.text(j, i, '**', ha='center', va='center', fontsize=7, color=NEAR_BLACK)
+            elif abs(z) > 1.96:
+                ax.text(j, i, '*', ha='center', va='center', fontsize=7, color=NEAR_BLACK)
+    add_elegant_colorbar(im, ax, label='z-score')
+    polish_axes(ax, subtle_grid=False)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+# ============================================================
+# 20.21 plot_colocalization — 双信号空间共定位散点（ρ + p）
+# ============================================================
+
+def _resolve_signal(adata_sp, name):
+    """取 var_names 基因 或 obs 列（如去卷积比例）的数值向量（plot_colocalization 内部用）。"""
+    import numpy as np
+    if name in adata_sp.var_names:
+        v = adata_sp[:, name].X
+        if hasattr(v, 'toarray'):
+            v = v.toarray()
+        return np.asarray(v).ravel().astype(float), 'gene'
+    if name in adata_sp.obs.columns:
+        return np.asarray(adata_sp.obs[name], dtype=float).ravel(), 'obs'
+    raise ValueError(f"'{name}' 既不在 var_names（基因）也不在 obs 列（比例/元数据）")
+
+
+def plot_colocalization(adata_sp, var_x, var_y, method='spearman',
+                         groupby=None, ax=None, figsize=None,
+                         save=None, show=None, **kwargs):
+    """两种信号的空间共定位——per-spot 相关散点图。
+
+    var_x/var_y 可以是基因名（adata.var_names）或 obs 列名（如去卷积比例列）。
+    散点图 x=var_x, y=var_y，颜色=点密度（hexbin 或 alpha 散点）。
+    标注相关系数 ρ + p 值。groupby 时按组分色。
+
+    Args:
+        method: 'spearman'（默认）或 'pearson'
+        groupby: 非 None 时按该 obs 列分色（不分组面）
+    """
+    import numpy as np
+    from scipy.stats import spearmanr, pearsonr
+    x, xtype = _resolve_signal(adata_sp, var_x)
+    y, _ = _resolve_signal(adata_sp, var_y)
+    mask = np.isfinite(x) & np.isfinite(y)
+    x, y = x[mask], y[mask]
+    if method == 'pearson':
+        rho, p = pearsonr(x, y)
+        rho_label = 'r'
+    else:
+        rho, p = spearmanr(x, y)
+        rho_label = 'ρ'
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (4.8, 4.2))
+    else:
+        fig = ax.figure
+    if groupby is not None:
+        if groupby not in adata_sp.obs.columns:
+            raise ValueError(f"groupby '{groupby}' not in obs")
+        g = adata_sp.obs[groupby].astype(str).to_numpy()[mask]
+        cats = sorted(set(g))
+        for i, c in enumerate(cats):
+            m = g == c
+            ax.scatter(x[m], y[m], s=3, alpha=0.3, rasterized=True,
+                       color=MORLANDI[i % len(MORLANDI)], label=c, edgecolor='none')
+        ax.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', frameon=False, fontsize=7)
+    elif len(x) > 5000:
+        hb = ax.hexbin(x, y, gridsize=60, mincnt=1, cmap=EXPR_CMAP,
+                       edgecolors='none', rasterized=True)
+        add_elegant_colorbar(hb, ax, label='spots')
+    else:
+        ax.scatter(x, y, s=3, alpha=0.3, rasterized=True, color='#5E81AC',
+                   edgecolor='none')
+    # 相关标注
+    star = 'ns' if p >= 0.05 else ('*' if p >= 0.01 else '**')
+    ax.text(0.03, 0.97,
+            f'{rho_label}={rho:.2f}, p={p:.2e} {star} ({method.capitalize()})',
+            transform=ax.transAxes, va='top', fontsize=8, color=GREY)
+    ax.set_xlabel(var_x, fontsize=10, labelpad=10)
+    ax.set_ylabel(var_y, fontsize=10, labelpad=10)
+    ax.set_title('Spatial colocalization', fontsize=12, pad=8)
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+# ============================================================
+# 20.22 plot_enrichment_scatter — 富集气泡散点（5 维：x/y/size/color/term）
+# ============================================================
+
+def plot_enrichment_scatter(enr_df, x='GeneRatio', y='FDR', size='Count',
+                              color='FDR', top_n=15, term_col='Term',
+                              ax=None, figsize=None, save=None, show=None, **kwargs):
+    """富集分析气泡散点图——比条形图信息密度高（5 维）。
+
+    enr_df 是富集结果 DataFrame（GO/KEGG/GSEA）。
+    x 轴=GeneRatio（或自定义列），y 轴=-log10(FDR)，
+    点大小=Count，点颜色=FDR。标注 top_n 通路名。
+
+    Args:
+        size/color: 需要归一化/映射的列名（默认均为 FDR）
+        top_n: 按 -log10(FDR) 降序取前 n 条标注
+    """
+    import numpy as np
+    import pandas as pd
+    for col in (x, y, size, color):
+        if col not in enr_df.columns:
+            raise ValueError(f"enr_df 缺少列 '{col}'")
+    df = enr_df.copy()
+    df['_ylog'] = np.log10(df[y].replace(0, np.nan)) * -1
+    df['_ylog'] = df['_ylog'].fillna(np.nanmax(df['_ylog']))
+    df['_size_scaled'] = np.interp(df[size], (df[size].min(), df[size].max()), (20, 200))
+    top = df.nlargest(top_n, '_ylog')
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (7.0, 5.0))
+    else:
+        fig = ax.figure
+    sc = ax.scatter(df[x], df['_ylog'], s=df['_size_scaled'], c=df[color],
+                    cmap=EXPR_CMAP, alpha=0.75, edgecolor=NEAR_BLACK,
+                    linewidth=0.3, rasterized=True)
+    # 通路名标注（手动偏移，避免标签重叠）
+    for _, row in top.iterrows():
+        ax.annotate(str(row[term_col])[:40], (row[x], row['_ylog']),
+                    fontsize=6, color=GREY, ha='left', va='center',
+                    xytext=(5, 0), textcoords='offset points')
+    ax.set_xlabel(str(x), fontsize=10, labelpad=10)
+    ax.set_ylabel(r'$-$log$_{10}$(' + str(y) + ')', fontsize=10, labelpad=10)
+    ax.set_title('Enrichment bubble', fontsize=12, pad=8)
+    add_elegant_colorbar(sc, ax, label=str(color))
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax

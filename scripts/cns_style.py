@@ -1235,8 +1235,8 @@ def plot_umap(adata, color='celltype', basis='X_umap', ax=None, figsize=None,
             ov.pl.embedding(adata, basis=basis, color=color, ax=ax, show=False,
                             size=p['point_size'], alpha=p['alpha'], **kwargs)
             if labels:
-                add_cluster_labels(ax, adata, basis=basis.replace('X_','').lower(),
-                                   groupby=color)
+                label_basis = basis.replace('X_', '') if basis.startswith('X_') else basis
+                add_cluster_labels(ax, adata, basis=label_basis, groupby=color)
         except Exception as e:
             print(f"[smart_plot] ov.pl.embedding failed ({e}), mpl fallback")
             _umap_mpl(adata, color, basis, ax, p, labels, **kwargs)
@@ -1258,8 +1258,10 @@ def _umap_mpl(adata, color, basis, ax, p, labels, **kwargs):
                    alpha=p['alpha'], color=MORLANDI[i % len(MORLANDI)],
                    edgecolor='none', rasterized=True, label=str(cat))
     if labels:
-        add_cluster_labels(ax, adata, basis=basis.replace('X_','').lower(),
-                           groupby=color)
+        # 传原始 basis 给 add_cluster_labels（它内部有 X_ 前缀智能匹配），
+        # 不做 replace/lower——数据可能用 UMAP/X_umap/umap 等不同 key
+        label_basis = basis.replace('X_', '') if basis.startswith('X_') else basis
+        add_cluster_labels(ax, adata, basis=label_basis, groupby=color)
 
 
 # ============================================================

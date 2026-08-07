@@ -22,6 +22,31 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (worker/
 
 `dispatch_cheatsheet.md` condenses the 26 hard rules (A 分析严谨性 9 / B 绘图 7 / C API 4 / D 迭代 6) from 7 reference files into 75 lines — one reference replaces hand-writing 30 rules every time. **Skipping injection = the sub-agent will violate rules it never saw.**
 
+## Quick Route（关键词→子skill 索引，borrowed from Biomni prompt-retriever）
+
+用户说短句时按关键词快速命中，无需扫全表：
+
+| 关键词 | 子skill |
+|---|---|
+| umap / tsne / 聚类 / 分群 / annotate / 注释 | `single-cell/omicverse-pipeline` §2-4 |
+| 差异基因 / DE / volcano / marker / 筛选 | `omicverse-pipeline` §8.5 |
+| 细胞比例 / 组成 / Milo / 丰度 / proportion | `omicverse-pipeline` §9c |
+| 通讯 / CCC / CellChat / LR / ligand | `omicverse-pipeline` §9 |
+| 空间 / Visium / 空转 / Xenium / spot / spatial | `spatial/omicverse-spatial` |
+| 去卷积 / cell2location / deconv / Tangram | `spatial/deconvolution` |
+| 高分空转 / Visium HD / Stereo-seq / MERFISH | `spatial/multiomics` |
+| 蛋白组 / CODEX / IMC / MIBI | `spatial/proteomics` |
+| 速度 / velocity / RNA velocity / fate | `single-cell/rna-velocity` |
+| 扰动 / Perturb-seq / perturbation | `single-cell/perturbation` |
+| R / Seurat / scop | `single-cell/scop` |
+| bulk / 路径 / 通路 / enrichment / 富集 | `general-bio/omicverse-bulk` |
+| CNV / inferCNV / copykat | `omicverse-pipeline` |
+| 画图 / 绘图 / figure / panel / 拼图 | `visualization/figure-production` |
+| 机制图 / 流程图 / schematic / 图形摘要 | `visualization/scientific-schematics` |
+| PPT / 汇报 / 幻灯片 / slides / 答辩 | `presentation/scientific-slides` |
+| 论文 / manuscript / methods / 写作 | `presentation/manuscript-writing` |
+| 研究设计 / 规划 / study design | `single-cell/research-planner` |
+
 ## Routing Table
 
 | Task | Sub-skill | Engine |

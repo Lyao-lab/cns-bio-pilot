@@ -87,6 +87,8 @@
 - **Lock method versions**: for complex dependency stacks (R / toolchain / scvi↔anndata↔omicverse interlocks), get it working once at project start, then pin `pip freeze` + `conda env export` + R `sessionInfo()` — no drift
 - **Predefine downgrade paths**: every core method gets a plan B (GPU→CPU / method A→B / toolchain break→alt implementation); don't improvise on the spot
 - **Verify external dependencies live**: never trust LLM memory for versions, accessions, APIs — check PyPI / NCBI / official docs in real time
+- **No silent retry** (borrowed from OmicOS / contig): if a step crashes mid-way (OOM / kernel death / timeout), do NOT silently rerun the whole segment — report the crash with traceback, let the researcher decide whether to retry with adjusted params or investigate root cause. Silent retries mask recurring errors and waste compute.
+- **Reject stale coordinates** (borrowed from OmicOS Notebook Copilot): in notebook workflows, if a cell references an object/column that was modified or deleted in a later cell (stale coordinate), hard-fail with "object X has changed since this cell was authored" rather than guessing — rerun the dependency chain, don't operate on assumptions.
 
 ---
 
@@ -167,19 +169,48 @@ Every analysis run must record, in an `analysis_log.md` (or `step.params.json` p
 | **Versions** | from `compat.yaml` + `pip freeze` + `sessionInfo()` (meta §5) |
 | **Total attempts** | `§5 clustering: tried res=0.3/0.6/1.0 → chose 0.6 (ARI stability 0.82)` — not just the one that worked |
 
+**Structured provenance template** (borrowed from OmicOS W3C-PROV, simplified):
+
+项目 §0 Init 时创建 `analysis_log.yml`，每步追加一个 entry：
+
+```yaml
+- step: "QC"
+  tool: "ov.pp.qc"
+  call: "ov.pp.qc(adata, tresh={'mito_perc':0.15, 'doublets_score':0.3})"
+  params:
+    mito_threshold: 0.15
+    doublet_score: 0.3
+  input: "data/raw.h5ad"
+  input_md5: "<md5sum>"
+  output: "checkpoints/01_qc.h5ad"
+  output_md5: "<md5sum>"
+  seed: 42
+  versions:
+    omicverse: "2.3.1"
+    scanpy: "1.11"
+  timestamp: "2026-08-07T15:30:00"
+  attempts: "tried mt=0.1/0.15/0.2 → chose 0.15 (knee diagnostic)"
+  postcheck: "PASS (A1 counts layer present)"
+```
+
+每步 postcheck 通过后追加一个 entry。最终 `analysis_log.yml` 是完整的可复现记录。
+
 The checkpoint h5ad (Core Rule 5) stores **data state**; the provenance log stores **decision state**. Both are needed for reproducibility.
 
-### 8c. Conclusion Confidence Grading
+### 8c. Conclusion Confidence Grading + Source Labeling
 
-Every conclusion in the final report gets a grade:
+Every conclusion in the final report gets a grade **and a source label**:
 
-| Grade | Criterion | Wording allowed |
-|---|---|---|
-| **Verified** | Data support + literature grounding (PubMed/DOI cited) + passes §7 sanity gate | "we show / demonstrates" |
-| **Data-supported, literature gap** | Data support + passes §7, but no prior literature to contextualize | "we observe / suggests, consistent with our data" |
-| **Speculative** | Plausible biology but data insufficient or no orthogonal validation | "may / hypothesized / warrants further study" |
+| Grade | Criterion | Wording allowed | Source label |
+|---|---|---|---|
+| **Verified** | Data support + literature grounding (PubMed/DOI cited) + passes §7 sanity gate + 反证通过（story_builder §7.3b） | "we show / demonstrates" | `[实测+文献]` |
+| **Data-supported, literature gap** | Data support + passes §7, but no prior literature to contextualize | "we observe / suggests, consistent with our data" | `[实测]` |
+| **Speculative** | Plausible biology but data insufficient or no orthogonal validation | "may / hypothesized / warrants further study" | `[推断]` |
+| **Literature-only** | 来自文献但本次未实测（背景/对比用） | "has been reported / prior work shows" | `[文献]` |
 
-Conclusions without any grade = not reportable. This three-tier system (borrowed from PaperQA2's evidence grading and Co-Scientist's calibrated confidence) prevents overclaiming.
+**Source labeling rule** (borrowed from OmicOS Campaign result provenance tiering): 每个结论句末标来源标签——`[实测]` = 本次分析的数据产出；`[文献]` = 引用前人但本次未验证；`[推断]` = 无数据无文献的逻辑推断。标签让读者一眼区分"我做的"vs"别人做的"vs"猜的"。
+
+Conclusions without any grade = not reportable. This three-tier system (borrowed from PaperQA2's evidence grading and Co-Scientist's calibrated confidence) prevents overclaiming. Source labeling (borrowed from OmicOS Campaign) adds the missing "where did this come from" dimension.
 
 ---
 

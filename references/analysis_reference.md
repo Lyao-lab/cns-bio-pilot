@@ -11,7 +11,8 @@
 |---|---|---|
 | **生物学问题→方法决策表** | [`analysis/decision_guide.md`](analysis/decision_guide.md) | **⭐ 用户问生物学问题时先查这个——28 个问题→方法映射 + 反模式黑名单** |
 | **自主分析流程决策树** | [`analysis/analysis_flow.md`](analysis/analysis_flow.md) | **⭐ agent 自主分析时查这个——每步结果解读→下一步追什么→交叉验证→逻辑闭环** |
-| **高分文章分析范式** | [`analysis/paper_paradigms.md`](analysis/paper_paradigms.md) | **⭐ 像高分文章作者一样思考——3 种分析主干/主角细胞选择/空间验证模式/CCC 完整链/收敛点规律** |
+| **高分文章分析范式** | [`analysis/paper_paradigms.md`](analysis/paper_paradigms.md) | **⭐ 通用分析主干（链 A-E）/主角细胞选择/空间验证模式/CCC 完整链/收敛点规律** |
+| **方向专属分析指南** | [`analysis/paper_directions.md`](analysis/paper_directions.md) | **⭐ 7 方向独有要素（发育/免疫/图谱/衰老/植物/肠道/肺）+ 新主干 D-E + 验证模式 D + 方向专属工具** |
 | 速查卡 + 全局开头 | [`analysis/README.md`](analysis/README.md) | 分析任务→入口函数映射；全局 import 模板；数据 IO 速查 |
 | 单细胞基础流程 | [`analysis/sc_basic.md`](analysis/sc_basic.md) | QC/doublet/ambient → preprocess → 降维 → 聚类 → 细胞周期 → 批次校正 |
 | 注释 + DE + 富集 + 比例 | [`analysis/sc_annotation.md`](analysis/sc_annotation.md) | Marker/注释 → Pseudobulk DE → 富集 → 细胞比例/差异丰度 |

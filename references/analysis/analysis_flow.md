@@ -3,6 +3,7 @@
 > **核心问题**：agent 拿到原始数据，怎么自主走完分析全流程？
 > 不是线性 pipeline（QC→cluster→DE→CCC），而是**根据每步结果的特征决定下一步追哪条线**。
 > 与 decision_guide.md（问题→方法）互补：那张表解决"做什么"，本表解决"做了之后看什么、然后追什么"。
+> **选路线**：开始前先查 [`paper_paradigms.md`](paper_paradigms.md)（5 种分析主干 A-E）确定整体路线。
 
 ## 全局流程框架
 

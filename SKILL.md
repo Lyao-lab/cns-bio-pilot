@@ -114,6 +114,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 | `scripts/cns_style.py` | Import at top of every plotting script (26+ helpers + 40 smart_plot entry points: plot_umap/volcano/dotplot/plot_ccc/plot_ridge/plot_upset/...) |
 | `scripts/postcheck.py` | After any analysis (scientific rigor auto-check) |
 | `references/analysis_reference.md` | Analysis code templates (QC/DE/CCC/spatial/bulk) — the plotting_reference equivalent for analysis |
+| `references/analysis/decision_guide.md` | **Biology question → analysis method decision table** (28 questions: "which cells communicate?" → LIANA+; "spatial colocalization?" → nhood_enrichment; etc.) |
 | `references/plotting_reference.md` | Plotting code templates (18 chart types) |
 | `scripts/api_check.py` | After installing/updating omicverse or pertpy |
 | `scripts/scop_api_check.R` | After installing/updating scop |

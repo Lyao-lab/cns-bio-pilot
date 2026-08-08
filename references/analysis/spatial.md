@@ -175,3 +175,19 @@ ov.space.create_communication_anndata(adata, clustering_column='celltype')
 # 或 LIANA+ spatial mode：ov.single.run_liana(adata, ...) with spatial coords
 # ⚠️ ov.space.COMMOT 无公开方法（只有 _commot 私有 + helper）
 ```
+
+### 5.11 其他空间分析工具 ⭐ 新增
+```python
+# 来源：omicverse-spatial（API 签名以 ov 2.3.1 实测为准）
+# clusters：通用空间聚类（支持多种方法）
+ov.space.clusters(adata, methods='kmeans', spatial_key='spatial')
+
+# interaction_matrix：细胞类型互作矩阵（哪些类型相邻）
+ov.space.interaction_matrix(adata, cluster_key='celltype')
+
+# nmf_tissue_zones：NMF 组织区域分解
+ov.space.nmf_tissue_zones(adata, obsm_key='X_pca', n_factors=10)
+
+# sliding_window：滑动窗口分析（局部特征提取）
+ov.space.sliding_window(adata, window_size=100, overlap=20)
+```

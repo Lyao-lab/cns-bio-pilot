@@ -118,3 +118,25 @@ model = ov.single.batch_correction(adata, batch_key='batch', methods='scVI',
 # 例：ov.single.batch_correction(adata, batch_key='batch', methods='scanorama')
 ```
 
+### 2.9 其他 ov.pp 工具 ⭐ 新增
+```python
+# 来源：omicverse-pipeline（API 签名以 ov 2.3.1 实测为准）
+# recover_counts：从归一化数据恢复 counts（preprocess 后想找回原始量级）
+adata.layers['recover_counts'] = ov.pp.recover_counts(adata.X, mult_value=50*1e4, max_range=50*1e5)
+
+# normalize_pearson_residuals：单独跑 pearson 残差归一化（不用 preprocess 联合模式时）
+ov.pp.normalize_pearson_residuals(adata)
+
+# scrublet：单独跑 doublet 检测（不用 ov.pp.qc 的 doublets_method 时）
+ov.pp.scrublet(adata)
+
+# qc_metrics：只算 QC 指标不过滤（诊断阶段）
+ov.pp.qc_metrics(adata, mt_startswith='MT-')
+
+# regress：回归校正（去 batch effect / 细胞周期等协变量）
+ov.pp.regress(adata, keys=['n_counts', 'percent_mito'])
+
+# louvain：Louvain 聚类（leiden 的替代）
+ov.pp.louvain(adata, resolution=0.6)
+```
+

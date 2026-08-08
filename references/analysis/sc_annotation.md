@@ -80,3 +80,27 @@ dct_obj = ov.single.DCT(adata, condition='condition',
 # ov.pl.cellproportion(adata, celltype_clusters='celltype', groupby='condition', legend=True)
 ```
 
+### 3.5 高级分析工具 ⭐ 新增
+```python
+# 来源：omicverse-pipeline + omicverse-analysis（API 签名以 ov 2.3.1 实测为准）
+# SCENIC：转录因子调控网络分析（CNS 文章标配）
+scenic = ov.single.SCENIC(adata, db_glob='cytolambda.db', motif_path='motifs.tbl',
+                          n_jobs=8, species='human')
+
+# CNV：拷贝数变异推断（肿瘤研究标配）
+ov.single.CNV(adata, method='infercnv', genome='hg38')
+
+# Augur：细胞类型优先级排序（哪些 celltype 对条件变化最敏感）
+augur = ov.single.Augur(adata, label_col='condition', cell_type_col='celltype')
+result = augur.predict()
+
+# MetaCell：元细胞分析（降低噪声、提高统计效力）
+mc = ov.single.MetaCell(adata, method='seacells', use_rep='X_pca', n_metacells=250)
+
+# Milo：Milo 差异丰度（独立类，与 DCT 互补）
+milo = ov.single.Milo()
+
+# CellVote：投票法整合多个注释结果
+cv = ov.single.CellVote(adata)
+```
+

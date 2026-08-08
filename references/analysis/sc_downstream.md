@@ -46,3 +46,17 @@ ov.single.Metabolism(adata)     # scRNA + 代谢
 # 完整 API 见 references/multiomics_integration.md（per-modality 代码）
 ```
 
+### 4.4 其他下游工具 ⭐ 新增
+```python
+# 来源：omicverse-pipeline + omicverse-analysis（API 签名以 ov 2.3.1 实测为准）
+# StaVIA：VIA 轨迹分析（替代 cellrank_fate）
+via = ov.single.StaVIA(adata, use_rep='scaled|original|X_pca', n_comps=50, basis='X_umap')
+
+# MetaTiME：肿瘤微环境 cell state 注释
+ov.single.MetaTiME(adata, mode='table')
+
+# CrossSpecies：跨物种分析（human/mouse 对齐）
+cs = ov.single.CrossSpecies(adatas=[adata_human, adata_mouse], species=['human','mouse'],
+                            method='sym', ref_species='human')
+```
+

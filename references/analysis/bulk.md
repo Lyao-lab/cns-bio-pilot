@@ -43,3 +43,10 @@ ov.bulk.pyPPI(gene='TP53', species='human')
 adata.X = ov.bulk.deseq2_normalize(adata.to_df())
 ```
 
+### 6.5 Bulk 批次校正
+```python
+# ⭐ Bulk RNA-seq 批次校正（消除批次效应后再做 DE）
+ov.bulk.batch_correction(adata, batch_key='batch', key_added='X_corrected')
+# 校正后再跑 DE：ov.bulk.pyDEG(...)
+```
+

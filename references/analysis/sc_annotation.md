@@ -104,3 +104,16 @@ milo = ov.single.Milo()
 cv = ov.single.CellVote(adata)
 ```
 
+### 3.6 Celltype annotation transfer（跨数据集注释迁移）
+```python
+# ⭐ 从已注释的参考数据集迁移注释到新数据集
+# ov 提供多种 transfer 方式，常用 scanpy 的 ingest 或 ov.single.Annotation 的 ref 模式
+# 参考方式（reference-based annotation）：
+obj = ov.single.Annotation(adata)
+obj.annotate(method='scsa', tissuename='heart', speciename='human')
+# 或用参考数据集：
+ov.single.AnnotationRef(adata, adata_ref=ref_adata, celltype_key='celltype')
+# scanpy ingest 方式（经典）：
+sc.tl.ingest(adata, ref_adata, obs='celltype')
+```
+

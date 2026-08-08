@@ -60,3 +60,30 @@ cs = ov.single.CrossSpecies(adatas=[adata_human, adata_mouse], species=['human',
                             method='sym', ref_species='human')
 ```
 
+### 4.5 CellPhoneDB v5（CCC 替代方法）
+```python
+# ⭐ CellPhoneDB v5（除 LIANA+ 外的另一个主流 CCC 方法）
+ov.single.run_cellphonedb_v5(adata, cpdb_file_path='cellphonedb/',
+    celltype_key='celltype', min_cell_fraction=0.1, min_genes=10, min_cells=10)
+# 需先下载数据库：ov.single.download_cellphonedb_database()
+# 结果可视化：ov.pl.cpdb_heatmap / cpdb_network / cpdb_plot_interaction
+```
+
+### 4.6 RNA Velocity（轨迹前置）
+```python
+# ⭐ scVelo velocity（需先安装 scvelo）
+vdata = ov.single.velocity(adata)
+# 速度嵌入到 UMAP：scv.pl.velocity_embedding / velocity_stream
+# 注意：velocity 需要 spliced/unspliced counts（需 velocytelo 或 kb-python 产出）
+```
+
+### 4.7 AUCell（SCENIC 配套富集）
+```python
+# ⭐ AUCell：基于 regulon 活性评分的富集
+# 通常在 SCENIC 后跑，对每个 regulon 算 AUC 评分
+import pandas as pd
+auc_mtx = ov.single.aucell(exp_mtx=pd.DataFrame(adata.X.toarray(), index=adata.obs_names, columns=adata.var_names),
+                           signatures=regulon_dict, auc_threshold=0.05)
+# 结果存入 adata.obs 或 adata.obsm 供下游可视化
+```
+

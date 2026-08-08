@@ -33,6 +33,10 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (worker/
 | 细胞比例 / 组成 / Milo / 丰度 / proportion | `omicverse-pipeline` §9c |
 | 通讯 / CCC / CellChat / LR / ligand | `omicverse-pipeline` §9 |
 | 空间 / Visium / 空转 / Xenium / spot / spatial | `spatial/omicverse-spatial` |
+| 空间 domain / niche / 区域 / STAGATE / CAST | `spatial/omicverse-spatial` §domain |
+| 共定位 / colocalization / 空间邻近 / 邻域富集 / nhood | `spatial/omicverse-spatial` §统计（nhood_enrichment/co_occurrence）|
+| 空间变异基因 / SVG / spatial variable / Moran | `spatial/omicverse-spatial` §SVG（svg/spatial_autocorr/sepal）|
+| 空间统计 / Ripley / centrality / 空间分布 | `spatial/omicverse-spatial` §统计（ripley/centrality_scores）|
 | 去卷积 / cell2location / deconv / Tangram | `spatial/deconvolution` |
 | 高分空转 / Visium HD / Stereo-seq / MERFISH | `spatial/multiomics` |
 | 蛋白组 / CODEX / IMC / MIBI | `spatial/proteomics` |
@@ -41,6 +45,8 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (worker/
 | R / Seurat / scop | `single-cell/scop` |
 | bulk / 路径 / 通路 / enrichment / 富集 | `general-bio/omicverse-bulk` |
 | CNV / inferCNV / copykat | `omicverse-pipeline` |
+| 转录因子 / TF / regulon / SCENIC / GRN | `omicverse-pipeline` §SCENIC（ov.single.SCENIC）|
+| 生存分析 / survival / KM / Kaplan | `general-bio/omicverse-bulk`（ov.pl.kaplan_meier/survival）|
 | 画图 / 绘图 / figure / panel / 拼图 | `visualization/figure-production` |
 | 机制图 / 流程图 / schematic / 图形摘要 | `visualization/scientific-schematics` |
 | PPT / 汇报 / 幻灯片 / slides / 答辩 | `presentation/scientific-slides` |

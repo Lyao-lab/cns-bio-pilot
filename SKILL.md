@@ -105,7 +105,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 | `references/omicverse_skills_examples.md` | External reference — curated patterns from omicverse-skills repo (marked "absorbed" vs "reference") |
 | `references/story_builder.md` | **After analysis, before drawing/writing** — how to turn results into a biological story (5-step method: findings → causal chain → main message → figure mapping → story arc) |
 | `references/discovery_miner.md` | **Right after analysis** — scan each result type (DE/proportion/CCC/trajectory/niche) for candidate discoveries, score priority, exclude false positives, determine story level |
-| `scripts/cns_style.py` | Import at top of every plotting script (26 helpers + 18 smart_plot entry points: plot_umap/volcano/dotplot/...) |
+| `scripts/cns_style.py` | Import at top of every plotting script (26+ helpers + 40 smart_plot entry points: plot_umap/volcano/dotplot/plot_ccc/plot_ridge/plot_upset/...) |
 | `scripts/postcheck.py` | After any analysis (scientific rigor auto-check) |
 | `references/analysis_reference.md` | Analysis code templates (QC/DE/CCC/spatial/bulk) — the plotting_reference equivalent for analysis |
 | `references/plotting_reference.md` | Plotting code templates (18 chart types) |

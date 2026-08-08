@@ -83,7 +83,15 @@
 - **相关规则**: B1 B2 B3
 - **机检**: finalize_figure 内置
 
-### plot_chord | category: plotting | verified ✅
+### plot_ccc | category: plotting | verified ✅
+- **inputs**: weight_matrix(DataFrame, N×N 方阵), layout='chord'|'network'
+- **outputs**: PDF 到 panels/
+- **路由**: layout='chord' → plot_chord（ov.pl.CellChatViz 优先 → mpl+networkx）；layout='network' → plot_ccc_network（力导向）
+- **对齐 ov**: ov.pl.ccc_network_plot(plot_type='chord'/'diff_network')
+- **相关规则**: B1 B2 B3
+- **机检**: finalize_figure 内置
+
+### plot_chord | category: plotting | verified ✅（plot_ccc layout='chord' 的实现）
 - **inputs**: weight_matrix(DataFrame, 细胞对×通路)
 - **outputs**: PDF 到 panels/
 - **路由**: ov.pl.CellChatViz 优先 → mpl+networkx 兜底
@@ -159,6 +167,20 @@
 - **路由**: mpl（ov 无），-log10(FDR) 降序取 top_n 标通路名
 - **相关规则**: B1 B2 B3
 - **机检**: finalize_figure 内置
+
+### plot_ccc_network | category: plotting | verified ⚠️（plot_ccc layout='network' 的实现）
+- **inputs**: weight_matrix(N×N 方阵/DataFrame, 互作强度), labels, layout='fr'|'circle'|'spring', edge_threshold=0.1, node_size_scale=500
+- **outputs**: PDF 力导向互作网络图（节点=细胞类型/模块，大小∝加权度，边 alpha/lw∝权重）
+- **路由**: mpl + networkx（nx.spring_layout FR 算法 / nx.circular_layout），CoVarNet Nature 2025 gr.igraph_global 风格
+- **相关规则**: B1 B2 B3
+- **机检**: finalize_figure 内置；非方阵/labels 长度不符 → ValueError
+
+### plot_deconv_pie | category: plotting | verified ⚠️
+- **inputs**: adata_sp(AnnData spatial, 需 obsm['spatial']), prop_cols=None(自动检测 prop/frac/flashdeconv_ 数值列), cluster_key, max_spots=500
+- **outputs**: PDF per-spot 去卷积饼图网格（图例外置右侧；>6 类聚合 <5% 为 'Other'）
+- **路由**: mpl patched.Wedge 手绘扇形（Redeconve Nat Commun 2023 spatial.piechart 风格）；cluster_key 时 scatter 着色
+- **相关规则**: B1 B2 B3
+- **机检**: finalize_figure 内置；无数值比例列 → ValueError
 
 ## 校验脚本（4 个）
 
@@ -264,3 +286,127 @@
 - **路由**: ov.pl.ForbiddenCity() 命名色板桥，最小环境不崩溃
 - **相关规则**: 命名色板统一入口
 - **机检**: 无
+
+---
+
+## 批次 2：omicverse API 对齐补充（15 个，编号 20.25-20.39）
+
+### plot_ridge | category: plotting | verified ✅
+- **inputs**: adata(AnnData), keys(gene/list), groupby='celltype'
+- **outputs**: PDF 山脊图（多组分布叠放比较）
+- **路由**: ov.pl.ridgeplot 优先 → mpl fill_betweenx 兜底
+- **对齐 ov**: ov.pl.ridgeplot
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_boxplot | category: plotting | verified ✅
+- **inputs**: adata(AnnData), keys(gene/list), groupby='celltype'
+- **outputs**: PDF 箱线图+抖动点
+- **路由**: ov.pl.boxplot 优先 → mpl boxplot+scatter 兜底
+- **对齐 ov**: ov.pl.boxplot
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_kde | category: plotting | verified ✅
+- **inputs**: data(DataFrame), x, y=None, hue=None
+- **outputs**: PDF 核密度估计图
+- **路由**: ov.pl.kdeplot 优先 → mpl gaussian_kde 兜底
+- **对齐 ov**: ov.pl.kdeplot
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_histplot | category: plotting | verified ✅
+- **inputs**: data(DataFrame), x, hue=None, bins='auto'
+- **outputs**: PDF 直方图
+- **路由**: ov.pl.histplot 优先 → mpl hist 兜底
+- **对齐 ov**: ov.pl.histplot
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_stripplot | category: plotting | verified ✅
+- **inputs**: data(DataFrame), x, y, hue=None
+- **outputs**: PDF 抖动散点图
+- **路由**: ov.pl.stripplot 优先 → mpl scatter 兜底
+- **对齐 ov**: ov.pl.stripplot
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_stackarea | category: plotting | verified ✅
+- **inputs**: adata(AnnData), celltype_col='celltype', groupby='condition'
+- **outputs**: PDF 堆叠面积图（比例随变量变化）
+- **路由**: ov.pl.cellstackarea 优先 → mpl stackplot 兜底
+- **对齐 ov**: ov.pl.cellstackarea
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_bardotplot | category: plotting | verified ✅
+- **inputs**: adata(AnnData), groupby, color(基因名/obs列)
+- **outputs**: PDF 柱+点组合图
+- **路由**: ov.pl.bardotplot 优先 → mpl bar+scatter 兜底
+- **对齐 ov**: ov.pl.bardotplot
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_stacking_vol | category: plotting | verified ✅
+- **inputs**: data_dict({条件: DE DataFrame}), color_dict=None
+- **outputs**: PDF 堆叠火山图（多条件DE并排）
+- **路由**: ov.pl.stacking_vol（无 mpl 兜底）
+- **对齐 ov**: ov.pl.stacking_vol
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_upset | category: plotting | verified ✅
+- **inputs**: sets(dict {名称: set/list}), top_n=30
+- **outputs**: PDF UpSet 图（>3组交集）
+- **路由**: ov.pl.upset（无 mpl 兜底）
+- **对齐 ov**: ov.pl.upset
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_venn | category: plotting | verified ✅
+- **inputs**: sets(dict {名称: set/list}, 2-4 组)
+- **outputs**: PDF Venn 图（≤4组交集）
+- **路由**: ov.pl.venn（无 mpl 兜底）
+- **对齐 ov**: ov.pl.venn
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_forest | category: plotting | verified ✅
+- **inputs**: data(DataFrame), estimate, lower, upper, label, group=None
+- **outputs**: PDF 森林图（meta-analysis）
+- **路由**: ov.pl.forest 优先 → mpl errorbar 兜底
+- **对齐 ov**: ov.pl.forest
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_regplot | category: plotting | verified ✅
+- **inputs**: data(DataFrame), x, y, hue=None, fit='linear'
+- **outputs**: PDF 回归散点图（带拟合线）
+- **路由**: ov.pl.regplot 优先 → mpl scatter+polyfit 兜底
+- **对齐 ov**: ov.pl.regplot
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_ccc_heatmap | category: plotting | verified ⚠️
+- **inputs**: adata(AnnData, 需 uns['liana_res']), plot_type='heatmap'
+- **outputs**: PDF 通讯热图（CCC 强度多模式）
+- **路由**: ov.pl.ccc_heatmap（无 mpl 兜底，需 liana 预计算）
+- **对齐 ov**: ov.pl.ccc_heatmap(plot_type='heatmap'|'dot'|'tile')
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_pca_variance | category: plotting | verified ✅
+- **inputs**: adata(AnnData), n_pcs=30
+- **outputs**: PDF PCA 方差比图
+- **路由**: ov.pl.plot_pca_variance_ratio 优先 → mpl bar 兜底
+- **对齐 ov**: ov.pl.plot_pca_variance_ratio
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_hvg_scatter | category: plotting | verified ✅
+- **inputs**: adata(AnnData)
+- **outputs**: PDF HVG 均值-离散散点
+- **路由**: ov.pl.highly_variable_genes_scatter 优先 → mpl scatter 兜底
+- **对齐 ov**: ov.pl.highly_variable_genes_scatter
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置

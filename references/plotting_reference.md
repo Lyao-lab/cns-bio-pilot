@@ -27,6 +27,21 @@
 | 空间 CCC 共表达 | `plot_spatial_ccc(adata_sp, ligand, receptor, save=...)` | 双面板配受体共表达；scale bar |
 | Milo beeswarm | `plot_milo(milo_result, save=...)` | 无预定义cluster的局部丰度；SpatialFDR着色 |
 | 信号角色热图 | `plot_signaling_heatmap(comm_scores, save=...)` | outgoing/incoming；celltype×pathway |
+| 山脊图 | `plot_ridge(adata, keys=..., groupby=..., save=...)` | >5组分布比较；overlap=0.6 |
+| 箱线图 | `plot_boxplot(adata, keys=..., groupby=..., save=...)` | 抖动点+箱体；简洁替代violin |
+| 核密度 | `plot_kde(data, x=..., y=..., hue=..., save=...)` | 单/双变量密度；data=DataFrame |
+| 直方图 | `plot_histplot(data, x=..., hue=..., save=...)` | QC标配；bins='auto' |
+| 抖动散点 | `plot_stripplot(data, x=..., y=..., hue=..., save=...)` | 每点可见；summary='mean' |
+| 堆叠面积 | `plot_stackarea(adata, celltype_col=..., groupby=..., save=...)` | 比例随连续变量变化 |
+| 柱+点组合 | `plot_bardotplot(adata, groupby=..., color=..., save=...)` | 均值柱+分布点 |
+| 堆叠火山 | `plot_stacking_vol(data_dict, save=...)` | 多条件DE并排；data_dict={条件:DE} |
+| UpSet 图 | `plot_upset(sets, top_n=30, save=...)` | >3组交集；sets={名称:set} |
+| Venn 图 | `plot_venn(sets, save=...)` | ≤4组交集；sets={名称:set} |
+| 森林图 | `plot_forest(data, estimate=..., lower=..., upper=..., save=...)` | meta-analysis |
+| 回归散点 | `plot_regplot(data, x=..., y=..., fit='linear', save=...)` | 相关性分析；fit='lowess'可选 |
+| 通讯热图 | `plot_ccc_heatmap(adata, plot_type='heatmap', save=...)` | 需liana预计算；plot_type='dot'/'tile' |
+| PCA方差比 | `plot_pca_variance(adata, n_pcs=30, save=...)` | QC标配；选PCs数 |
+| HVG散点 | `plot_hvg_scatter(adata, save=...)` | QC标配；均值vs离散 |
 
 ## 1. 全局开头（每个脚本第一行）
 
@@ -227,20 +242,27 @@ fig, ax = plot_paga(adata, save='K_paga', threshold=0.05)
 > pos=adata.obsm['X_umap'], ax=ax, show=False, threshold=0.05, edge_width_scale=0.5)` +
 > `clean_umap_axes(ax)` + `save_panel(fig, name)`。
 
-### 3.2 Chord / CCC（细胞通讯弦图）
+### 3.2 CCC 细胞通讯（统一入口 plot_ccc，layout 路由 chord/network）
 
-**统一入口**（自动 ov.pl 优先，mpl 兜底）：≤8 cell types（再多糊成球）；边颜色 = source 色、alpha=0.5；lw ∝ 通讯强度。
+**统一入口**——对齐 `ov.pl.ccc_network_plot` 的 `plot_type` 设计：一个函数支持多种布局，用 `layout` 参数路由。≤8 cell types 用 chord（再多糊成球）；复杂拓扑用 network。
 
 ```python
 comm = pd.read_csv('lr_interactions.csv')   # 列: source, target, weight
 weight = comm.pivot_table(index='source', columns='target', values='weight',
                           aggfunc='sum').fillna(0)
-fig, ax = plot_chord(weight, save='L_chord')
-# 内部：ov 可用走 ov.pl.CellChatViz → netVisual_chord_cell（签名以实际 ov 版本为准）；
-#       ov 不可用走 networkx circular layout 兜底（≤8 节点, 弦线 lw∝weight, alpha=0.5）
+
+# chord 布局（环形弦图，展示"谁给谁收信号"）
+fig, ax = plot_ccc(weight, layout='chord', save='L_chord')
+
+# network 布局（力导向网络图，节点大小=加权度，适合复杂拓扑）
+fig, ax = plot_ccc(weight, layout='network', save='L_ccc_net')
 ```
 
-> **高级**（networkx 兜底实现）：`G = nx.from_pandas_adjacency(weight)` + `G.subgraph(nodes[:8])` +
+> **路由对照**（cns_style → omicverse）：`layout='chord'` ≈ `ov.pl.ccc_network_plot(plot_type='chord')`；
+> `layout='network'` ≈ `plot_type='diff_network'`。cns_style 内部 `plot_chord` / `plot_ccc_network` 是
+> 两种布局的具体实现，`plot_ccc` 是统一入口。
+>
+> **chord 高级**（networkx 兜底）：`G = nx.from_pandas_adjacency(weight)` + `G.subgraph(nodes[:8])` +
 > `pos = nx.circular_layout(G)` + 节点 `ax.scatter(s=800, color=palette[n], edgecolor='white', zorder=5)` +
 > 弦 `ax.plot([x1,x2],[y1,y2], color=palette[u], alpha=0.5, lw=0.5+3*w/maxw, solid_capstyle='round')` +
 > `ax.set_aspect('equal'); ax.axis('off')` + `save_panel(fig, name)`。
@@ -372,6 +394,201 @@ from cns_style import plot_enrichment_scatter
 plot_enrichment_scatter(enr_df, x='GeneRatio', y='FDR', size='Count',
                         color='FDR', top_n=15, save='V_enrich_bubble')
 # enr_df: GO/KEGG/GSEA 输出 DataFrame；top_n 条通路名标注在点旁
+```
+
+### 3.14 CCC network（plot_ccc layout='network'，力导向布局）
+
+> §3.2 已介绍统一入口 `plot_ccc(layout='chord'|'network')`。本节补充 network 布局的细节。
+
+**用法**：`plot_ccc(weight_mat, layout='network', labels=cell_types, ...)`，内部调 `plot_ccc_network`。
+方阵互作强度 → 力导向网络图（节点=细胞类型/模块，边=互作强度）。与 chord 互补：网络图展示复杂拓扑、可容纳 >8 节点，节点大小∝加权度。来源：CoVarNet Nature 2025 `gr.igraph_global`（Fruchterman-Reingold 布局）。
+
+```python
+plot_ccc(weight_mat, layout='network', labels=cell_types,
+         edge_threshold=0.1, node_size_scale=500, save='W_ccc_network')
+# weight_mat: N×N 方阵（DataFrame 自动取 index 为标签）；layout='circle' 可切环形
+# edge_threshold 过滤弱连接；边透明度/宽度∝权重，灰阶着色
+```
+
+### 3.15 Deconvolution pie grid（去卷积饼图网格）
+
+**统一入口**（mpl)：空转 AnnData + 去卷积比例列 → 每个 spot 一个微型饼图（细胞类型比例）。来源：Redeconve Nat Commun 2023 `spatial.piechart`。细胞类型 >6 时自动聚合 <5% 为 'Other'；spot 数 >max_spots 随机采样防过密。
+
+```python
+from cns_style import plot_deconv_pie
+plot_deconv_pie(adata_sp, prop_cols=None, max_spots=500, save='X_deconv_pie')
+# prop_cols=None 自动检测 obs 中 prop/frac 开头的数值列；有离散 celltype 列时传 cluster_key 直接着色
+# 图例外置右侧；半径按最近邻距离自适应
+```
+
+### 3.16 Ridge plot（山脊图——多组分布叠放比较）
+
+**统一入口**（ov.pl.ridgeplot 优先，mpl 兜底）：>5 组时比 violin 更清晰——分布叠放避免遮挡，CNS marker 验证标配。
+
+```python
+from cns_style import plot_ridge
+plot_ridge(adata, keys=['COL1A1'], groupby='celltype', save='Y_ridge')
+# 多基因：keys=['COL1A1','DCN','PDGFRB']，逐基因叠放
+# overlap=0.6 控制山脊重叠程度；order='median' 按中位数排序
+```
+
+### 3.17 Boxplot（箱线图+抖动点）
+
+**统一入口**（ov.pl.boxplot 优先，mpl 兜底）：分布比较的简洁替代 violin——抖动点+箱体，信号更聚焦形状与异常值。
+
+```python
+from cns_style import plot_boxplot
+plot_boxplot(adata, keys=['COL1A1'], groupby='celltype', save='Z_boxplot')
+# 多基因：keys=['COL1A1','DCN','PDGFRB']；jitter=0.3 抖动宽度防重叠
+# showfliers=False 隐藏异常点（CNS 常隐）；与 §3.16 ridge 二选一，不并列
+```
+
+### 3.18 KDE plot（核密度估计）
+
+**统一入口**（ov.pl.kdeplot 优先，mpl 兜底）：单/双变量密度——data 是 tidy DataFrame（不是 AnnData），适合跨样本/跨条件分布叠加。
+
+```python
+from cns_style import plot_kde
+plot_kde(data=df, x='expr', hue='group', save='AA_kde')
+# data: tidy DataFrame，列含 x（数值）与 hue（分组）
+# 双变量：plot_kde(data=df, x='g1', y='g2') 画等高密度；fill=True 填充曲线
+```
+
+### 3.19 Histogram（直方图——QC 标配）
+
+**统一入口**（ov.pl.hist 优先，mpl 兜底）：QC 标配——n_genes/pct_mt/total_counts 分布必查。
+
+```python
+from cns_style import plot_histplot
+plot_histplot(data=df, x='n_genes', hue='condition', bins=50, save='AB_hist_qc')
+# data: tidy DataFrame；bins='auto' 或显式整数；hue 分组分色叠加
+# 多指标并排 subplot：x=['n_genes','pct_mt','total_counts'] 逐列
+```
+
+### 3.20 Strip plot（抖动散点）
+
+**统一入口**（ov.pl.stripplot 优先，mpl 兜底）：每点可见——样本量小时比 box/violin 更诚实。
+
+```python
+from cns_style import plot_stripplot
+plot_stripplot(data=df, x='group', y='expr', hue='condition', save='AC_strip')
+# data: tidy DataFrame；jitter 自动加横向抖动防重叠
+# summary='mean' 叠加均值线；点过多自动 alpha 降密度
+```
+
+### 3.21 Stacked area（堆叠面积图——比例随连续变量变化）
+
+**统一入口**（mpl，ov 无对应函数）：celltype 比例随连续变量（pseudotime/层级）变化——轨迹组成分析标配。
+
+```python
+from cns_style import plot_stackarea
+plot_stackarea(adata, celltype_col='celltype', groupby='pseudotime', save='AD_stackarea')
+# 内部：按 groupby 分箱 → 每 bin 各 celltype 比例 → 堆叠面积
+# bin 数过多自动合并；x 轴标签取 bin 中点
+```
+
+### 3.22 Bar-dot plot（柱+点组合）
+
+**统一入口**（mpl，ov 无对应函数）：均值柱 + 分布点——同时给集中趋势与个体分布。
+
+```python
+from cns_style import plot_bardotplot
+plot_bardotplot(adata, groupby='celltype', color='COL1A1', save='AE_bardot')
+# 柱=均值（±1.96*SEM error bar），点=每样本/每细胞原始值
+# color 为基因时按基因名标注单位；多基因循环调用
+```
+
+### 3.23 Stacking volcano（堆叠火山图——多条件 DE 并排）
+
+**统一入口**（mpl，ov 无对应函数）：多条件 DE 并排对比——单火山图一次一张，堆叠版可直接比条件间方向/幅度。
+
+```python
+from cns_style import plot_stacking_vol
+de_dict = {'W1': de_df1, 'W2': de_df2, 'W3': de_df3}   # 每张: gene, log2FC, padj
+plot_stacking_vol(de_dict, save='AF_stacking_vol')
+# data_dict={条件名: DE DataFrame}；每条件一列，列内基因按 log2FC 排序
+# 显著=彩点(up红/down蓝)，ns=灰；横线分隔层叠
+```
+
+### 3.24 UpSet plot（UpSet 图——>3 组交集）
+
+**统一入口**（upsetplot 优先，mpl 兜底）：>3 组交集比 Venn 清晰——交集条形 + 组大小横条。
+
+```python
+from cns_style import plot_upset
+sets = {'Up_DE': set(de_genes_1), 'Down_DE': set(de_genes_2),
+        'Pathway_A': set(pathway_genes)}
+plot_upset(sets, top_n=30, save='AG_upset')
+# sets={名称: set}；top_n=30 只画前 30 大交集
+# 交集点阵左侧组大小条；内部用 upsetplot.UpSet 兜底
+```
+
+### 3.25 Venn diagram（Venn 图——≤4 组交集）
+
+**统一入口**（matplotlib_venn 优先，mpl 兜底）：≤4 组交集——>4 组改用 §3.24 UpSet。
+
+```python
+from cns_style import plot_venn
+plot_venn({'Cluster1': set(markers_1), 'Cluster2': set(markers_2)}, save='AH_venn')
+# sets={名称: set}；2/3 组用 matplotlib_venn，4 组用 mpl 圆形兜底
+# set_labels 缺省取 key；交叠数字为两集合交集大小
+```
+
+### 3.26 Forest plot（森林图——meta-analysis）
+
+**统一入口**（mpl，ov 无对应函数）：meta-analysis 标配——效应量 + 95% CI 横排。
+
+```python
+from cns_style import plot_forest
+plot_forest(data=meta_df, estimate='effect', lower='ci_low', upper='ci_high',
+            label='study', save='AI_forest')
+# data: DataFrame 含 effect/ci_low/ci_high/study 列
+# 垂直线画在 0（或 OR/RR 时 1）；label 列作为行标签
+```
+
+### 3.27 Regression plot（回归散点）
+
+**统一入口**（ov.pl.regression 优先，mpl 兜底）：相关性分析标配——散点 + 拟合线 + CI 带。
+
+```python
+from cns_style import plot_regplot
+plot_regplot(data=df, x='gene_A_expr', y='gene_B_expr', fit='linear', save='AJ_regplot')
+# data: tidy DataFrame；fit='linear'（默认）| 'lowess'（非线性可选）
+# 图上标注 r + p（pearson 默认）；off-diagonal 用 regplot 替代 scatter
+```
+
+### 3.28 CCC heatmap（通讯热图——liana 结果多模式可视化）
+
+**统一入口**（对齐 ov.pl.ccc_heatmap）：liana 预计算后，CCC 强度的 heatmap/dot/tile 多模式展示。
+
+```python
+from cns_style import plot_ccc_heatmap
+plot_ccc_heatmap(adata, plot_type='heatmap', save='AK_ccc_heatmap')
+# 前置：需先跑 liana（结果存 adata.uns['liana_res']）
+# plot_type: 'heatmap'(默认) | 'dot' | 'tile' | 'focused_heatmap'
+# 对齐 ov.pl.ccc_heatmap；celltype×celltype 强度矩阵
+```
+
+### 3.29 PCA variance ratio（PCA 方差比——QC 标配）
+
+**统一入口**（ov.pl.pca_variance_ratio 优先，mpl 兜底）：QC 标配——看前 n 个 PC 解释方差，决定选多少个 PCs。
+
+```python
+from cns_style import plot_pca_variance
+plot_pca_variance(adata, n_pcs=30, save='AL_pca_variance')
+# 前置：需先跑 sc.pp.pca；n_pcs=30 默认展示前 30 个
+# 常用：拐点前保留 PCs；neighbors 用同一 n_pcs
+```
+
+### 3.30 HVG scatter（HVG 均值-离散散点——QC 标配）
+
+**统一入口**（mpl，ov 无对应函数）：QC 标配——基因均值 vs 离散度（方差/均值），看 HVG 选择质量。
+
+```python
+from cns_style import plot_hvg_scatter
+plot_hvg_scatter(adata, save='AM_hvg_scatter')
+# 内部：x=log mean，y=log variance（或 dispersion），HVG 着红色
+# 常用：可结合 sc.pp.highly_variable_genes 结果着色
 ```
 
 ## 4. 统计标注（add_significance_bracket）

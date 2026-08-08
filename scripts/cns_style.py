@@ -89,6 +89,15 @@ FORBIDDEN_CITY_FALLBACK = {
 }
 
 
+# Global figure scale factor — set by set_cns_style_journal()
+# 1.0 = generic (notebook/report), 0.7 = nature/cell (compact print)
+_FIG_SCALE = 1.0
+
+def _fs(w, h):
+    """Apply global figure scale to a (width, height) tuple."""
+    return (w * _FIG_SCALE, h * _FIG_SCALE)
+
+
 # ============================================================
 # 1. set_cns_style() — one-shot rcParams (call ONCE per script)
 # ============================================================
@@ -170,23 +179,21 @@ def set_cns_style(base_fontsize=8, scale=1.2, palette='morlandi'):
 # ============================================================
 # 2. polish_axes(ax) — per-panel finishing touch
 # ============================================================
-def polish_axes(ax, keep_spines=('left', 'bottom'), subtle_grid=True):
-    """CNS-grade axis styling: L-frame, outward ticks, subtle gridlines.
+def polish_axes(ax, keep_spines=('left', 'bottom'), subtle_grid=False):
+    """CNS-grade axis styling: hide top/right spines, tick/grid/label cleanup.
 
     Apply to EVERY panel after plotting. For UMAP/tSNE use clean_umap_axes() instead.
+    Gridlines are OFF by default.
     """
-    # Spine hierarchy
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-    for spine_name in keep_spines:
-        ax.spines[spine_name].set_visible(True)
-        ax.spines[spine_name].set_linewidth(0.8)
-        ax.spines[spine_name].set_color(NEAR_BLACK)
+    # Hide top/right spines (CNS convention: only left + bottom)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
 
-    # Outward ticks, no tick marks
+    # Tick styling (no tick marks, label sizing)
     ax.tick_params(direction='out', length=0, labelsize=8, colors=NEAR_BLACK)
 
-    # Subtle horizontal reference lines
+    # Gridlines OFF by default (CNS style: clean background)
+    ax.grid(False)
     if subtle_grid:
         ax.yaxis.grid(True, linewidth=0.3, alpha=0.15, color=GREY)
         ax.set_axisbelow(True)
@@ -220,9 +227,9 @@ def add_elegant_colorbar(mappable, ax, label='', ticks=None, **kw):
     Replaces the ugly default plt.colorbar() which is too wide and has a border box.
     """
     cb = plt.colorbar(mappable, ax=ax,
-                      fraction=0.046,    # width relative to axes (slim)
-                      pad=0.04,         # gap from axes
-                      aspect=20,        # height/width ratio (tall & slim)
+                      fraction=0.025,    # narrow
+                      pad=0.04,
+                      aspect=15,
                       **kw)
     cb.outline.set_visible(False)       # no border box
     cb.ax.tick_params(direction='out', length=0, labelsize=7)
@@ -624,31 +631,32 @@ def recipe_figsize(chart_type, n_x=None, n_y=None, journal='generic'):
     scale = 0.8 if journal in ('nature', 'science', 'cell') else 1.0
 
     recipes = {
-        'umap': (4.5, 4.5),  # must be square (铁律3: no ellipse distortion)
-        'volcano': (4.0, 3.5),
-        'feature': (3.0, 3.0),      # per-gene panel in a grid
-        'spatial': (5.0, 4.5),
-        'chord': (5.0, 5.0),
-        'paga': (3.5, 3.0),
+        'umap': (3.0, 3.0),
+        'volcano': (3.0, 2.5),
+        'feature': (2.0, 2.0),
+        'spatial': (3.0, 2.8),
+        'chord': (3.0, 3.0),
+        'paga': (2.5, 2.2),
     }
 
     if chart_type in recipes:
         w, h = recipes[chart_type]
         return (w * scale, h * scale)
     elif chart_type == 'heatmap' and n_x and n_y:
-        w = n_x * 0.18 + 2.0   # +2 for dendrogram + colorbar
-        h = n_y * 0.35
+        cell = 0.4  # 正方形单元格
+        w = n_x * cell + 1.0   # +1.0" colorbar
+        h = n_y * cell + 0.5
         return (w * scale, h * scale)
     elif chart_type == 'dotplot' and n_x and n_y:
-        w = n_x * 0.3 + 2.0
-        h = n_y * 0.3 + 1.0
+        w = n_x * 0.5 + 1.0   # 每列 0.5"（点需要空间）+ 1.0" legend/colorbar
+        h = n_y * 0.35 + 0.5
         return (w * scale, h * scale)
     elif chart_type in ('violin', 'bar') and n_x:
-        w = n_x * 0.7 + 1.0
-        h = 3.5
+        w = n_x * 0.6 + 0.8   # 每组 0.6"
+        h = 2.5
         return (w * scale, h * scale)
     else:
-        return (5.0 * scale, 4.0 * scale)  # safe default
+        return (3.0 * scale, 2.5 * scale)
 
 
 # ============================================================
@@ -746,6 +754,9 @@ def set_cns_style_journal(journal='generic', palette='morlandi'):
     set_cns_style(palette=palette)  # base aesthetics
     preset = JOURNAL_PRESETS.get(journal, JOURNAL_PRESETS['generic'])
     plt.rcParams.update(preset)
+    # 设置全局 figure 缩放因子（顶刊紧凑，通用正常）
+    global _FIG_SCALE
+    _FIG_SCALE = 0.72 if journal in ('nature', 'science', 'cell', 'nature_double') else 1.0
 
 
 # ============================================================
@@ -996,11 +1007,11 @@ def cohort_params(n_cells):
         fig.set_size_inches(*p['figsize'])
     """
     if n_cells < 10_000:
-        return dict(point_size=8, alpha=0.7, figsize=(4.5, 4.5))
+        return dict(point_size=6, alpha=0.7, figsize=(3.0, 3.0))
     elif n_cells < 50_000:
-        return dict(point_size=3, alpha=0.5, figsize=(5, 5))
+        return dict(point_size=3, alpha=0.5, figsize=(3.5, 3.5))
     elif n_cells < 100_000:
-        return dict(point_size=1, alpha=0.35, figsize=(5.5, 5.5))
+        return dict(point_size=1, alpha=0.35, figsize=(4.0, 4.0))
     elif n_cells < 200_000:
         # 数值参考 omicverse-skills plot1cell 经验；100k+ 档为梯度推断，按数据微调
         return dict(point_size=0.6, alpha=0.3, figsize=(6, 6))
@@ -1346,7 +1357,9 @@ def plot_dotplot(adata, var_names, groupby='celltype', ax=None, figsize=None,
             ov.pl.dotplot(adata, var_names=var_names, groupby=groupby,
                           standard_scale=standard_scale, dendrogram=False, show=False)
             fig_ov = plt.gcf()
-            fig_ov.set_size_inches(*recipe_figsize('dotplot'))
+            n_genes = len(var_names) if not isinstance(var_names, dict) else sum(len(v) for v in var_names.values())
+            n_groups = adata.obs[groupby].nunique()
+            fig_ov.set_size_inches(*recipe_figsize('dotplot', n_x=n_groups, n_y=n_genes))
             ax = fig_ov.axes[0] if fig_ov.axes else ax
             if save:
                 save_panel(fig_ov, save, show=show)
@@ -1355,7 +1368,7 @@ def plot_dotplot(adata, var_names, groupby='celltype', ax=None, figsize=None,
             print(f"[smart_plot] ov.pl.dotplot failed ({e}), mpl fallback")
     if ax is None:
         n_groups = adata.obs[groupby].nunique()
-        fig, ax = plt.subplots(figsize=figsize or (n_groups*0.5+1, len(var_names)*0.4+1))
+        fig, ax = plt.subplots(figsize=figsize or (min(n_groups*0.35+0.8, 3.5), len(var_names)*0.3+0.8))
     else:
         fig = ax.figure
     _dotplot_mpl(adata, var_names, groupby, ax, standard_scale)
@@ -1418,15 +1431,25 @@ def _dotplot_mpl(adata, var_names, groupby, ax, standard_scale):
 # ============================================================
 
 def plot_violin(adata, keys, groupby='celltype', ax=None, figsize=None,
-                save=None, show=None, **kwargs):
-    """Violin：ov.pl.violin 优先（交替背景+wilcox），mpl 兜底。"""
+                save=None, show=None, show_stats=False, **kwargs):
+    """Violin：ov.pl.violin 优先（交替背景），mpl 兜底。
+
+    Args:
+        show_stats: 是否显示 pairwise wilcox p 值标注（bracket）。
+                    默认 False——CNS 正文 violin 一般不放 bracket，p 值写图注。
+                    组数 >4 时强制 False（pairwise 太多会挡图）。
+    """
     groups = adata.obs[groupby].astype('category').cat.categories
+    n_groups = len(groups)
+    # 组数 >4 时 pairwise 太多（C(5,2)=10+），bracket 必然挡图 → 强制关闭
+    if n_groups > 4:
+        show_stats = False
     n_genes = len(keys) if isinstance(keys, list) else 1
     if isinstance(keys, str):
         keys = [keys]
     if ax is None:
         fig, axes = plt.subplots(n_genes, 1, figsize=figsize or
-                                 (len(groups)*0.6+1, n_genes*2.8), sharex=True)
+                                 (min(len(groups)*0.45+0.8, 4.5), n_genes*1.6), sharex=True)
         if n_genes == 1:
             axes = [axes]
     else:
@@ -1436,13 +1459,16 @@ def plot_violin(adata, keys, groupby='celltype', ax=None, figsize=None,
     if _check_ov() and len(axes) == 1:
         try:
             import omicverse as ov
+            ov_kwargs = dict(
+                stripplot=True, jitter=True, size=1, jitter_alpha=0.4,
+                violin_alpha=0.8, alternating_background=True,
+                spine_color='#b4aea9', grid_lines=False)
+            if show_stats:
+                ov_kwargs['statistical_tests'] = 'wilcox'
             ov.pl.violin(adata, keys=keys, groupby=groupby, ax=axes[0], show=False,
-                        stripplot=True, jitter=True, size=1, jitter_alpha=0.4,
-                        violin_alpha=0.8, alternating_background=True,
-                        spine_color='#b4aea9', grid_lines=True,
-                        statistical_tests='wilcox', **kwargs)
+                         figsize=(min(len(groups)*0.45+0.8, 4.5), 2.2),
+                         **ov_kwargs, **kwargs)
             fig_ov = plt.gcf()
-            fig_ov.set_size_inches(len(groups)*0.6+1, 2.8)
             if save:
                 save_panel(fig_ov, save, show=show)
             return fig_ov, axes[0]
@@ -1485,14 +1511,13 @@ def _violin_mpl(adata, gene, groupby, ax):
         ax.scatter(np.full(len(d), i)+jit, d, s=1, alpha=0.4,
                    color=MORLANDI[i % len(MORLANDI)], edgecolor='none',
                    rasterized=True, zorder=3)
-    ax.yaxis.grid(True, alpha=0.3, lw=0.5, color='#b4aea9', zorder=0)
-    ax.set_axisbelow(True)
     for sp in ax.spines.values():
         sp.set_color('#b4aea9'); sp.set_linewidth(0.8)
-    ax.set_ylabel(gene, fontstyle='italic', fontsize=10, labelpad=10)
+    ax.set_ylabel('Expression', fontsize=9, labelpad=8)
+    ax.set_title(gene, fontstyle='italic', fontsize=11, pad=8)
     ax.set_xticks(range(len(groups)))
     ax.set_xticklabels(groups, fontsize=7,
-                       rotation=45 if len(groups) > 12 else 0)
+                       rotation=45 if len(groups) > 8 else 0)
 
 
 # ============================================================
@@ -1501,11 +1526,13 @@ def _violin_mpl(adata, gene, groupby, ax):
 
 def plot_heatmap(adata, var_names, groupby='celltype', ax=None, figsize=None,
                  save=None, z_score=0, cmap=None, show=None, **kwargs):
-    """Heatmap：sns/scanpy（ov 无独立函数），Z-score per row + 注释条。"""
+    """Heatmap：mpl imshow（正方形单元格，Z-score per row）。"""
     if ax is None:
         n_groups = adata.obs[groupby].nunique()
+        n_genes = len(var_names) if not isinstance(var_names, dict) else sum(len(v) for v in var_names.values())
+        cell = 0.25  # 正方形单元格边长
         fig, ax = plt.subplots(figsize=figsize or
-                               (n_groups*0.5+1.5, len(var_names)*0.35+1))
+                               (n_groups * cell + 1.0, n_genes * cell + 0.8))
     else:
         fig = ax.figure
     import pandas as pd
@@ -1515,11 +1542,12 @@ def plot_heatmap(adata, var_names, groupby='celltype', ax=None, figsize=None,
     mean_expr = expr.groupby(groupby).mean().T  # rows=genes, cols=groups
     # Z-score per row
     mean_z = mean_expr.apply(lambda r: (r - r.mean()) / (r.std() + 1e-10), axis=1)
-    im = ax.imshow(mean_z.values, aspect='auto', cmap=cmap or EXPR_CMAP,
+    im = ax.imshow(mean_z.values, aspect='equal', cmap=cmap or EXPR_CMAP,
                    vmin=-2, vmax=2, interpolation='nearest')
     ax.set_xticks(range(len(mean_z.columns)))
     ax.set_xticklabels(mean_z.columns, fontsize=7,
-                       rotation=45 if len(mean_z.columns) > 8 else 0, ha='right')
+                       rotation=45, ha='center', va='top', rotation_mode='anchor')
+    ax.tick_params(axis='x', pad=10)  # x 轴标签下移
     ax.set_yticks(range(len(mean_z.index)))
     ax.set_yticklabels(mean_z.index, fontsize=8, fontstyle='italic')
     # white separators
@@ -1528,7 +1556,9 @@ def plot_heatmap(adata, var_names, groupby='celltype', ax=None, figsize=None,
     ax.grid(which='minor', color='white', linewidth=0.5)
     ax.tick_params(which='minor', length=0)
     add_elegant_colorbar(im, ax, label='Scaled expression (z-score)')
-    polish_axes(ax, subtle_grid=False)
+    # 热图不需要坐标轴线
+    for sp in ax.spines.values():
+        sp.set_visible(False)
     if save:
         save_panel(fig, save, show=show)
     return fig, ax
@@ -1604,11 +1634,34 @@ def _spatial_mpl(adata_sp, color, ax, spot_alpha):
 
 def plot_bar(props, ax=None, figsize=None, save=None, groupby=None, celltype_col='celltype',
              show=None, **kwargs):
-    """Bar (proportions)：mpl（ov 无），带 95% CI error bars + per-sample dots。
+    """Bar (proportions)：ov.pl.barplot 优先，mpl 兜底（带 95% CI error bars + per-sample dots）。
 
     可直接传 adata（AnnData）+ groupby 自动算比例，或传已算好的 props DataFrame。
     """
     import pandas as pd
+    if _check_ov() and isinstance(props, pd.DataFrame):
+        try:
+            import omicverse as ov
+            # ov.pl.barplot 需要 data 参数为 DataFrame
+            # 如果 props 是宽格式（index=样本, columns=celltype），转成长格式
+            if groupby is None:
+                # 宽格式 props：index=样本 columns=celltype → 转长格式
+                long_df = props.reset_index()
+                id_col = long_df.columns[0]  # 第一列是样本名
+                long_df = long_df.melt(id_vars=id_col, var_name=celltype_col,
+                                       value_name='proportion')
+                ov.pl.barplot(data=long_df, x=celltype_col, y='proportion',
+                              dots=True, figsize=figsize or (3.0, 2.5))
+            else:
+                ov.pl.barplot(data=props, x=groupby, y=celltype_col,
+                              dots=True, figsize=figsize or (3.0, 2.5))
+            fig = plt.gcf()
+            fig.set_size_inches(*(figsize or (3.0, 2.5)))
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, fig.axes[0] if fig.axes else None
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.barplot failed ({e}), mpl fallback")
     # 如传 AnnData + groupby，自动算比例
     if hasattr(props, 'obs') and groupby is not None:
         adata = props
@@ -1651,7 +1704,7 @@ def plot_enrichment(enr, ax=None, figsize=None, save=None, top_n=15,
     """Enrichment barh：-log10(FDR) 降序，条右标 gene count，通路名截断。"""
     terms = enr.nsmallest(top_n, fdr_col)
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize or (4.5, 0.35*len(terms)+1))
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 0.22*len(terms)+0.6))
     else:
         fig = ax.figure
     y_pos = range(len(terms))
@@ -1676,24 +1729,68 @@ def plot_enrichment(enr, ax=None, figsize=None, save=None, top_n=15,
 
 def plot_lr_bubble(pair_labels, pathway_labels, sizes, mean_expr,
                    x_idx=None, y_idx=None, ax=None, figsize=None, save=None, show=None, **kwargs):
-    """L-R Bubble：size=-log10(p), color=mean expr，pair×pathway 矩阵。"""
+    """L-R Bubble：ov.pl.scatterplot 优先（size=-log10(p), color=mean expr），mpl 兜底。"""
+    import pandas as pd
+    n_pairs = len(pair_labels); n_path = len(pathway_labels)
+    if _check_ov():
+        try:
+            import omicverse as ov
+            # 矩阵转 tidy DataFrame
+            sizes_arr = np.asarray(sizes).reshape(n_path, n_pairs).T  # (n_pairs, n_path)
+            expr_arr = np.asarray(mean_expr).reshape(n_path, n_pairs).T
+            rows = []
+            for pi in range(n_pairs):
+                for ti in range(n_path):
+                    rows.append({'x': pi, 'y': ti, 'size': sizes_arr[pi, ti],
+                                 'expr': expr_arr[pi, ti]})
+            df_bubble = pd.DataFrame(rows)
+            ov.pl.scatterplot(data=df_bubble, x='x', y='y', size='size', hue='expr',
+                              cmap='YlOrRd', alpha=0.85,
+                              figsize=figsize or (min(n_pairs*0.8+1, 3.5), min(n_path*0.6+1, 3.0)))
+            fig = plt.gcf()
+            ax_ov = fig.axes[0] if fig.axes else ax
+            if ax_ov:
+                # x/y 轴设为 pair/pathway 名，去掉数值标签
+                ax_ov.set_xticks(range(n_pairs))
+                ax_ov.set_xticklabels(pair_labels, rotation=45, ha='right', fontsize=7)
+                ax_ov.set_yticks(range(n_path))
+                ax_ov.set_yticklabels(pathway_labels, fontsize=7)
+                ax_ov.set_xlabel('')
+                ax_ov.set_ylabel('')
+                # dot size legend（用虚拟点）
+                s_min, s_max = float(sizes_arr.min()), float(sizes_arr.max())
+                for frac, label in [(0.25, f'{s_min+(s_max-s_min)*0.25:.0f}'),
+                                    (0.5, f'{s_min+(s_max-s_min)*0.5:.0f}'),
+                                    (1.0, f'{s_max:.0f}')]:
+                    ax_ov.scatter([], [], s=frac * 200, c='lightgray', edgecolor=NEAR_BLACK,
+                                  linewidth=0.3, label=label)
+                ax_ov.legend(title='-log10(p)', loc='upper left', bbox_to_anchor=(1.15, 1.0),
+                             frameon=False, fontsize=6, title_fontsize=7, labelspacing=1.2,
+                             scatterpoints=1)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax_ov
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.scatterplot failed ({e}), mpl fallback")
     n_pairs = len(pair_labels); n_path = len(pathway_labels)
     if x_idx is None:
         x_idx = np.arange(n_pairs)
     if y_idx is None:
         y_idx = np.arange(n_path)
     # broadcast to full grid if needed
-    if len(np.atleast_1d(sizes)) == n_pairs * n_path:
-        sizes = np.asarray(sizes).reshape(n_path, n_pairs).T
-        mean_expr = np.asarray(mean_expr).reshape(n_path, n_pairs).T
-        xs, ys = np.meshgrid(x_idx, y_idx)
-        x_idx_plot = xs.ravel(order='F'); y_idx_plot = ys.ravel(order='F')
-        sizes_plot = sizes.ravel(); expr_plot = mean_expr.ravel()
+    if np.asarray(sizes).size == n_pairs * n_path:
+        # sizes shape (n_path, n_pairs) → 转置为 (n_pairs, n_path)
+        sizes_mat = np.asarray(sizes).reshape(n_path, n_pairs).T
+        expr_mat = np.asarray(mean_expr).reshape(n_path, n_pairs).T
+        # 生成 n_pairs × n_path 的坐标网格（展平后共 n_pairs*n_path 个点）
+        xs, ys = np.meshgrid(x_idx, y_idx, indexing='ij')
+        x_idx_plot = xs.ravel(); y_idx_plot = ys.ravel()
+        sizes_plot = sizes_mat.ravel(); expr_plot = expr_mat.ravel()
     else:
         x_idx_plot = x_idx; y_idx_plot = y_idx; sizes_plot = sizes; expr_plot = mean_expr
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or
-                               (max(5, n_pairs*0.6), max(4, n_path*0.35)))
+                               (min(n_pairs*0.45+1.0, 3.5), min(n_path*0.3+1.0, 3.0)))
     else:
         fig = ax.figure
     scatter = ax.scatter(x_idx_plot, y_idx_plot, s=sizes_plot, c=expr_plot,
@@ -1726,6 +1823,9 @@ def plot_feature_matrix(adata, genes, basis='X_umap', ax=None, figsize=None,
             for a in axs:
                 clean_umap_axes(a)
             fig = plt.gcf()
+            n_genes = len(genes)
+            nrows = int(np.ceil(n_genes / ncols))
+            fig.set_size_inches(min(ncols * 2.0 + 0.5, 7.0), nrows * 2.0 + 0.3)
             if save:
                 save_panel(fig, save, show=show)
             return fig, list(axs)
@@ -1739,7 +1839,10 @@ def _feature_matrix_mpl(adata, genes, basis, ncols, save, show):
     import math
     coords = np.asarray(adata.obsm[basis])
     nrows = math.ceil(len(genes) / ncols)
-    fig, axes = plt.subplots(nrows, ncols, figsize=(ncols*3, nrows*3),
+    # 子图用 set_box_aspect(1) 保证正方形；figsize 按正方形子图算
+    cell_w = 3.0
+    cell_h = 3.0   # 正方形子图，宽=高
+    fig, axes = plt.subplots(nrows, ncols, figsize=(ncols*cell_w, nrows*cell_h),
                              constrained_layout=True)
     axes = np.atleast_1d(axes).ravel()
     # shared vmax
@@ -1759,6 +1862,7 @@ def _feature_matrix_mpl(adata, genes, basis, ncols, save, show):
                       vmin=0, vmax=vmax, s=1.5, alpha=0.7, edgecolor='none',
                       rasterized=True)
         a.set_title(g, fontstyle='italic', fontsize=10, pad=4)
+        a.set_box_aspect(1)   # matplotlib 3.2+ 正方形（比 set_aspect 在 constrained_layout 下更可靠）
         clean_umap_axes(a)
     # hide unused
     for j in range(len(genes), len(axes)):
@@ -1774,7 +1878,20 @@ def _feature_matrix_mpl(adata, genes, basis, ncols, save, show):
 
 def plot_paga(adata, ax=None, figsize=None, save=None, threshold=0.05,
               color=None, show=None, **kwargs):
-    """PAGA：sc.pl.paga 优先，mpl+networkx 兜底。"""
+    """PAGA：ov.pl.trajectory_graph 优先，sc.pl.paga/mpl+networkx 兜底。"""
+    if _check_ov():
+        try:
+            import omicverse as ov
+            ov.pl.trajectory_graph(adata, method='paga',
+                                   cluster_key='leiden' if 'leiden' in adata.obs else None,
+                                   basis='X_umap' if 'X_umap' in adata.obsm else None,
+                                   figsize=figsize or (2.5, 2.2), show=False)
+            fig = plt.gcf()
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, fig.axes[0] if fig.axes else None
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.trajectory_graph failed ({e}), fallback")
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or recipe_figsize('paga'))
     else:
@@ -1791,6 +1908,7 @@ def plot_paga(adata, ax=None, figsize=None, save=None, threshold=0.05,
     if not routed:
         _paga_mpl(adata, ax, threshold)
     polish_axes(ax)
+    ax.set_aspect('equal')   # PAGA 用 embedding 坐标定位节点，必须正方形
     if save:
         save_panel(fig, save, show=show)
     return fig, ax
@@ -1835,7 +1953,39 @@ def _paga_mpl(adata, ax, threshold):
 
 
 # ============================================================
-# 20.12 plot_chord — Chord/CCC 细胞通讯弦图（ov 优先，networkx 兜底）
+# 20.12 plot_ccc — 统一细胞通讯可视化（chord/network，对齐 ov.pl.ccc_network_plot 的 plot_type 路由）
+# ============================================================
+
+def plot_ccc(weight_matrix, layout='chord', labels=None, ax=None, figsize=None,
+             save=None, show=None, **kwargs):
+    """统一细胞通讯/互作可视化——一个入口，layout 路由到不同布局。
+
+    对齐 omicverse ``ov.pl.ccc_network_plot`` 的 ``plot_type`` 设计哲学
+    （一个函数支持 chord/circle/diff_network 等十几种布局）。
+
+    Args:
+        weight_matrix: 2D array/DataFrame，方阵 N×N，值=互作强度（0=无）。
+        layout: ``'chord'`` → 环形弦图（≤8 类型，展示"谁给谁收信号"）
+                ``'network'`` → 力导向网络图（复杂拓扑，节点大小=加权度）
+        labels: 节点标签（None=用 matrix index/行列名）
+        ax/figsize/save/show: 标准
+        **kwargs: 透传给对应布局的函数
+    Returns: (fig, ax)
+    """
+    if layout == 'chord':
+        return plot_chord(weight_matrix, ax=ax, figsize=figsize,
+                          save=save, show=show, **kwargs)
+    elif layout == 'network':
+        return plot_ccc_network(weight_matrix, labels=labels, ax=ax,
+                                figsize=figsize, save=save, show=show, **kwargs)
+    else:
+        raise ValueError(
+            f"layout='{layout}' unsupported. Use 'chord' or 'network'. "
+            f"(Maps to ov.pl.ccc_network_plot plot_type='chord'/'diff_network')")
+
+
+# ============================================================
+# 20.12a plot_chord — Chord/CCC 细胞通讯弦图（plot_ccc 的 chord 布局实现）
 # ============================================================
 
 def plot_chord(weight_matrix, ax=None, figsize=None, save=None, show=None, **kwargs):
@@ -1914,7 +2064,7 @@ def plot_pseudotime(adata, genes, pseudotime_col='pseudotime', ax=None,
         genes = [genes]
     if ax is None:
         fig, axes = plt.subplots(len(genes), 1, figsize=figsize or
-                                 (4.5, 2.2*len(genes)), sharex=True)
+                                 (3.5, 1.8*len(genes)), sharex=True)
         if len(genes) == 1:
             axes = [axes]
     else:
@@ -1973,7 +2123,7 @@ def plot_cellproportion(adata, groupby='condition', celltype_col='celltype',
             # ov.pl.cellproportion 的 legend 默认 False —— 堆叠柱必须显式开图例
             kwargs.setdefault('legend', True)
             ov.pl.cellproportion(adata, celltype_clusters=celltype_col,
-                                 groupby=groupby, **kwargs)
+                                 groupby=groupby, figsize=(3.0, 2.5), **kwargs)
             fig_ov = plt.gcf()
             if save:
                 save_panel(fig_ov, save, show=show)
@@ -2027,6 +2177,32 @@ def plot_de_scatter(de_dict, ax=None, figsize=None, save=None,
     Returns: (fig, ax)
     """
     import pandas as pd
+    if _check_ov():
+        try:
+            import omicverse as ov
+            rows = []
+            for gname, de in de_dict.items():
+                for _, r in de.iterrows():
+                    rows.append({'group': gname, 'logFC': r[fc_name],
+                                 'padj': r[pval_name]})
+            df_de = pd.DataFrame(rows)
+            n_groups = len(de_dict)
+            group_names = list(de_dict.keys())
+            group_map = {g: i for i, g in enumerate(group_names)}
+            df_de['x_num'] = df_de['group'].map(group_map)
+            ov.pl.scatterplot(data=df_de, x='x_num', y='logFC', hue='padj',
+                              cmap='coolwarm_r', alpha=0.7, s=15,
+                              figsize=figsize or (min(n_groups * 0.8 + 0.5, 4.0), 2.5))
+            fig = plt.gcf()
+            ax_ov = fig.axes[0] if fig.axes else None
+            if ax_ov:
+                ax_ov.set_xticks(range(n_groups))
+                ax_ov.set_xticklabels(group_names, fontsize=7)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax_ov
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.scatterplot failed ({e}), mpl fallback")
     comparisons = list(de_dict.keys())
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or recipe_figsize('bar', n_x=len(comparisons)))
@@ -2073,22 +2249,24 @@ def plot_de_scatter(de_dict, ax=None, figsize=None, save=None,
 
 def plot_spatial_ccc(adata_sp, ligand, receptor, ax=None, figsize=None, save=None,
                      niche_col=None, show=None, **kwargs):
-    """空间 CCC：配体/受体空间共表达面板（空转 CCC 最低证据）。
-
-    左面板=ligand 空间表达，右面板=receptor 空间表达，共享 colorscale。
-    ov/sq 无直接函数，mpl 双面板。
-
-    Args:
-        adata_sp: 空转 AnnData（有 obsm['spatial']）
-        ligand/receptor: 基因名
-        niche_col: 可选，niche 列名（画在两面板之间作为对照）
-    Returns: (fig, (ax1, ax2))
-    """
+    """空间 CCC：ov.pl.spatial_value 优先（双面板），mpl 兜底。"""
+    if _check_ov() and 'spatial' in getattr(adata_sp, 'uns', {}):
+        try:
+            import omicverse as ov
+            lib_id = list(adata_sp.uns['spatial'].keys())[0]
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize or (5.0, 2.5))
+            ov.pl.spatial_value(adata_sp, color=ligand, library_id=lib_id, ax=ax1)
+            ov.pl.spatial_value(adata_sp, color=receptor, library_id=lib_id, ax=ax2)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, (ax1, ax2)
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.spatial_value failed ({e}), mpl fallback")
     if 'spatial' not in adata_sp.obsm and 'X_spatial' not in adata_sp.obsm:
         raise ValueError("adata_sp needs obsm['spatial'] or obsm['X_spatial']")
     coords = adata_sp.obsm.get('spatial', adata_sp.obsm.get('X_spatial'))
     if ax is None:
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize or (9, 4.2),
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize or (5.0, 2.5),
                                        gridspec_kw={'wspace': 0.35})
     else:
         raise ValueError("plot_spatial_ccc creates its own 2-panel layout; pass ax=None")
@@ -2133,12 +2311,22 @@ def plot_spatial_ccc(adata_sp, ligand, receptor, ax=None, figsize=None, save=Non
 def plot_milo(milo_result, ax=None, figsize=None, save=None,
               test_col='SpatialFDR', logfc_col='logFC', label_col='Population',
               sig_threshold=0.1, show=None, **kwargs):
-    """Milo beeswarm：KNN 节点 logFC 按 population 分组，SpatialFDR 着色。
-
-    ov 无，直接 mpl（需 milo_result DataFrame，列含 Population/logFC/SpatialFDR）。
-    """
+    """Milo beeswarm：ov.pl.compare_groups 优先，mpl 兜底。"""
+    if _check_ov():
+        try:
+            import omicverse as ov
+            milo_df = milo_result.copy()
+            ov.pl.compare_groups(data=milo_df, value=logfc_col, group=label_col,
+                                 figsize=figsize or (3.0, 2.5))
+            fig = plt.gcf()
+            ax_ov = fig.axes[0] if fig.axes else None
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax_ov
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.compare_groups failed ({e}), mpl fallback")
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize or (6, 4))
+        fig, ax = plt.subplots(figsize=figsize or (3.2, 2.8))
     else:
         fig = ax.figure
     pops = milo_result[label_col].astype('category').cat.categories
@@ -2180,7 +2368,7 @@ def plot_signaling_heatmap(comm_scores, ax=None, figsize=None, save=None,
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or
-                               (len(comm_scores.columns)*0.4+2, len(comm_scores.index)*0.4+1.5))
+                               (min(len(comm_scores.columns)*0.3+1.5, 3.5), min(len(comm_scores.index)*0.3+1.0, 3.5)))
     else:
         fig = ax.figure
     data = comm_scores.values
@@ -2260,8 +2448,28 @@ def plot_distance_distribution(adata_sp, group_a, group_b, groupby=None,
     # A 每个 spot → B 最近邻的欧氏距离
     tree = cKDTree(coords[mb])
     d, _ = tree.query(coords[ma])
+    if _check_ov():
+        try:
+            import omicverse as ov
+            import pandas as pd
+            if groupby is not None and groupby in adata_sp.obs.columns:
+                g = adata_sp.obs[groupby].loc[ma].astype(str).values
+            else:
+                g = np.array(['All'] * len(d))
+            df_dist = pd.DataFrame({'distance': d, 'group': g, 'hue': 'all'})
+            ov.pl.boxplot(data=df_dist, hue='hue', x_value='group', y_value='distance',
+                          figsize=figsize or (3.0, 2.5))
+            fig = plt.gcf()
+            ax_ov = fig.axes[0] if fig.axes else None
+            if ax_ov:
+                ax_ov.set_ylabel(f'Distance to {group_b} (µm)', fontsize=7)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax_ov
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.boxplot failed ({e}), mpl fallback")
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize or (5.2, 4.0))
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
     else:
         fig = ax.figure
     # 箱线图：按 groupby 分组（只含组 A 的 spot）
@@ -2285,7 +2493,11 @@ def plot_distance_distribution(adata_sp, group_a, group_b, groupby=None,
     for part in ('whiskers', 'caps'):
         for el in bp[part]:
             el.set_color(NEAR_BLACK)
-            el.set_linewidth(0.8)
+    # 叠加 jitter 散点（每个 spot 的实际距离）
+    for i, dat in enumerate(data if groupby else [d]):
+        jit = np.random.uniform(-0.12, 0.12, len(dat))
+        ax.scatter(np.full(len(dat), i+1)+jit, dat, s=8, alpha=0.3,
+                   color=NEAR_BLACK, edgecolor='none', zorder=3, rasterized=True)
     for md in bp['medians']:
         md.set_color(NEAR_BLACK)
         md.set_linewidth(1.2)
@@ -2385,7 +2597,7 @@ def plot_nhood_enrichment(adata_sp, cluster_key='celltype',
         # 简化：以 counts 的 sqrt 作为尺度的 z-score 近似
         zscore = np.where(exp > 0, (counts - exp) / np.sqrt(exp + 1e-9), 0.0)
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize or (5.5, 4.8))
+        fig, ax = plt.subplots(figsize=figsize or (3.2, 3.0))
     else:
         fig = ax.figure
     im = ax.imshow(zscore, cmap=DIVERGING_CMAP, vmin=-6, vmax=6,
@@ -2442,6 +2654,29 @@ def plot_colocalization(adata_sp, var_x, var_y, method='spearman',
         method: 'spearman'（默认）或 'pearson'
         groupby: 非 None 时按该 obs 列分色（不分组面）
     """
+    if _check_ov():
+        try:
+            import omicverse as ov
+            import pandas as pd
+            # 提取 var_x 和 var_y 的值（_resolve_signal 返回 (values, kind) 二元组）
+            x_vals, _ = _resolve_signal(adata_sp, var_x)
+            y_vals, _ = _resolve_signal(adata_sp, var_y)
+            df_plot = pd.DataFrame({var_x: x_vals, var_y: y_vals})
+            if groupby is not None and groupby in adata_sp.obs.columns:
+                df_plot[groupby] = adata_sp.obs[groupby].values
+                ov.pl.scatterplot(data=df_plot, x=var_x, y=var_y, hue=groupby,
+                                  corr=method, alpha=0.5, s=8,
+                                  figsize=figsize or (3.0, 2.8))
+            else:
+                ov.pl.scatterplot(data=df_plot, x=var_x, y=var_y,
+                                  corr=method, alpha=0.5, s=8,
+                                  figsize=figsize or (3.0, 2.8))
+            fig = plt.gcf()
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, fig.axes[0] if fig.axes else None
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.scatterplot failed ({e}), mpl fallback")
     import numpy as np
     from scipy.stats import spearmanr, pearsonr
     x, xtype = _resolve_signal(adata_sp, var_x)
@@ -2455,7 +2690,7 @@ def plot_colocalization(adata_sp, var_x, var_y, method='spearman',
         rho, p = spearmanr(x, y)
         rho_label = 'ρ'
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize or (4.8, 4.2))
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 2.8))
     else:
         fig = ax.figure
     if groupby is not None:
@@ -2506,6 +2741,32 @@ def plot_enrichment_scatter(enr_df, x='GeneRatio', y='FDR', size='Count',
         size/color: 需要归一化/映射的列名（默认均为 FDR）
         top_n: 按 -log10(FDR) 降序取前 n 条标注
     """
+    if _check_ov():
+        try:
+            import omicverse as ov
+            import pandas as pd
+            import numpy as np
+            df = enr_df.copy()
+            df['_ylog'] = np.log10(df[y].replace(0, np.nan)) * -1
+            df['_ylog'] = df['_ylog'].fillna(np.nanmax(df['_ylog']))
+            df['_size_scaled'] = np.interp(df[size], (df[size].min(), df[size].max()), (8, 90))
+            ov.pl.scatterplot(data=df, x=x, y='_ylog', size='_size_scaled',
+                              cmap='YlOrRd', alpha=0.75,
+                              figsize=figsize or (3.5, 3.0))
+            fig = plt.gcf()
+            # 标注 top_n 通路名
+            top = df.nlargest(top_n, '_ylog')
+            ax_fig = fig.axes[0] if fig.axes else None
+            if ax_fig:
+                for _, row in top.iterrows():
+                    ax_fig.annotate(str(row[term_col])[:35], (row[x], row['_ylog']),
+                                    fontsize=6, color=GREY, ha='left', va='center',
+                                    xytext=(4, 0), textcoords='offset points')
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax_fig
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.scatterplot failed ({e}), mpl fallback")
     import numpy as np
     import pandas as pd
     for col in (x, y, size, color):
@@ -2517,21 +2778,1120 @@ def plot_enrichment_scatter(enr_df, x='GeneRatio', y='FDR', size='Count',
     df['_size_scaled'] = np.interp(df[size], (df[size].min(), df[size].max()), (20, 200))
     top = df.nlargest(top_n, '_ylog')
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize or (7.0, 5.0))
+        fig, ax = plt.subplots(figsize=figsize or (3.5, 3.0))
     else:
         fig = ax.figure
     sc = ax.scatter(df[x], df['_ylog'], s=df['_size_scaled'], c=df[color],
                     cmap=EXPR_CMAP, alpha=0.75, edgecolor=NEAR_BLACK,
                     linewidth=0.3, rasterized=True)
-    # 通路名标注（手动偏移，避免标签重叠）
-    for _, row in top.iterrows():
-        ax.annotate(str(row[term_col])[:40], (row[x], row['_ylog']),
-                    fontsize=6, color=GREY, ha='left', va='center',
-                    xytext=(5, 0), textcoords='offset points')
+    # 通路名标注——交替左右偏移 + 引线，减少重叠
+    try:
+        from adjustText import adjust_text
+        texts = [ax.text(row[x], row['_ylog'], str(row[term_col])[:35],
+                         fontsize=6, color=GREY, ha='left', va='bottom')
+                 for _, row in top.iterrows()]
+        adjust_text(texts, arrowprops=dict(arrowstyle='-', color=GREY, lw=0.3))
+    except ImportError:
+        # adjustText 不可用时用交替偏移
+        for i, (_, row) in enumerate(top.iterrows()):
+            offset = (8, 6) if i % 2 == 0 else (8, -6)
+            ax.annotate(str(row[term_col])[:35], (row[x], row['_ylog']),
+                        fontsize=6, color=GREY, ha='left', va='center',
+                        xytext=offset, textcoords='offset points',
+                        arrowprops=dict(arrowstyle='-', color=GREY, lw=0.3))
     ax.set_xlabel(str(x), fontsize=10, labelpad=10)
     ax.set_ylabel(r'$-$log$_{10}$(' + str(y) + ')', fontsize=10, labelpad=10)
     ax.set_title('Enrichment bubble', fontsize=12, pad=8)
     add_elegant_colorbar(sc, ax, label=str(color))
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+# ============================================================
+# 20.23 plot_ccc_network — CCC/模块互作网络图（力导向布局，CoVarNet 2025 风格）
+# ============================================================
+
+def plot_ccc_network(weight_matrix, labels=None, ax=None, figsize=None,
+                     save=None, layout='fr', edge_threshold=0.1,
+                     node_size_scale=500, show=None, **kwargs):
+    """细胞通讯/模块互作网络图（plot_ccc 的 network 布局实现）。
+
+    节点=细胞类型/模块，边=互作强度，力导向布局展示复杂拓扑。
+    来源：CoVarNet Nature 2025 gr.igraph_global（Fruchterman-Reingold 布局）。
+
+    Args:
+        weight_matrix: 2D array/DataFrame，方阵（N×N），值=互作强度（0=无）
+        labels: 节点标签列表（None=用 matrix index）
+        layout: 'fr'(Fruchterman-Reingold 力导向) | 'circle'(环形) | 'spring'
+        edge_threshold: 低于此值的边不画（过滤弱连接）
+        node_size_scale: 节点大小缩放（节点大小=加权度中心性）
+    Returns: (fig, ax)
+    """
+    import networkx as nx
+    if hasattr(weight_matrix, 'values'):
+        wm = weight_matrix.values
+        if labels is None:
+            labels = [str(x) for x in weight_matrix.index]
+    else:
+        wm = np.asarray(weight_matrix)
+        labels = [str(i) for i in range(len(wm))]
+    if wm.ndim != 2 or wm.shape[0] != wm.shape[1]:
+        raise ValueError(
+            f"weight_matrix 必须是方阵（N×N），实际 shape={wm.shape}")
+    n = wm.shape[0]
+    if labels is None:
+        labels = [f'C{i}' for i in range(n)]
+    labels = [str(l) for l in labels]
+    if len(labels) != n:
+        raise ValueError(f"labels 长度 {len(labels)} 与矩阵维度 {n} 不一致")
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.5, 3.0))
+    else:
+        fig = ax.figure
+    # 构图：节点=labels，边权重=matrix 值（过滤弱连接）
+    G = nx.Graph()
+    G.add_nodes_from(range(n))
+    for i in range(n):
+        for j in range(i + 1, n):
+            w = wm[i, j]
+            if w > edge_threshold:
+                G.add_edge(i, j, weight=float(w))
+    # 布局：fr/spring → Fruchterman-Reingold 力导向；circle → 环形
+    if layout == 'circle':
+        pos = nx.circular_layout(G)
+    else:  # 'fr' | 'spring'（FR 算法族）
+        pos = nx.spring_layout(G, weight='weight', seed=42, k=1.2)
+    # 节点大小 = 加权度（sum of edge weights）× node_size_scale
+    deg = {i: 0.0 for i in range(n)}
+    for u, v, d in G.edges(data=True):
+        deg[u] += d['weight']; deg[v] += d['weight']
+    max_deg = max(deg.values(), default=1) or 1
+    sizes = {i: 30 + node_size_scale * deg[i] / max_deg for i in range(n)}
+    # 边：alpha 按权重映射（0.2-0.8），宽度 0.5-3，灰阶（弱=浅灰，强=深灰）
+    maxw = max((d['weight'] for _, _, d in G.edges(data=True)), default=1)
+    for u, v, d in G.edges(data=True):
+        t = d['weight'] / maxw
+        ax.plot([pos[u][0], pos[v][0]], [pos[u][1], pos[v][1]],
+                color=GREY, alpha=0.2 + 0.6 * t, lw=0.5 + 2.5 * t,
+                solid_capstyle='round', zorder=2)
+    # 节点：MORLANDI 按 index 循环，白描边
+    for i in range(n):
+        x, y = pos[i]
+        ax.scatter(x, y, s=sizes[i], color=MORLANDI[i % len(MORLANDI)],
+                   edgecolor='white', linewidth=1.2, zorder=5)
+        # 标签放节点右侧（避免中心标签与节点重叠）
+        ax.text(x + 0.05, y, labels[i], fontsize=8, color=NEAR_BLACK,
+                ha='left', va='center', zorder=6)
+    clean_umap_axes(ax, xlabel='', ylabel='')
+    ax.set_title('CCC network', fontsize=12, pad=8)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+# ============================================================
+# 20.24 plot_deconv_pie — 去卷积饼图网格（Per-spot 比例，Redeconve 2023 风格）
+# ============================================================
+
+def plot_deconv_pie(adata_sp, prop_cols=None, cluster_key=None,
+                    spatial_key='spatial', max_spots=500, ax=None, figsize=None,
+                    save=None, show=None, **kwargs):
+    """Per-spot 去卷积饼图网格——每个 spot 一个饼图显示细胞类型比例。
+
+    来源：Redeconve spatial.piechart。在空间坐标上画微型饼图（每个 spot 一个）。
+    细胞类型 >6 时自动聚合低比例为 'Other'，避免饼图不可读。
+
+    Args:
+        adata_sp: 空转 AnnData（有 obsm[spatial_key]）
+        prop_cols: 比例列名列表（如 ['flashdeconv_FB','flashdeconv_EndoCC',...]）
+                   None=自动检测 obs 里 prop/frac 开头或 flashdeconv_ 前缀的列
+        cluster_key: 可选，如果有离散 celltype 列（每个 spot 一个类型，直接着色不画饼）
+        max_spots: 最大显示 spot 数（>max_spots 时随机采样，避免太密）
+    Returns: (fig, ax)
+    """
+    from matplotlib import patches
+    if _check_ov() and prop_cols is not None:
+        try:
+            import omicverse as ov
+            fig, ax_pie = plt.subplots(figsize=figsize or (3.5, 3.0))
+            coords_tmp = np.asarray(adata_sp.obsm[spatial_key])
+            ax_pie.scatter(coords_tmp[:, 0], coords_tmp[:, 1], s=0.5,
+                           c='lightgray', alpha=0.3, rasterized=True)
+            ov.pl.add_pie2spatial(adata_sp, cell_type_columns=prop_cols[:6],
+                                  ax=ax_pie, pie_radius=15)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax_pie
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.add_pie2spatial failed ({e}), mpl fallback")
+    if spatial_key not in adata_sp.obsm:
+        raise ValueError(f"adata_sp 需要 obsm['{spatial_key}']")
+    coords = np.asarray(adata_sp.obsm[spatial_key])
+    obs = adata_sp.obs
+    # 离散 celltype 列 → 直接按类型着色（不画饼）
+    if cluster_key is not None:
+        return _deconv_pie_cluster(adata_sp, cluster_key, spatial_key,
+                                   max_spots, ax, figsize, save, show)
+    # 自动检测比例列
+    if prop_cols is None:
+        prop_cols = [c for c in obs.columns
+                     if ('prop' in c or 'frac' in c or c.startswith('flashdeconv_'))]
+    if not prop_cols:
+        raise ValueError(
+            "未找到去卷积比例列：prop_cols=None 时自动检测 obs 中 "
+            "含 'prop'/'frac' 或以 'flashdeconv_' 开头的列，均未命中。"
+            "请显式传入 prop_cols（如 ['flashdeconv_FB', ...]）。")
+    # 排除非数值列（如 _dominant/_type 后缀的字符串列）
+    prop_cols = [c for c in prop_cols if c in obs.columns]
+    prop_cols = [c for c in prop_cols if np.issubdtype(obs[c].dtype, np.number)]
+    if not prop_cols:
+        raise ValueError(
+            "prop_cols 中无数值列：所选列均为非数值（如 _dominant/_type 字符串列），"
+            "请传入数值比例列。")
+    P = obs[prop_cols].to_numpy(dtype=float)
+    # 行归一化（保证每行和为 1）
+    row_sum = P.sum(axis=1)
+    P = P / np.where(row_sum > 0, row_sum, 1)[:, None]
+    # spot 采样
+    n = len(coords)
+    if n > max_spots:
+        idx = np.random.default_rng(42).choice(n, size=max_spots, replace=False)
+        coords, P = coords[idx], P[idx]
+    # 微型饼图半径：按最近邻中位距离自适应（避免 0.8 固定值在 Visium 尺度下太小/太大）
+    if len(coords) > 2:
+        d = np.linalg.norm(coords[:, None, :] - coords[None, :, :], axis=-1)
+        np.fill_diagonal(d, np.inf)
+        nn = np.median(d.min(axis=1))
+        radius = max(0.8, 0.4 * nn)
+    else:
+        radius = 0.8
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.5, 3.0))
+    else:
+        fig = ax.figure
+    n_cells = P.shape[1]
+    # >6 类时聚合 <5% 的低比例为 'Other'
+    if n_cells > 6:
+        frac = P.mean(axis=0)
+        keep = frac >= 0.05
+        if keep.all():
+            cell_names = list(prop_cols)
+        else:
+            P_agg = np.column_stack([P[:, keep], P[:, ~keep].sum(axis=1)])
+            cell_names = [prop_cols[i] for i in np.where(keep)[0]] + ['Other']
+            P = P_agg
+    else:
+        cell_names = list(prop_cols)
+    n_cells = P.shape[1]
+    palette = [MORLANDI[i % len(MORLANDI)] for i in range(n_cells)]
+    # 逐 spot 画扇形（Wedge）
+    for (x, y), p in zip(coords, P):
+        start = 0.0
+        for k in range(n_cells):
+            frac_k = p[k]
+            if frac_k <= 0:
+                continue
+            theta = 360.0 * frac_k
+            ax.add_patch(patches.Wedge((x, y), radius, start, start + theta,
+                                       width=None, facecolor=palette[k],
+                                       edgecolor='white', linewidth=0.2, zorder=3))
+            start += theta
+    ax.set_aspect('equal')
+    clean_umap_axes(ax, xlabel='', ylabel='')
+    # 图例外置右侧
+    handles = [plt.Line2D([], [], marker='o', linestyle='None', markersize=7,
+                          markerfacecolor=c, markeredgecolor='none', label=n)
+               for c, n in zip(palette, cell_names)]
+    ax.legend(handles=handles, loc='center left', bbox_to_anchor=(1.02, 0.5),
+              frameon=False, fontsize=7, title='Cell type', title_fontsize=8)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+def _deconv_pie_cluster(adata_sp, cluster_key, spatial_key, max_spots,
+                        ax, figsize, save, show):
+    """plot_deconv_pie 的离散 celltype 分支：每个 spot 一种类型，scatter 着色。"""
+    if cluster_key not in adata_sp.obs:
+        raise ValueError(f"obs 中无列 '{cluster_key}'")
+    coords = np.asarray(adata_sp.obsm[spatial_key])
+    cats = adata_sp.obs[cluster_key].astype('category')
+    n = len(coords)
+    if n > max_spots:
+        idx = np.random.default_rng(42).choice(n, size=max_spots, replace=False)
+        coords, cats = coords[idx], cats.iloc[idx]
+    palette = {ct: MORLANDI[i % len(MORLANDI)]
+               for i, ct in enumerate(cats.cat.categories)}
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.5, 3.0))
+    else:
+        fig = ax.figure
+    colors = [palette[ct] for ct in cats]
+    ax.scatter(coords[:, 0], coords[:, 1], c=colors, s=8, alpha=0.85,
+               edgecolor='none', rasterized=True)
+    ax.set_aspect('equal')
+    clean_umap_axes(ax, xlabel='', ylabel='')
+    handles = [plt.Line2D([], [], marker='o', linestyle='None', markersize=7,
+                          markerfacecolor=c, markeredgecolor='none', label=ct)
+               for ct, c in palette.items()]
+    ax.legend(handles=handles, loc='center left', bbox_to_anchor=(1.02, 0.5),
+              frameon=False, fontsize=7, title='Cell type', title_fontsize=8)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+# ============================================================
+# 20.25-20.39: 分布/统计/集合类图（ov.pl 优先 → mpl 兜底）
+# ============================================================
+
+def _adata_to_tidy(adata, cols):
+    """AnnData → tidy DataFrame：基因名（var_names）提取表达值，obs 列名直接用。
+
+    Args:
+        adata: AnnData 对象
+        cols: list[str]，基因名或 obs 列名（可混合）
+    Returns:
+        pandas.DataFrame：列=cols（保持给定顺序），行=adata.obs_names
+    """
+    import pandas as pd
+    out = {}
+    for c in cols:
+        if c in adata.var_names:
+            expr = adata[:, c].X
+            if hasattr(expr, 'toarray'):
+                expr = expr.toarray()
+            out[c] = np.asarray(expr).ravel()
+        elif c in adata.obs.columns:
+            out[c] = adata.obs[c].values
+        else:
+            raise ValueError(f"'{c}' 既不是 var_names 也不是 obs 列")
+    return pd.DataFrame(out, index=adata.obs_names)
+
+
+# ============================================================
+# 20.25 plot_ridge — 山脊图（ov.pl.ridgeplot → mpl KDE 叠放）
+# ============================================================
+def plot_ridge(adata, keys, groupby='celltype', ax=None, figsize=None,
+               save=None, show=None, overlap=0.2, **kwargs):
+    """山脊图（ridgeplot）：多组表达分布叠放比较。纯 mpl 实现。
+
+    >5 组时比 violin 更清晰（CNS marker 验证标配）。
+    Args:
+        overlap: 行间重叠比例（0=完全分离, 0.2=微叠便于区分）。
+    """
+    import pandas as pd
+    if isinstance(keys, str):
+        keys = [keys]
+    n_genes = len(keys)
+    if ax is None:
+        n_groups = adata.obs[groupby].astype('category').nunique()
+        # 宽度固定 3.0"，高度按组数自适应
+        fig, axes = plt.subplots(n_genes, 1, figsize=figsize or
+                                 (3.0, (n_groups * 0.5 + 0.5) * n_genes),
+                                 sharex=False)
+        if n_genes == 1:
+            axes = [axes]
+    else:
+        fig = ax.figure
+        axes = [ax]
+        keys = keys[:1]
+    groups = adata.obs[groupby].astype('category').cat.categories
+    for row, g in enumerate(keys):
+        _ridge_mpl(adata, g, groupby, groups, axes[row], overlap=overlap)
+    fig = axes[0].figure
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, axes if n_genes > 1 else axes[0]
+
+
+def _ridge_mpl(adata, gene, groupby, groups, ax, overlap=0.5):
+    """mpl ridge：逐组 KDE 叠放，固定行高 + 下方盖上方。
+
+    - 每行高度固定 row_height=1.0（KDE 归一化后统一缩放）
+    - 行间距 step = row_height * (1 - overlap)
+    - z-order：第一组（底部）zorder 最高 → 下方盖上方
+    - 组名标签放左侧 y 轴位置
+    """
+    from scipy.stats import gaussian_kde
+    if gene in adata.var_names:
+        expr = adata[:, gene].X
+        if hasattr(expr, 'toarray'):
+            expr = expr.toarray()
+        expr = np.asarray(expr).ravel()
+    else:
+        expr = np.zeros(adata.n_obs)
+    xmin, xmax = np.percentile(expr, 0.1), np.percentile(expr, 99.9)
+    x = np.linspace(xmin, xmax, 300)
+    row_height = 1.0
+    step = row_height * (1.0 - overlap)
+    n_groups = len(groups)
+    # 从下到上画：第一组在底部（y=0），最后一组在顶部
+    # z-order：底部组 zorder 最大（下方盖上方）
+    for i, grp in enumerate(groups):
+        mask = (adata.obs[groupby] == grp).values
+        vals = expr[mask]
+        baseline = i * step
+        if len(vals) < 2 or vals.std() == 0:
+            # 退化组：画一条平线
+            ax.axhline(baseline, xmin=0.05, xmax=0.95, color=MORLANDI[i % len(MORLANDI)],
+                       alpha=0.5, lw=1, zorder=n_groups - i)
+        else:
+            kde = gaussian_kde(vals)
+            y = kde(x)
+            peak = y.max()
+            if peak > 0:
+                y = y / peak * row_height  # 归一化到固定行高
+            scaled = baseline + y
+            # z-order: 底部组最大 → 下方盖上方
+            z = n_groups - i + 1
+            ax.fill_between(x, baseline, scaled, alpha=0.65,
+                            color=MORLANDI[i % len(MORLANDI)], zorder=z)
+            ax.plot(x, scaled, color='white', lw=0.8, zorder=z + 0.1)
+        # 组名标签放左侧 y=baseline 位置
+        ax.text(xmin - (xmax - xmin) * 0.02, baseline + row_height * 0.3,
+                str(grp), fontsize=7, color=GREY, ha='right', va='center')
+    ax.set_xlim(xmin, xmax)
+    top = (n_groups - 1) * step + row_height
+    ax.set_ylim(-0.3, top + 0.2)
+    ax.set_yticks([])
+    ax.set_xlabel(gene, fontsize=7, fontstyle='italic', labelpad=6)
+    ax.tick_params(axis='x', labelsize=7, length=2, colors=NEAR_BLACK)
+    # 只保留 x 轴线（bottom spine），隐藏其余
+    for sp_name in ('top', 'left', 'right'):
+        ax.spines[sp_name].set_visible(False)
+    ax.spines['bottom'].set_visible(True)
+    ax.spines['bottom'].set_linewidth(0.8)
+    ax.spines['bottom'].set_color(NEAR_BLACK)
+
+
+# ============================================================
+# 20.26 plot_boxplot — 箱线图+抖动（ov.pl.boxplot → mpl boxplot+scatter）
+# ============================================================
+def plot_boxplot(adata, keys, groupby='celltype', ax=None, figsize=None,
+                 save=None, show=None, **kwargs):
+    """箱线图+抖动点：分布比较的简洁替代。ov.pl.boxplot 优先，mpl 兜底。"""
+    import pandas as pd
+    if isinstance(keys, str):
+        keys = [keys]
+    n_genes = len(keys)
+    if ax is None:
+        fig, axes = plt.subplots(n_genes, 1, figsize=figsize or
+                                 (min(len(adata.obs[groupby].unique()) * 0.4 + 0.8, 3.5),
+                                     n_genes * 2.0), sharex=False)
+        if n_genes == 1:
+            axes = [axes]
+    else:
+        fig = ax.figure
+        axes = [ax]
+        keys = keys[:1]
+    if _check_ov() and len(axes) == 1:
+        try:
+            import omicverse as ov
+            df = _adata_to_tidy(adata, keys + [groupby])
+            # ov.pl.boxplot 的 hue=None 会 KeyError(None)（内部 data[None]）
+            # → 注入常量伪 hue 列，单类别等价于无 hue
+            if 'hue' not in df.columns:
+                df['hue'] = 'all'
+            ov.pl.boxplot(data=df, hue='hue', x_value=groupby, y_value=keys[0],
+                          **kwargs)
+            fig_ov = plt.gcf()          # boxplot 无 ax 参数，自建 figure
+            fig_ov.set_size_inches(*(figsize or (min(len(df[groupby].unique())*0.4+0.8, 3.5), 2.0)))
+            ax_ov = fig_ov.axes[0] if fig_ov.axes else axes[0]
+            legend = ax_ov.get_legend()
+            if legend is not None:
+                legend.remove()         # 常量 hue 的图例无信息量
+            polish_axes(ax_ov)
+            if save:
+                save_panel(fig_ov, save, show=show)
+            return fig_ov, ax_ov
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.boxplot failed ({e}), mpl fallback")
+    groups = adata.obs[groupby].astype('category').cat.categories
+    for row, g in enumerate(keys):
+        _boxplot_mpl(adata, g, groupby, groups, axes[row])
+    fig = axes[0].figure
+    polish_axes(axes[-1])
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, axes if n_genes > 1 else axes[0]
+
+
+def _boxplot_mpl(adata, gene, groupby, groups, ax):
+    """mpl boxplot + jitter scatter。"""
+    if gene in adata.var_names:
+        expr = adata[:, gene].X
+        if hasattr(expr, 'toarray'):
+            expr = expr.toarray()
+        expr = np.asarray(expr).ravel()
+    else:
+        expr = np.zeros(adata.n_obs)
+    data_per = [expr[(adata.obs[groupby] == grp).values] for grp in groups]
+    bp = ax.boxplot(data_per, positions=range(len(groups)), widths=0.5,
+                    patch_artist=True, showfliers=False, zorder=2)
+    for i, patch in enumerate(bp['boxes']):
+        c = MORLANDI[i % len(MORLANDI)]
+        patch.set_facecolor(c); patch.set_alpha(0.55)
+        patch.set_edgecolor(NEAR_BLACK); patch.set_linewidth(0.8)
+    for element in ('whiskers', 'caps', 'medians'):
+        for line in bp[element]:
+            line.set_color(NEAR_BLACK); line.set_linewidth(0.8)
+    # jitter scatter
+    for i, d in enumerate(data_per):
+        jit = np.random.default_rng(42).uniform(-0.18, 0.18, len(d))
+        ax.scatter(np.full(len(d), i) + jit, d, s=2, alpha=0.5,
+                   color=NEAR_BLACK, edgecolor='none', zorder=3, rasterized=True)
+    ax.set_xticks(range(len(groups)))
+    ax.set_xticklabels(groups, fontsize=7,
+                       rotation=45 if len(groups) > 8 else 0)
+    ax.set_ylabel(gene, fontsize=9, fontstyle='italic')
+
+
+# ============================================================
+# 20.27 plot_kde — 核密度估计（ov.pl.kdeplot → scipy gaussian_kde）
+# ============================================================
+def plot_kde(data, x, y=None, hue=None, ax=None, figsize=None,
+             save=None, show=None, **kwargs):
+    """核密度估计图。ov.pl.kdeplot 优先，mpl 兜底。
+    data 可以是 AnnData（x/y 是基因名→自动提取表达）或 DataFrame。
+    """
+    import pandas as pd
+    if hasattr(data, 'var_names'):   # AnnData
+        cols = [c for c in (x, y, hue) if c]
+        df = _adata_to_tidy(data, cols)
+    else:
+        df = data
+    if y is None:
+        use_x, use_y = x, None
+    else:
+        use_x, use_y = (x, y) if x in df.columns else (y, x)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
+    else:
+        fig = ax.figure
+    if _check_ov():
+        try:
+            import omicverse as ov
+            ov.pl.kdeplot(data=df, x=use_x, y=use_y, hue=hue,
+                          ax=ax, **kwargs)
+            polish_axes(ax)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.kdeplot failed ({e}), mpl fallback")
+    _kde_mpl(df, use_x, use_y, hue, ax)
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+def _kde_mpl(df, x, y, hue, ax):
+    """mpl KDE：单变量一维曲线 / 双变量等高线。"""
+    from scipy.stats import gaussian_kde
+    if y is None:
+        # 单变量：按 hue 分组画曲线
+        if hue is None:
+            vals = df[x].dropna().values
+            if len(vals) < 2:
+                return
+            xs = np.linspace(vals.min(), vals.max(), 300)
+            ax.plot(xs, gaussian_kde(vals)(xs), color=MORLANDI[0], lw=1.5)
+            ax.fill_between(xs, gaussian_kde(vals)(xs),
+                            color=MORLANDI[0], alpha=0.25)
+            ax.set_xlabel(x); ax.set_ylabel('Density')
+        else:
+            for i, grp in enumerate(df[hue].astype('category').cat.categories):
+                vals = df.loc[df[hue] == grp, x].dropna().values
+                if len(vals) < 2:
+                    continue
+                xs = np.linspace(vals.min(), vals.max(), 300)
+                c = MORLANDI[i % len(MORLANDI)]
+                ax.plot(xs, gaussian_kde(vals)(xs), color=c, lw=1.5, label=grp)
+                ax.fill_between(xs, gaussian_kde(vals)(xs), color=c, alpha=0.2)
+            ax.set_xlabel(x); ax.set_ylabel('Density')
+            ax.legend(frameon=False, fontsize=7)
+    else:
+        # 双变量：等高线
+        d = df[[x, y]].dropna()
+        if len(d) < 3:
+            return
+        k = gaussian_kde(d.values.T)
+        xi = np.linspace(d[x].min(), d[x].max(), 100)
+        yi = np.linspace(d[y].min(), d[y].max(), 100)
+        X, Y = np.meshgrid(xi, yi)
+        Z = k(np.vstack([X.ravel(), Y.ravel()])).reshape(X.shape)
+        ax.contourf(X, Y, Z, levels=10, cmap=EXPR_CMAP, alpha=0.6)
+        ax.set_xlabel(x); ax.set_ylabel(y)
+
+
+# ============================================================
+# 20.28 plot_histplot — 直方图（ov.pl.histplot → mpl hist）
+# ============================================================
+def plot_histplot(data, x, hue=None, bins='auto', ax=None, figsize=None,
+                  save=None, show=None, **kwargs):
+    """直方图：QC-metric 分布标配。ov.pl.histplot 优先，mpl 兜底。"""
+    import pandas as pd
+    if hasattr(data, 'var_names'):   # AnnData
+        df = _adata_to_tidy(data, [c for c in (x, hue) if c])
+    else:
+        df = data
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
+    else:
+        fig = ax.figure
+    if _check_ov():
+        try:
+            import omicverse as ov
+            ov.pl.histplot(data=df, x=x, hue=hue, bins=bins,
+                           ax=ax, **kwargs)
+            polish_axes(ax)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.histplot failed ({e}), mpl fallback")
+    if hue is None:
+        ax.hist(df[x].dropna(), bins=bins, color=MORLANDI[0], alpha=0.75,
+                edgecolor='white', linewidth=0.4)
+    else:
+        for i, grp in enumerate(df[hue].astype('category').cat.categories):
+            vals = df.loc[df[hue] == grp, x].dropna()
+            ax.hist(vals, bins=bins, alpha=0.55, label=grp,
+                    color=MORLANDI[i % len(MORLANDI)], edgecolor='white',
+                    linewidth=0.3)
+        ax.legend(frameon=False, fontsize=7)
+    ax.set_xlabel(x); ax.set_ylabel('Count')
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+# ============================================================
+# 20.29 plot_stripplot — 抖动散点（ov.pl.stripplot → mpl scatter）
+# ============================================================
+def plot_stripplot(data, x, y, hue=None, ax=None, figsize=None,
+                   save=None, show=None, **kwargs):
+    """抖动散点：每个观测点都可见。ov.pl.stripplot 优先，mpl 兜底。"""
+    import pandas as pd
+    if hasattr(data, 'var_names'):   # AnnData
+        df = _adata_to_tidy(data, [c for c in (x, y, hue) if c])
+    else:
+        df = data
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
+    else:
+        fig = ax.figure
+    if _check_ov():
+        try:
+            import omicverse as ov
+            ov.pl.stripplot(data=df, x=x, y=y, hue=hue,
+                            ax=ax, **kwargs)
+            polish_axes(ax)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.stripplot failed ({e}), mpl fallback")
+    # mpl 兜底：x 分类型 → 抖动；x 连续型 → 直接散点
+    if df[x].dtype.name.startswith(('int', 'float')) and df[x].nunique() > 12:
+        ax.scatter(df[x], df[y], s=4, alpha=0.6, color=MORLANDI[0],
+                   edgecolor='none', rasterized=True)
+        ax.set_xlabel(x)
+    else:
+        cats = df[x].astype('category')
+        rng = np.random.default_rng(42)
+        for i, grp in enumerate(cats.cat.categories):
+            vals = df.loc[cats == grp, y]
+            jit = rng.uniform(-0.18, 0.18, len(vals))
+            ax.scatter(np.full(len(vals), i) + jit, vals, s=4, alpha=0.6,
+                       color=MORLANDI[i % len(MORLANDI)], edgecolor='none',
+                       rasterized=True, label=None if hue else grp)
+        ax.set_xticks(range(len(cats.cat.categories)))
+        ax.set_xticklabels(cats.cat.categories, fontsize=7,
+                           rotation=45 if len(cats.cat.categories) > 8 else 0)
+        ax.set_xlabel(x)
+    ax.set_ylabel(y)
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+# ============================================================
+# 20.30 plot_stackarea — 细胞比例堆叠面积（ov.pl.cellstackarea → mpl stackplot）
+# ============================================================
+def plot_stackarea(adata, celltype_col='celltype', groupby='condition',
+                   ax=None, figsize=None, save=None, show=None, **kwargs):
+    """细胞比例堆叠面积图：比例随连续/有序变量变化。ov.pl.cellstackarea 优先，mpl 兜底。"""
+    import pandas as pd
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
+    else:
+        fig = ax.figure
+    if _check_ov():
+        try:
+            import omicverse as ov
+            ov.pl.cellstackarea(adata, celltype_clusters=celltype_col,
+                                groupby=groupby, ax=ax)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.cellstackarea failed ({e}), mpl fallback")
+    # mpl 兜底：按 groupby 分组算比例，stackplot
+    ct = adata.obs[celltype_col].astype('category')
+    g = adata.obs[groupby]
+    groups = g.astype('category').cat.categories
+    prop = pd.DataFrame(index=groups, columns=ct.cat.categories, dtype=float)
+    for grp in groups:
+        mask = (g == grp).values
+        if mask.sum() == 0:
+            prop.loc[grp] = 0.0
+            continue
+        counts = ct[mask].value_counts()
+        prop.loc[grp] = [counts.get(c, 0) / mask.sum() for c in ct.cat.categories]
+    prop = prop.fillna(0.0)
+    x = np.arange(len(groups))
+    ax.stackplot(x, *prop.values.T, labels=prop.columns,
+                 colors=[MORLANDI[i % len(MORLANDI)]
+                         for i in range(len(prop.columns))],
+                 alpha=0.85, edgecolor='white', linewidth=0.3)
+    ax.set_xticks(x)
+    ax.set_xticklabels(groups, fontsize=7, rotation=45 if len(groups) > 8 else 0)
+    ax.set_xlabel(groupby)
+    ax.set_ylabel('Proportion')
+    ax.set_ylim(0, 1)
+    ax.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', frameon=False,
+              fontsize=7, title=celltype_col)
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+# ============================================================
+# 20.31 plot_bardotplot — 柱+点组合（ov.pl.bardotplot → mpl bar+scatter）
+# ============================================================
+def plot_bardotplot(adata, groupby, color, ax=None, figsize=None,
+                    save=None, show=None, **kwargs):
+    """柱+点组合图：均值柱+分布点双重展示。ov.pl.bardotplot 优先，mpl 兜底。"""
+    import pandas as pd
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
+    else:
+        fig = ax.figure
+    if _check_ov():
+        try:
+            import omicverse as ov
+            ov.pl.bardotplot(adata, groupby=groupby, color=color,
+                             ax=ax)
+            polish_axes(ax)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.bardotplot failed ({e}), mpl fallback")
+    # mpl 兜底：color 是基因名 → 各 group 均值柱 + 逐细胞抖动点；
+    #          color 是 obs 类别列 → 各 group 内类别占比柱
+    groups = adata.obs[groupby].astype('category').cat.categories
+    rng = np.random.default_rng(42)
+    if color in adata.var_names:
+        expr = adata[:, color].X
+        if hasattr(expr, 'toarray'):
+            expr = expr.toarray()
+        expr = np.asarray(expr).ravel()
+        means = [expr[(adata.obs[groupby] == grp).values].mean()
+                 for grp in groups]
+        ax.bar(range(len(groups)), means, width=0.55,
+               color=MORLANDI[0], alpha=0.85,
+               edgecolor='white', linewidth=0.4, zorder=2)
+        # 逐 cell 抖动点
+        for gi, grp in enumerate(groups):
+            vals = expr[(adata.obs[groupby] == grp).values]
+            jit = rng.uniform(-0.18, 0.18, len(vals))
+            ax.scatter(np.full(len(vals), gi) + jit, vals, s=4, alpha=0.4,
+                       color=NEAR_BLACK, edgecolor='none',
+                       rasterized=True, zorder=3)
+        ax.set_ylabel(color, fontsize=9, fontstyle='italic')
+    else:
+        cats = pd.unique(adata.obs[color])
+        for i, c in enumerate(cats):
+            means = []
+            for gi, grp in enumerate(groups):
+                mask = ((adata.obs[groupby] == grp) & (adata.obs[color] == c)).values
+                prop = mask.mean() if mask.sum() > 0 else 0.0
+                means.append(prop)
+                if mask.sum():
+                    jitter = rng.uniform(0, 0.9, int(mask.sum()))
+                    xs = np.full(int(mask.sum()), gi) + rng.uniform(-0.12, 0.12, int(mask.sum()))
+                    ax.scatter(xs, 0.05 + jitter, s=3, alpha=0.35,
+                               color=MORLANDI[i % len(MORLANDI)],
+                               edgecolor='none', rasterized=True)
+            ax.bar([g + (i - (len(cats) - 1) / 2) * 0.18 for g in range(len(groups))],
+                   means, width=0.18,
+                   color=MORLANDI[i % len(MORLANDI)], alpha=0.85,
+                   edgecolor='white', linewidth=0.4, label=c)
+        ax.set_ylabel(f'{color} proportion')
+        ax.set_ylim(0, 1)
+    ax.set_xticks(range(len(groups)))
+    ax.set_xticklabels(groups, fontsize=7, rotation=45 if len(groups) > 8 else 0)
+    if color not in adata.var_names:
+        ax.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', frameon=False,
+                  fontsize=7)
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+# ============================================================
+# 20.32 plot_stacking_vol — 堆叠火山（ov.pl.stacking_vol，无 mpl 兜底）
+# ============================================================
+def plot_stacking_vol(data_dict, color_dict=None, ax=None, figsize=None,
+                      save=None, show=None, **kwargs):
+    """堆叠火山图：多条件 DE 并排比较。直接传参给 ov.pl.stacking_vol。
+    data_dict: {条件名: DE DataFrame}（每含 gene/padj/log2FC 列）
+    """
+    import pandas as pd
+    if not _check_ov():
+        print("[smart_plot] ov.pl.stacking_vol 需要 omicverse，跳过")
+        return None, None
+    try:
+        import omicverse as ov
+        if color_dict is None:
+            color_dict = {k: MORLANDI[i % len(MORLANDI)]
+                          for i, k in enumerate(data_dict)}
+        _col_map = {'gene': 'names', 'padj': 'pvals_adj', 'log2FC': 'logfoldchanges'}
+        data_dict_ov = {}
+        for k, de in data_dict.items():
+            if isinstance(de, pd.DataFrame):
+                de = de.rename(columns={old: new
+                                        for old, new in _col_map.items()
+                                        if old in de.columns and new not in de.columns})
+            data_dict_ov[k] = de
+        n_conds = len(data_dict)
+        fig_size = figsize or (min(n_conds * 1.8, 5.0), 3.0)
+        out = ov.pl.stacking_vol(data_dict_ov, color_dict, figsize=fig_size, **kwargs)
+        if isinstance(out, tuple) and len(out) == 2:
+            fig, axes = out
+        else:
+            fig, axes = out, None
+        if fig is None:
+            fig = plt.gcf()
+        # 条件名标注在色块中央（savefig 后再标注，避免 finalize_figure 干扰）
+        if isinstance(axes, dict):
+            for cond_name, cond_ax in axes.items():
+                cond_ax.set_title(cond_name, fontsize=10, fontweight='bold', pad=4)
+        if save:
+            save_panel(fig, save, show=show)
+            # save_panel 后重新标注（finalize_figure 可能清了 title）
+            if isinstance(axes, dict):
+                for cond_name, cond_ax in axes.items():
+                    cond_ax.set_title(cond_name, fontsize=10, fontweight='bold', pad=4)
+                import os
+                dpi = plt.rcParams.get('savefig.dpi', 300)
+                if '/' in save or '\\' in save:
+                    path = f'{save}.pdf'
+                else:
+                    path = f'panels/{save}.pdf'
+                fig.savefig(path, dpi=dpi, bbox_inches='tight', pad_inches=0.1)
+        ax_out = None
+        if axes is not None:
+            if isinstance(axes, dict) and axes:
+                ax_out = next(iter(axes.values()))
+            elif hasattr(axes, '__iter__') and not isinstance(axes, str):
+                ax_out = list(axes)[0] if list(axes) else None
+            else:
+                ax_out = axes
+        return fig, ax_out
+    except Exception as e:
+        print(f"[smart_plot] ov.pl.stacking_vol failed ({e})")
+        return None, None
+# ============================================================
+# 20.33 plot_upset — UpSet 图（ov 专用，无 mpl 兜底）
+# ============================================================
+def plot_upset(sets, top_n=30, ax=None, figsize=None,
+               save=None, show=None, **kwargs):
+    """UpSet 图：>3 组基因集交集可视化。ov.pl.upset 优先。
+    sets: dict {集合名: list/set of items}
+    无 mpl 兜底（UpSet 布局复杂，纯 ov）；ov 不可用时打印警告返回 None。
+    """
+    if not _check_ov():
+        print("[smart_plot] ov.pl.upset 需要 omicverse，跳过")
+        return None, None
+    try:
+        import omicverse as ov
+        ov.pl.upset(sets, top_n=top_n, **kwargs)
+        fig = plt.gcf()          # upset 自建 figure
+        # 关掉所有子图的网格线
+        for a in fig.axes:
+            a.grid(False)
+        if figsize:
+            fig.set_size_inches(*figsize)
+        else:
+            fig.set_size_inches(4.0, 2.5)
+        if save:
+            save_panel(fig, save, show=show)
+        return fig, fig.axes[0] if fig.axes else None
+    except Exception as e:
+        print(f"[smart_plot] ov.pl.upset failed ({e})")
+        return None, None
+
+
+# ============================================================
+# 20.34 plot_venn — Venn 图（ov.pl.venn，无 mpl 兜底）
+# ============================================================
+def plot_venn(sets, ax=None, figsize=None, save=None, show=None, **kwargs):
+    """Venn 图：≤4 组基因集交集。ov.pl.venn 优先。
+    sets: dict {集合名: set/list}（2-4 组）
+    无 mpl 兜底；ov.pl.venn 的 out 参数默认写文件到 './'，此处传临时目录避免污染 CWD。
+    """
+    import tempfile
+    if not _check_ov():
+        print("[smart_plot] ov.pl.venn 需要 omicverse，跳过")
+        return None, None
+    try:
+        import omicverse as ov
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ov.pl.venn(sets=sets, out=tmpdir, **kwargs)
+            fig = plt.gcf()
+            fig.set_size_inches(*(figsize or (2.5, 2.5)))
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, fig.axes[0] if fig.axes else None
+    except Exception as e:
+        print(f"[smart_plot] ov.pl.venn failed ({e})")
+        return None, None
+
+
+# ============================================================
+# 20.35 plot_forest — 森林图（ov.pl.forest → mpl errorbar）
+# ============================================================
+def plot_forest(data, estimate, lower=None, upper=None, label=None,
+                group=None, ax=None, figsize=None, save=None, show=None, **kwargs):
+    """森林图：meta-analysis/多研究效应合并。ov.pl.forest 优先，mpl 兜底。
+    data: DataFrame，estimate/lower/upper/label 是列名。
+    """
+    import pandas as pd
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (2.5, min(len(data) * 0.3 + 0.5, 3.5)))
+    else:
+        fig = ax.figure
+    if _check_ov():
+        try:
+            import omicverse as ov
+            ov.pl.forest(data=data, estimate=estimate, lower=lower, upper=upper,
+                         label=label, group=group, ax=ax, **kwargs)
+            polish_axes(ax)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.forest failed ({e}), mpl fallback")
+    # mpl 兜底：errorbar + 零线
+    est = data[estimate].values
+    if lower is not None and upper is not None:
+        lo = est - data[lower].values        # lower 语义=下界值
+        up = data[upper].values - est
+        yerr = np.vstack([lo, up])
+    else:
+        yerr = None
+    y = np.arange(len(data))
+    ax.errorbar(est, y, xerr=yerr, fmt='o', color=MORLANDI[0],
+                ecolor=GREY, elinewidth=1.0, capsize=2.5, markersize=5,
+                zorder=3)
+    if label is not None and label in data.columns:
+        ax.set_yticks(y)
+        ax.set_yticklabels(data[label].astype(str).values, fontsize=7)
+    else:
+        ax.set_yticks(y)
+        ax.set_yticklabels(data.index.astype(str), fontsize=7)
+    ax.invert_yaxis()
+    ax.axvline(0, color=GREY, lw=0.8, linestyle='--', zorder=1)
+    ax.set_xlabel(estimate)
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+# ============================================================
+# 20.36 plot_regplot — 回归散点（ov.pl.regplot → mpl polyfit）
+# ============================================================
+def plot_regplot(data, x, y, hue=None, fit='linear', ax=None, figsize=None,
+                 save=None, show=None, **kwargs):
+    """回归散点图：带拟合线（相关性分析标配）。ov.pl.regplot 优先，mpl 兜底。"""
+    import pandas as pd
+    if hasattr(data, 'var_names'):   # AnnData
+        df = _adata_to_tidy(data, [c for c in (x, y, hue) if c])
+    else:
+        df = data
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
+    else:
+        fig = ax.figure
+    if _check_ov():
+        try:
+            import omicverse as ov
+            ov.pl.regplot(data=df, x=x, y=y, hue=hue, fit=fit,
+                          ax=ax, **kwargs)
+            polish_axes(ax)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.regplot failed ({e}), mpl fallback")
+    # mpl 兜底：scatter + polyfit 拟合线
+    if hue is None:
+        ax.scatter(df[x], df[y], s=6, alpha=0.6, color=MORLANDI[0],
+                   edgecolor='none', rasterized=True)
+        _fit_line(ax, df[x].values, df[y].values, fit)
+    else:
+        for i, grp in enumerate(df[hue].astype('category').cat.categories):
+            sub = df[df[hue] == grp]
+            c = MORLANDI[i % len(MORLANDI)]
+            ax.scatter(sub[x], sub[y], s=6, alpha=0.6, color=c,
+                       edgecolor='none', rasterized=True, label=grp)
+            _fit_line(ax, sub[x].values, sub[y].values, fit, color=c)
+        ax.legend(frameon=False, fontsize=7)
+    ax.set_xlabel(x); ax.set_ylabel(y)
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+def _fit_line(ax, xs, ys, fit='linear', color=None, n=200):
+    """polyfit 拟合线（degree: linear=1, quadratic=2）+ 95% 数据范围。"""
+    mask = ~(np.isnan(xs) | np.isnan(ys))
+    xs, ys = xs[mask], ys[mask]
+    if len(xs) < 2:
+        return
+    deg = {'linear': 1, 'quadratic': 2}.get(fit, 1)
+    try:
+        coef = np.polyfit(xs, ys, deg)
+    except np.linalg.LinAlgError:
+        return
+    xline = np.linspace(np.nanpercentile(xs, 1), np.nanpercentile(xs, 99), n)
+    yline = np.polyval(coef, xline)
+    ax.plot(xline, yline, color=color or NEAR_BLACK, lw=1.2, zorder=4)
+
+
+# ============================================================
+# 20.37 plot_ccc_heatmap — 通讯热图（ov.pl.ccc_heatmap，无 mpl 兜底）
+# ============================================================
+def plot_ccc_heatmap(adata, plot_type='heatmap', ax=None, figsize=None,
+                     save=None, show=None, **kwargs):
+    """通讯热图：CCC 强度的 heatmap/dot/tile 多模式。ov.pl.ccc_heatmap 优先。
+    需先跑 liania（adata.uns['liana_res']）。
+    plot_type: 'heatmap'|'dot'|'tile'|'focused_heatmap' 等
+    无 mpl 兜底（需要 liana 预计算结果）；ov 不可用时打印警告返回 None。
+    """
+    if not _check_ov():
+        print("[smart_plot] ov.pl.ccc_heatmap 需要 omicverse，跳过")
+        return None, None
+    try:
+        import omicverse as ov
+        ov.pl.ccc_heatmap(adata, plot_type=plot_type, **kwargs)
+        fig = plt.gcf()
+        fig.set_size_inches(*(figsize or (3.5, 3.0)))
+        if save:
+            save_panel(fig, save, show=show)
+        return fig, fig.axes[0] if fig.axes else None
+    except Exception as e:
+        print(f"[smart_plot] ov.pl.ccc_heatmap failed ({e})")
+        return None, None
+
+
+# ============================================================
+# 20.38 plot_pca_variance — PCA 方差比（ov.pl.plot_pca_variance_ratio → mpl bar）
+# ============================================================
+def plot_pca_variance(adata, n_pcs=30, ax=None, figsize=None,
+                      save=None, show=None, **kwargs):
+    """PCA 方差比图：QC 标配（选 PCs 数）。ov.pl.plot_pca_variance_ratio 优先，mpl 兜底。"""
+    import pandas as pd
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
+    else:
+        fig = ax.figure
+    if _check_ov():
+        try:
+            import omicverse as ov
+            ov.pl.plot_pca_variance_ratio(adata, n_pcs=n_pcs, show=False,
+                                          **kwargs)
+            fig_ov = plt.gcf()          # 无 ax 参数，自建 figure
+            fig_ov.set_size_inches(*(figsize or (3.0, 2.5)))
+            ax_ov = fig_ov.axes[0] if fig_ov.axes else ax
+            polish_axes(ax_ov)
+            if save:
+                save_panel(fig_ov, save, show=show)
+            return fig_ov, ax_ov
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.plot_pca_variance_ratio failed ({e}), mpl fallback")
+    # mpl 兜底：adata.uns['pca']/variance_ratio
+    ratios = None
+    if 'pca' in adata.uns and 'variance_ratio' in adata.uns['pca']:
+        ratios = np.asarray(adata.uns['pca']['variance_ratio'])[:n_pcs]
+    elif hasattr(adata.obsm.get('X_pca', None), 'shape'):
+        # 无现成 ratio → 用特征值近似（若存在）
+        if 'pca' in adata.uns and 'variance' in adata.uns['pca']:
+            var = np.asarray(adata.uns['pca']['variance'])[:n_pcs]
+            total = var.sum()
+            ratios = var / total if total > 0 else var
+    if ratios is None:
+        print("[smart_plot] 无 PCA variance_ratio 可用，跳过 mpl 兜底")
+        return fig, ax
+    n = len(ratios)
+    ax.bar(range(n), ratios, color=MORLANDI[0], alpha=0.8,
+           edgecolor='white', linewidth=0.4)
+    ax.axhline(ratios.mean(), color=GREY, lw=0.8, linestyle='--')
+    ax.set_xticks(range(0, n, max(1, n // 10)))
+    ax.set_xlabel('PC')
+    ax.set_ylabel('Variance ratio')
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax
+
+
+# ============================================================
+# 20.39 plot_hvg_scatter — HVG 均值-离散散点（ov → mpl）
+# ============================================================
+def plot_hvg_scatter(adata, ax=None, figsize=None, save=None, show=None, **kwargs):
+    """HVG 均值-离散散点：QC 标配。ov.pl.highly_variable_genes_scatter 优先，mpl 兜底。"""
+    import pandas as pd
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
+    else:
+        fig = ax.figure
+    if _check_ov():
+        try:
+            import omicverse as ov
+            ov.pl.highly_variable_genes_scatter(adata, ax=ax, show=False, **kwargs)
+            polish_axes(ax)
+            if save:
+                save_panel(fig, save, show=show)
+            return fig, ax
+        except Exception as e:
+            print(f"[smart_plot] ov.pl.highly_variable_genes_scatter failed ({e}), mpl fallback")
+    # mpl 兜底：mean 与 dispersion 的散点，HVG 高亮
+    means = adata.var['means'] if 'means' in adata.var else None
+    disps = adata.var['dispersions'] if 'dispersions' in adata.var else None
+    if means is None or disps is None:
+        print("[smart_plot] var 中无 means/dispersions 列，跳过 mpl 兜底")
+        return fig, ax
+    hvg = adata.var['highly_variable'].values if 'highly_variable' in adata.var \
+        else np.zeros(adata.n_vars, dtype=bool)
+    ax.scatter(means[~hvg], disps[~hvg], s=4, alpha=0.5, color=GREY,
+               edgecolor='none', rasterized=True, label='Non-HVG')
+    ax.scatter(means[hvg], disps[hvg], s=6, alpha=0.8, color=MORLANDI[0],
+               edgecolor='none', rasterized=True, label='HVG')
+    ax.set_xlabel('Mean expression')
+    ax.set_ylabel('Dispersion')
+    ax.legend(frameon=False, fontsize=7)
     polish_axes(ax)
     if save:
         save_panel(fig, save, show=show)

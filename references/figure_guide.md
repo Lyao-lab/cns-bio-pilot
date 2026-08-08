@@ -22,9 +22,13 @@
 | L-R Bubble | §2.9 | §5.9 |
 | Feature 矩阵 | §2.10 | §5.10 |
 | **PAGA** | §3.1 | §5.11 |
-| **Chord/CCC** | §3.2 | §5.12 |
+| **CCC（chord/network 统一入口）** | §3.2 | §5.12 |
 | **Pseudotime** | §3.3 | §5.11 |
 | **cellproportion** | §3.5 | §5.7 |
+| **山脊/箱线/KDE/直方/抖动散点** | §3.16-§3.20 | §5.4 |
+| **堆叠面积/柱+点组合** | §3.21-§3.22 | §5.7 |
+| **堆叠火山/UpSet/Venn/森林/回归** | §3.23-§3.27 | §5.2/§5.8 |
+| **通讯热图/PCA方差比/HVG散点** | §3.28-§3.30 | §5.5/§5.1 |
 
 ---
 
@@ -52,7 +56,7 @@
 | **轨迹拓扑/分支证据** | PAGA/图抽象 或 branch 树状图 | 拓扑断言用图模型而非 embedding 形状 | fate probability 矩阵 | §3.1 |
 | **轨迹基因动态证据** | gene-along-pseudotime 曲线（带 CI/平滑） | 轨迹论文的"证据图"永远是这个，不是 UMAP | 分 bin heatmap | §3.3 |
 | **CCC 强度+显著性** | bubble/dot plot（LR对×细胞类型对） | 信息密度最高的标准形式 | LR heatmap | §2.9 |
-| **CCC 方向性叙事** | chord/circos（≤8 类型） | chord 丢 LR 细节，只适合"谁给谁收信号" | 聚合网络图 | §3.2 |
+| **CCC 方向性叙事** | chord（≤8 类型） | chord 丢 LR 细节，只适合"谁给谁收信号" | network（>8 类型/复杂拓扑） | §3.2 |
 | **CCC 信号角色模式** | outgoing-incoming pattern heatmap | 展示 sender/receiver/mediator 角色 | — | §3.9 |
 | **空间单基因表达** | feature plot（spot/细胞着色） | 成像平台用单分子点渲染 | 阈值二值图（低表达基因） | §2.6 |
 | **空间+形态学** | H&E/IF 底图 overlay | 形态学结论必须 overlay 或并排 | 相邻并排面板 | §2.6 |

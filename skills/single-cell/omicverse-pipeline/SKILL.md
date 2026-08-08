@@ -12,6 +12,19 @@ description: 单细胞全流程（ambient 去除→QC→doublet→降维聚类�
 
 # OmicVerse Single-Cell Pipeline
 
+## 📋 Analysis Code Templates
+
+All analysis code templates live in `references/analysis/` (modular, always up-to-date with ov API):
+
+| 分析阶段 | 子模块 | 内容 |
+|---|---|---|
+| QC/preprocess/降维/聚类/批次 | `references/analysis/sc_basic.md` | ov.pp.preprocess(shiftlog\|pearson) → scale → pca → neighbors → leiden/auto_resolution → batch_correction |
+| 注释/DE/富集/丰度/SCENIC/CNV | `references/analysis/sc_annotation.md` | Annotation 类 → Pseudobulk DE → 富集 → DCT → SCENIC/CNV/Augur/MetaCell |
+| CCC/轨迹/Velocity | `references/analysis/sc_downstream.md` | LIANA+/CellPhoneDB v5 → TrajInfer/PseudotimeFate → Velocity → AUCell |
+| 分析纪律 | `references/analysis/discipline.md` | 红线规则（Pseudobulk DE / counts 保留 / obsm key 匹配等） |
+
+**⚠️ 下方内嵌代码可能过时——以 `references/analysis/` 子模块为最新权威源。**
+
 **Merged from prior skills:** the original preprocessing / doublet-detection / clustering / cell-annotation / batch-integration / cell-communication / trajectory-inference / scanpy / scvi-tools skills (these standalone skills no longer exist; functionality is unified in OmicVerse V2). This skill is the canonical entry point for all of them. RNA velocity lives in `single-cell/rna-velocity`; Perturb-seq in `single-cell/perturbation`.
 
 `pip install omicverse` (V2 released). Examples below use the real `ov` API, flagging key parameters and pitfalls.

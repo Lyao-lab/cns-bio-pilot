@@ -7,6 +7,20 @@
 
 ---
 
+## 0. 分析代码模板位置（开工前必查）
+
+分析代码模板已模块化到 `references/analysis/`，按分析阶段拆分——写分析代码前**必须查对应子模块**，不要凭记忆写（API 可能已更新）：
+
+| 分析任务 | 查这个文件 |
+|---|---|
+| QC / preprocess / 降维 / 聚类 / 批次校正 | `references/analysis/sc_basic.md` |
+| 注释 / DE / 富集 / 差异丰度 / SCENIC / CNV | `references/analysis/sc_annotation.md` |
+| 细胞通讯 / 轨迹 / Velocity / AUCell | `references/analysis/sc_downstream.md` |
+| 空转（domain/SVG/去卷积/统计/Visium HD） | `references/analysis/spatial.md` |
+| Bulk（DE/GSEA/WGCNA/PPI） | `references/analysis/bulk.md` |
+| 分析纪律红线 | `references/analysis/discipline.md` |
+| 数据 IO 速查 | `references/analysis/README.md` |
+
 ## A. 分析严谨性（违反 = 科学错误）
 
 - **[A1] 基于事实不虚构**：每个数字/数据集/accession/API 必须有来源；缺失标 `[AUTHOR TO SPECIFY]`，绝不编造 | 虚构 = 论文造假 | 机检：postcheck F1（占位符/编造 accession）

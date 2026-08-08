@@ -11,6 +11,20 @@ description: Bulk RNA-seq / 表达矩阵全流程（差异表达→富集→WGCN
 
 # OmicVerse Bulk Pipeline
 
+## 📋 Analysis Code Templates
+
+All bulk analysis code templates live in `references/analysis/bulk.md`:
+
+| 内容 | 关键 API |
+|---|---|
+| DE | ov.bulk.pyDEG / deseq2_normalize |
+| 富集/GSEA | ov.bulk.geneset_enrichment / pyGSEA / geneset_plot_multi |
+| WGCNA | ov.bulk.pyWGCNA |
+| 批次校正 | ov.bulk.batch_correction |
+| PPI | ov.bulk.pyPPI |
+
+**⚠️ 下方内嵌代码可能过时——以 `references/analysis/bulk.md` 为最新权威源。**
+
 **Merged from former skills**: original differential-expression / gokegg / gsea / wgcna / ppi-network / batch-correction / batch-correction-de (these standalone skills no longer exist; functionality unified in OmicVerse V2). OmicVerse V2 ports these R tools to native Python via pyDESeq2/pyGSEApy/pyWGCNA; this skill is the unified entry.
 
 `pip install omicverse` (V2). Fully R-free.

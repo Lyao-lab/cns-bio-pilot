@@ -11,6 +11,22 @@ description: 空间转录组全流程（IO→空间邻域→QC→空间域→SVG
 
 # OmicVerse Spatial Transcriptomics Pipeline
 
+## 📋 Analysis Code Templates
+
+All spatial analysis code templates live in `references/analysis/spatial.md` (35+ ov.space API covered):
+
+| 内容 | 关键 API |
+|---|---|
+| 数据 IO | sc.read_visium / ov.io.read_visium_hd/xenium/nanostring |
+| QC + 预处理 | ov.pp.qc + ov.pp.preprocess(shiftlog\|pearson) |
+| 空间 domain | pySTAGATE / CAST / GASTON / STT / cellcharter / merge_cluster |
+| SVG | svg(PROST) / spatial_autocorr(Moran) / sepal |
+| 去卷积 | Deconvolution / Tangram / CellLoc / CellMap / split_purify |
+| 空间统计 | nhood_enrichment / co_occurrence / ripley / centrality_scores |
+| Visium HD | bin2cell / salvage_secondary_labels |
+
+**⚠️ 下方内嵌代码可能过时——以 `references/analysis/spatial.md` 为最新权威源。**
+
 **Merged from former skills**: original preprocessing / data-io / domains / neighbors / statistics / visualization / communication / image-analysis (these standalone skills no longer exist; functionality unified in OmicVerse V2). **Deconvolution is NOT in this skill** — cell2location/RCTD etc. go to `spatial/deconvolution`. High-resolution platforms: see `spatial/multiomics`; spatial proteomics: see `spatial/proteomics`.
 
 `pip install omicverse` (V2). Built on scanpy/squidpy/anndata.

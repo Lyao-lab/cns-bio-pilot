@@ -41,22 +41,20 @@ ov.ov_plot_set()  # 或 from cns_style import set_cns_style_journal; set_cns_sty
 adata.layers['counts'] = adata.X.copy()
 ```
 
-## 数据 IO 速查 ⭐ 新增
+## 数据 IO 速查
 
-```python
-# 单细胞
-adata = ov.io.read_10x_h5('filtered_feature_bc_matrix.h5')
-adata = ov.io.read_10x_mtx('matrix/')
-adata = ov.io.read_h5ad('data.h5ad')
-adata = ov.io.read_csv('data.csv')
-# 空间
-adata = sc.read_visium('visium_sample/')
-adata = ov.io.read_visium_hd('hd_sample/')
-adata = ov.io.read_visium_hd_bin('hd/', binsize=8)       # bin 级
-adata = ov.io.read_visium_hd_seg('hd/')                   # 分割级
-adata = ov.io.read_xenium('xenium_out/')
-adata = ov.io.read_nanostring('cosmx/')
-# 其他
-adata = ov.io.read_fcs('sample.fcs')                      # FACS
-```
+| 数据类型 | 函数 | 备注 |
+|---|---|---|
+| 10x HDF5 | `ov.io.read_10x_h5('file.h5')` | |
+| 10x MTX | `ov.io.read_10x_mtx('dir/')` | |
+| h5ad | `ov.io.read_h5ad('file.h5ad')` / `sc.read_h5ad(...)` | |
+| CSV/Table | `ov.io.read_csv(...)` / `ov.io.read_table(...)` | |
+| Visium | `sc.read_visium('dir/')` | scanpy（非 ov） |
+| Visium HD | `ov.io.read_visium_hd('dir/')` | |
+| Visium HD bin/seg | `ov.io.read_visium_hd_bin(...)` / `read_visium_hd_seg(...)` | bin 级 / 分割级 |
+| Xenium | `ov.io.read_xenium('dir/')` | |
+| Nanostring | `ov.io.read_nanostring('dir/')` | GeoMx/CosMx |
+| FACS | `ov.io.read_fcs('file.fcs')` | |
+
+> 空间数据 IO 完整说明见 [`spatial.md`](spatial.md) §5.1。
 

@@ -15,15 +15,10 @@ adata = ov.io.read_nanostring('cosmx/')
 ```
 
 ### 5.2 空转 QC + 预处理
-```python
-# 来源：omicverse-spatial §2
-ov.pp.qc(adata, doublets_method='scrublet')   # 同单细胞入口
-ov.pp.preprocess(adata, mode='shiftlog|pearson', n_HVGs=3000)
-ov.pp.scale(adata); ov.pp.pca(adata, n_pcs=50)
-# layers['counts'] 必须保留（去卷积需要）
-# ⚠️ mode='shiftlog|pearson' 预处理后，PCA 结果存于 obsm['scaled|original|X_pca']
-#    （不是默认的 'X_pca'，下游按 use_rep 取用时注意 key 名）
-```
+> 同单细胞流程，完整代码见 [`sc_basic.md`](sc_basic.md) §2.2-§2.4。空转特有注意：
+> - n_HVGs 可比单细胞多（3000 vs 2000）
+> - `layers['counts']` 必须保留（去卷积需要）
+> - ⚠️ PCA 在 obsm['scaled|original|X_pca']（非默认 'X_pca'）
 
 ### 5.3 空间邻居图（所有空间分析前置）
 ```python

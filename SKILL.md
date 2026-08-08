@@ -116,6 +116,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 | `references/analysis_reference.md` | Analysis code templates (QC/DE/CCC/spatial/bulk) — the plotting_reference equivalent for analysis |
 | `references/analysis/decision_guide.md` | **Biology question → analysis method decision table** (28 questions: "which cells communicate?" → LIANA+; "spatial colocalization?" → nhood_enrichment; etc.) |
 | `references/analysis/analysis_flow.md` | **Autonomous analysis flow tree** — how to interpret each step's results to decide the next step (QC→cluster→annotation→DE/CCC/trajectory branches → cross-validation → logic closure) |
+| `references/analysis/paper_paradigms.md` | **High-impact paper analysis paradigms** — 3 analysis backbones (scRNA-led / spatial-led / structural), protagonist cell selection, 3 spatial validation modes, CCC full chain, convergence point patterns (from 13 CNS papers) |
 | `references/plotting_reference.md` | Plotting code templates (18 chart types) |
 | `scripts/api_check.py` | After installing/updating omicverse or pertpy |
 | `scripts/scop_api_check.R` | After installing/updating scop |

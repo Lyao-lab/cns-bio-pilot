@@ -12,6 +12,7 @@
 分析代码模板已模块化到 `references/analysis/`，按分析阶段拆分——写分析代码前**必须查对应子模块**，不要凭记忆写（API 可能已更新）：
 - **不知道该做什么分析？** 先查 `references/analysis/decision_guide.md`（生物学问题→分析方法决策表，28 个问题映射）
 - **自主分析不知下一步追什么？** 查 `references/analysis/analysis_flow.md`（每步结果→下一步决策树）
+- **想像高分文章一样设计分析路线？** 查 `references/analysis/paper_paradigms.md`（3 种分析主干 + 主角细胞选择 + 空间验证模式）
 
 | 分析任务 | 查这个文件 |
 |---|---|

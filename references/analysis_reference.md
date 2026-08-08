@@ -10,6 +10,7 @@
 | 分析阶段 | 子模块 | 内容 |
 |---|---|---|
 | **生物学问题→方法决策表** | [`analysis/decision_guide.md`](analysis/decision_guide.md) | **⭐ 用户问生物学问题时先查这个——28 个问题→方法映射 + 反模式黑名单** |
+| **自主分析流程决策树** | [`analysis/analysis_flow.md`](analysis/analysis_flow.md) | **⭐ agent 自主分析时查这个——每步结果解读→下一步追什么→交叉验证→逻辑闭环** |
 | 速查卡 + 全局开头 | [`analysis/README.md`](analysis/README.md) | 分析任务→入口函数映射；全局 import 模板；数据 IO 速查 |
 | 单细胞基础流程 | [`analysis/sc_basic.md`](analysis/sc_basic.md) | QC/doublet/ambient → preprocess → 降维 → 聚类 → 细胞周期 → 批次校正 |
 | 注释 + DE + 富集 + 比例 | [`analysis/sc_annotation.md`](analysis/sc_annotation.md) | Marker/注释 → Pseudobulk DE → 富集 → 细胞比例/差异丰度 |

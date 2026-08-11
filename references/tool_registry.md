@@ -4,7 +4,7 @@
 > verified = 已用真实数据测试通过；unverified = 未测试或依赖外部环境。
 > 思路借鉴 OmicOS Beacon（工具契约标准化），但不做运行时探针验证（太重）。
 
-## 绘图工具（scripts/cns_style.py，22 个统一入口）
+## 绘图工具（scripts/cns_style/ 包，plot_* 统一入口）
 
 ### plot_umap | category: plotting | verified ✅
 - **inputs**: adata(AnnData), color(str, obs列), basis='X_umap'
@@ -243,7 +243,7 @@
 - **相关规则**: Core Rule 10（交付门）+ 溯源标签 [实测]/[文献]/[推断]（meta §8c）
 - **机检**: 无（浏览器打开目检）
 
-## 辅助函数（scripts/cns_style.py）
+## 辅助函数（scripts/cns_style/ 包）
 
 ### save_panel | category: helper | verified ✅
 - **inputs**: fig(matplotlib Figure), name(无扩展名), outdir='panels', journal=True, fmt='pdf', show=None

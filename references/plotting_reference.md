@@ -630,8 +630,7 @@ fig, ax = plot_umap(adata, color='celltype', basis='X_umap',
 
 ### Example 2: 分组散点图（多时点 DE）
 
-> 注：多时点/多组 DE 分组散点（figure_guide §11.3）**无对应统一入口**（14 个统一入口不含此自定义图型），
-> 保持手动路径；单对比 volcano 用 `plot_volcano(de, save=...)`。
+> 统一入口为 plot_de_scatter（见 §3.6 与 §0 速查卡）；下方手动实现供需要精细控制时参考。
 
 ```python
 import sys; sys.path.insert(0, 'scripts/')

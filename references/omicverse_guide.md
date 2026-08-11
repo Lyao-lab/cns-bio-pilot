@@ -1,6 +1,6 @@
 # OmicVerse V2 API Quick Reference & Task Mapping
 
-`pip install omicverse`. This file maps tasks → APIs; for full usage see the corresponding `skills/*/SKILL.md`.
+`pip install omicverse`. This file maps tasks → APIs; **可执行代码模板以 `references/analysis/templates/` 为权威**，流程/决策见对应 `skills/*/SKILL.md`。版本以 `compat.yaml` 为准。
 
 ## Basic Setup
 
@@ -25,7 +25,7 @@ adata = ov.read('data.h5ad')
 | PCA | `ov.pp.pca(adata, layer='scaled', n_pcs=50)` | scanpy.pp.pca |
 | Neighbor graph | `ov.pp.neighbors(adata)` | scanpy.pp.neighbors |
 | UMAP/tSNE | `ov.pp.umap(adata)` / `ov.pp.tsne(adata)` | scanpy.tl.umap |
-| Clustering | `ov.pp.leiden(adata, resolution='auto')` (auto picks resolution) | scanpy.tl.leiden |
+| Clustering | `ov.pp.leiden(adata, resolution=0.6)` — **'auto' 报错，用固定值；自动选见 `ov.single.auto_resolution`** | scanpy.tl.leiden |
 | Auto resolution | `ov.single.auto_resolution(adata)` | — |
 | Cell cycle | `ov.pp.score_genes_cell_cycle(adata, species='human')` | scanpy.tl.score_genes_cell_cycle |
 | Batch correction Harmony | `ov.single.batch_correction(adata, batch_key='sample', methods='harmony')` — **`methods` 复数！** | harmonypy |
@@ -49,7 +49,7 @@ adata = ov.read('data.h5ad')
 | Read Visium HD | `ov.io.read_visium_hd(path)` | squidpy.read_visium |
 | Read Xenium | `ov.io.read_xenium(path)` | squidpy.read_xenium |
 | Read NanoString | `ov.io.read_nanostring(path)` | squidpy.read_nanostring |
-| Read Visium 10x | `ov.space.read_visium_10x(path)` | squidpy |
+| Read Visium 10x（标准 Visium） | `sc.read_visium(path)`（scanpy）— ⚠️ `ov.space.read_visium_10x(adata)` 是 wrapper 收 AnnData，不是 path reader | scanpy |
 | Spatial neighbor graph | `ov.space.spatial_neighbors(adata)` (NOT `ov.pp` — verified) | squidpy.gr.spatial_neighbors |
 | SVG (spatially variable genes) | `ov.space.spatial_autocorr(adata, mode='moran')` / `ov.space.moranI` | squidpy.gr.spatial_autocorr |
 | Spatial domains (wrapped) | `ov.space.pySTAGATE` / `pySTAligner` / `pySpaceFlow` | STAGATE/STAligner/SpaceFlow |
@@ -65,13 +65,13 @@ adata = ov.read('data.h5ad')
 
 | Task | omicverse API | Standalone tool it replaces |
 |---|---|---|
-| Differential expression | `ov.bulk.pyDEG(adata)` (pyDESeq2 wrapper) | DESeq2(R) / pydeseq2 |
+| Differential expression | `ov.bulk.pyDEG(count_df)` (pyDESeq2 wrapper) — **收 count DataFrame（行=基因, 列=样本），非 adata** | DESeq2(R) / pydeseq2 |
 | Batch correction | `ov.bulk.batch_correction(adata)` | ComBat / inmoose |
-| GO/KEGG enrichment | `ov.bulk.geneset_enrichment(genes)` + `geneset_plot()` | clusterProfiler(R) |
-| GSEA | `ov.bulk.pyGSEA(ranked_list)` (GSEApy wrapper) | fgsea(R) / GSEApy |
+| GO/KEGG enrichment | `ov.bulk.geneset_enrichment(gene_list, pathways_dict, organism='Human')` + `geneset_plot(enrich_res=...)` | clusterProfiler(R) |
+| GSEA | `ov.bulk.pyGSEA(gene_rnk=..., pathways_dict=...)` (GSEApy wrapper) — **gene_rnk 非 rank_series** | fgsea(R) / GSEApy |
 | Pathway database | `ov.utils.download_pathway_database()` + `geneset_prepare()` | — |
-| WGCNA | `ov.bulk.pyWGCNA(adata)` (pyWGCNA wrapper) | WGCNA(R) |
-| PPI | `ov.bulk.pyPPI(genes)` + `string_interaction()` | STRINGdb(R) |
+| WGCNA | `ov.bulk.pyWGCNA(anndata=adata, networkType='signed', powers=12)` (pyWGCNA wrapper) | WGCNA(R) |
+| PPI | `ov.bulk.pyPPI(gene=..., species=9606, gene_type_dict=..., gene_color_dict=...)` — **species=NCBI 分类 id** | STRINGdb(R) |
 | TCGA | `ov.bulk.pyTCGA()` | TCGA biolinks(R) |
 | Bulk deconvolution | `ov.bulk.Deconvolution` / Scaden / BayesPrime | CIBERSORT |
 

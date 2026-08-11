@@ -13,7 +13,7 @@ description: Bulk RNA-seq / 表达矩阵全流程（差异表达→富集→WGCN
 
 ## 📋 Analysis Code Templates
 
-All bulk analysis code templates live in `references/analysis/bulk.md`:
+All bulk analysis code templates live in `references/analysis/templates/bulk.md`:
 
 | 内容 | 关键 API |
 |---|---|
@@ -23,7 +23,7 @@ All bulk analysis code templates live in `references/analysis/bulk.md`:
 | 批次校正 | ov.bulk.batch_correction |
 | PPI | ov.bulk.pyPPI |
 
-**⚠️ 下方内嵌代码可能过时——以 `references/analysis/bulk.md` 为最新权威源。**
+**本文件只保留流程/决策指导；可执行代码一律以 references/analysis/templates/bulk.md 为权威。**
 
 **Merged from former skills**: original differential-expression / gokegg / gsea / wgcna / ppi-network / batch-correction / batch-correction-de (these standalone skills no longer exist; functionality unified in OmicVerse V2). OmicVerse V2 ports these R tools to native Python via pyDESeq2/pyGSEApy/pyWGCNA; this skill is the unified entry.
 
@@ -43,67 +43,29 @@ import pandas as pd
 
 ## 1. Input convention
 
-```python
-# AnnData: adata.X = counts matrix (n_obs=samples, n_var=genes), adata.obs['condition'], adata.obs['batch']
-# or build from a counts table
-import anndata as ad
-adata = ad.AnnData(counts_df.T)   # samples × genes
-adata.obs['condition'] = ['ctrl','ctrl','treat','treat']
-adata.layers['counts'] = adata.X.copy()
-```
+> 代码模板：references/analysis/templates/bulk.md「Batch correction + DE」节（count_df 构造）。
 
 ## 2. Batch correction (before DE)
 
-```python
-# ComBat (continuous expression matrix)
-ov.bulk.batch_correction(adata, batch_key='batch')
-# For counts layer use ComBat-Seq: convert to counts first (pyDESeq2-friendly)
-```
+> 代码模板：references/analysis/templates/bulk.md「Bulk 批次校正」。
 
 Decision: continuous log matrix → ComBat; raw integer counts with large differences → ComBat-Seq (preserves discreteness, more stable for the DESeq2 model). Typically main figures use the ComBat-corrected matrix; DE uses raw counts with batch as a design covariate.
 
 ## 3. Differential expression (pyDESeq2 wrapper, replaces DESeq2/edgeR/limma)
 
-```python
-ov.bulk.pyDEG(
-    adata,
-    groupby='condition',
-    vs='treat',           # control group
-    method='DEseq2',      # default; pyDESeq2 inside
-)
-deg = adata.uns['deg']   # DataFrame: log2FC, pvalue, padj
-```
+> 代码模板：references/analysis/templates/bulk.md「Batch correction + DE」。
 
 Replaces R: DESeq2(condition ~ condition) → results → sort. pyDESeq2 matches numerically and is faster.
 
 ## 4. Enrichment analysis (pyGSEA wrapper, replaces clusterProfiler/fgsea)
 
-```python
-# ORA: hypergeometric, input up/down gene list
-ov.bulk.geneset_enrichment(gene_list=up_genes, org='human')   # GO/KEGG/Reactome
-
-# GSEA: full ranked list
-ov.bulk.pyGSEA(rank_series=rank, org='human')
-# rank_series: pd.Series(index=gene, values=metric), often -log10(p)*sign(FC)
-
-# Enrichment dot/bar plot
-ov.bulk.geneset_plot(adata)
-```
+> 代码模板：references/analysis/templates/bulk.md「富集 + GSEA」。
 
 Replaces R: clusterProfiler::enrichGO/enrichKEGG + gseGO/gseKEGG + dotplot.
 
 ## 5. Co-expression network (pyWGCNA wrapper, replaces WGCNA R package)
 
-```python
-ov.bulk.pyWGCNA(
-    adata,
-    method='signed',     # 'signed'|'unsigned'
-    power=12,            # soft threshold; omit to auto pickSoftThreshold
-    minModuleSize=30,
-)
-# result in adata.uns['WGCNA']: modules, MEs, hub genes
-ov.bulk.geneset_plot(adata)  # module-trait association heatmap
-```
+> 代码模板：references/analysis/templates/bulk.md「共表达网络」。
 
 Replaces R: WGCNA blockwiseModules + moduleEigengenes + plotDendro.
 
@@ -113,21 +75,13 @@ Replaces R: WGCNA blockwiseModules + moduleEigengenes + plotDendro.
 
 ## 6. PPI network (pyPPI wrapper, replaces STRINGdb)
 
-```python
-net = ov.bulk.pyPPI(genes=hub_genes, species='human', score_thresh=400)
-# returns DataFrame: source, target, combined_score
-# thresholds: low(150)/medium(400)/high(700)/highest(900)
-```
+> 代码模板：references/analysis/templates/bulk.md「其他 Bulk 工具」节（pyPPI）。
 
 Replaces R: STRINGdb::map + get_interactions. Visualize with ov.pl network plots or export to Cytoscape.
 
 ## 7. Visualization (see visualization/figure-production)
 
-```python
-ov.pl.volcano(deg)                     # volcano plot
-ov.pl.complexheatmap(deg_top.T)        # heatmap (PyComplexHeatmap wrapper)
-ov.pl.dotplot(adata, var_names=...)    # gene-condition dot plot
-```
+> 代码模板：references/plotting_reference.md（plot_volcano/plot_heatmap 统一入口）。
 
 ## Decision quick-reference
 

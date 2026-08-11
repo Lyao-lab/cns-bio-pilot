@@ -14,16 +14,16 @@ description: 单细胞全流程（ambient 去除→QC→doublet→降维聚类�
 
 ## 📋 Analysis Code Templates
 
-All analysis code templates live in `references/analysis/` (modular, always up-to-date with ov API):
+All analysis code templates live in `references/analysis/templates/` (modular, always up-to-date with ov API):
 
 | 分析阶段 | 子模块 | 内容 |
 |---|---|---|
-| QC/preprocess/降维/聚类/批次 | `references/analysis/sc_basic.md` | ov.pp.preprocess(shiftlog\|pearson) → scale → pca → neighbors → leiden/auto_resolution → batch_correction |
-| 注释/DE/富集/丰度/SCENIC/CNV | `references/analysis/sc_annotation.md` | Annotation 类 → Pseudobulk DE → 富集 → DCT → SCENIC/CNV/Augur/MetaCell |
-| CCC/轨迹/Velocity | `references/analysis/sc_downstream.md` | LIANA+/CellPhoneDB v5 → TrajInfer/PseudotimeFate → Velocity → AUCell |
+| QC/preprocess/降维/聚类/批次 | `references/analysis/templates/sc_basic.md` | ov.pp.preprocess 一步式（shiftlog\|pearson）→ scale → pca → neighbors → leiden/auto_resolution → batch_correction |
+| 注释/DE/富集/丰度/SCENIC/CNV | `references/analysis/templates/sc_annotation.md` | Annotation 类 → Pseudobulk DE → 富集 → DCT → SCENIC/CNV/Augur/MetaCell |
+| CCC/轨迹/Velocity | `references/analysis/templates/sc_downstream.md` | LIANA+/CellPhoneDB v5 → TrajInfer/PseudotimeFate → Velocity → AUCell |
 | 分析纪律 | `references/analysis/discipline.md` | 红线规则（Pseudobulk DE / counts 保留 / obsm key 匹配等） |
 
-**⚠️ 下方内嵌代码可能过时——以 `references/analysis/` 子模块为最新权威源。**
+**本文件只保留流程/决策指导；可执行代码一律以 references/analysis/templates/ 子模块为权威。**
 
 **Merged from prior skills:** the original preprocessing / doublet-detection / clustering / cell-annotation / batch-integration / cell-communication / trajectory-inference / scanpy / scvi-tools skills (these standalone skills no longer exist; functionality is unified in OmicVerse V2). This skill is the canonical entry point for all of them. RNA velocity lives in `single-cell/rna-velocity`; Perturb-seq in `single-cell/perturbation`.
 
@@ -62,10 +62,7 @@ np.random.seed(42); torch.manual_seed(42)   # provenance: fixed seed (meta §8b)
 
 ## 1. Load data (keep `layers['counts']`)
 
-```python
-adata = sc.read_10x_mtx('filtered_feature_bc_matrix/')   # or ov.read('data.h5ad')
-adata.layers['counts'] = adata.X.copy()   # IMPORTANT: store raw counts BEFORE QC; DE/velocity depend on it
-```
+> 代码模板：references/analysis/templates/sc_basic.md「数据加载」节。
 
 > Million-cell scale: `adata = ov.read('data.h5ad', backend='rust')` uses AnnDataOOM, ~170× memory savings.
 
@@ -77,39 +74,13 @@ adata.layers['counts'] = adata.X.copy()   # IMPORTANT: store raw counts BEFORE Q
 
 ### Step 2a — Diagnose BEFORE filtering (mandatory)
 
-```python
-import scanpy as sc
-# Compute QC metrics WITHOUT filtering first
-adata.var['mt'] = adata.var_names.str.startswith('MT-')   # human; 'mt-' for mouse
-sc.pp.calculate_qc_metrics(adata, qc_vars=['mt'], inplace=True)
-# Plot per-sample distributions — find the knee/elbow, look for tissue-appropriate range
-sc.pl.violin(adata, ['n_genes_by_counts','total_counts','pct_counts_mt'],
-             groupby='sample', jitter=0.4, multi_panel=True)
-sc.pl.scatter(adata, x='total_counts', y='pct_counts_mt')      # high-mt tail = dying cells?
-sc.pl.scatter(adata, x='total_counts', y='n_genes_by_counts')   # knee = low-quality breakpoint?
-```
+> 代码模板：references/analysis/templates/sc_basic.md「QC + doublet」节（Step 2a 诊断块）。
 
 > **Look at the plot, then decide.** The threshold comes from YOUR data's distribution + tissue biology, not a hardcoded number. See the tissue reference table below (§QC principles) for typical ranges — but verify against your actual violin/scatter.
 
 ### Step 2b — Filter with the threshold you chose from the diagnostic
 
-```python
-import omicverse as ov
-ov.pp.qc(
-    adata,
-    mode='seurat',                       # 'seurat' (tresh dict) | 'mads' (5×MAD auto)
-    doublets_method='scdblfinder',       # DEFAULT (verified; see omicverse docs for current default) — Python port of R scDblFinder
-                                         # (xgboost on kNN+cxds). Alt: 'scrublet' / 'doubletfinder' / 'sccomposite'
-    batch_key='sample',                  # REQUIRED for multi-sample: detect doublets per sample
-    filter_doublets=True,
-    tresh={                              # NOTE: param name is 'tresh' (typo, omicverse's actual API)
-        'mito_perc': <VALUE_FROM_DIAGNOSTIC>,   # e.g. 0.15 for 15%; YOU choose after Step 2a
-        'nUMIs': 500,                            # min total counts
-        'detected_genes': 250,                   # min genes detected
-    },
-)
-# adds to adata.obs: n_genes_by_counts, total_counts, pct_counts_mt, predicted_doublet
-```
+> 代码模板：references/analysis/templates/sc_basic.md「QC + doublet」节（Step 2b 过滤块）。
 
 > **⚠️ Do NOT pass `mt_thresh=20` — that parameter does NOT exist on `ov.pp.qc`** (it is silently swallowed by `**kwargs` and ignored). The correct API is `tresh={'mito_perc': <frac>, ...}` (seurat mode) or `mode='mads', nmads=5` (auto-threshold from the distribution, 5 median-absolute-deviations — good when you don't want to hand-pick).
 >
@@ -122,10 +93,7 @@ Decision: `scdblfinder` default (Python port of R scDblFinder via `pyscdblfinder
 Ambient ("soup") RNA = cell-free mRNA from lysed cells that contaminates every droplet. Left uncorrected it inflates marker genes in cell types that never expressed them and biases DE, annotation, and trajectory inference. **For FFPE, nuclei, and any run with visible background, ambient removal is NOT optional** — skipping it is a silent landmine.
 
 **Canonical entry** (6-backend dispatcher; verified version in `compat.yaml`):
-```python
-import omicverse as ov
-ov.pp.ambient.remove_ambient(adata, method='soupx', raw=raw_adata)   # or 'fastcar' / 'decontx' / 'sccdc' / 'cellbender' / 'scar'
-```
+> 代码模板：references/analysis/templates/sc_basic.md「Ambient RNA removal」节。
 
 > **Full backend decision table + run options + diagnostics** (`contamination_report` / `plot_contamination` / `ambient_negative_marker_check` / `count_integrity_check`) + when NOT to run: see `references/ambient_removal.md`.
 >
@@ -166,51 +134,23 @@ QC thresholds are **experimental design choices, not universal defaults**. A thr
 
 Before preprocessing, check the **design**, not just the cells:
 
-```python
-import pandas as pd
-# batch × condition cross-tab — is the design separable? (meta §6 precheck)
-print(pd.crosstab(adata.obs['batch'], adata.obs['condition']))
-# If batch1 = all control, batch2 = all treated → CONFOUNDED. No algorithm rescues this.
-# If balanced (each batch has both conditions) → separable, proceed.
-
-# Sample-level overview — spot outliers before they become artifacts
-sample_stats = adata.obs.groupby('sample').agg(
-    n_cells=('n_genes_by_counts', 'count'),
-    median_genes=('n_genes_by_counts', 'median'),
-    median_mt=('pct_counts_mt', 'median')
-)
-print(sample_stats)
-# Any sample with <1/3 median cell count or >2× median mt% → flag, investigate before pooling
-```
+> 代码模板：references/analysis/templates/sc_basic.md「元数据 EDA」节。
 
 > **Why here, not later**: metadata problems (confounded design, outlier samples) are design problems (meta §6) — they must be caught before they propagate into integration, DE, and CCC. Running this check after batch correction is too late.
 
 ## 3. Preprocess (normalize + HVG + scale)
 
-```python
-ov.pp.preprocess(adata, mode='shiftlog', n_HVGs=2000)
-# mode='shiftlog'  → classic log1p (default)
-# mode='pearson'   → Pearson residuals (no explicit HVG/scale, more robust)
-ov.pp.scale(adata)   # result stored in adata.layers['scaled']
-```
+> 代码模板：references/analysis/templates/sc_basic.md「预处理」节。
 
 Decision: shiftlog for routine plots; pearson residuals more stable against mt/cell-cycle contamination but slightly worse DE interpretability.
 
 ## 4. Dim reduction + neighbors + UMAP/TSNE
 
-```python
-ov.pp.pca(adata, layer='scaled', n_pcs=50)
-ov.pp.neighbors(adata, n_neighbors=15, use_rep='X_pca', n_pcs=30)
-ov.pp.umap(adata)
-ov.pp.tsne(adata)   # optional, on demand
-```
+> 代码模板：references/analysis/templates/sc_basic.md「降维 + UMAP」节。
 
 ## 5. Clustering (auto resolution)
 
-```python
-ov.pp.leiden(adata, resolution=0.6)   # ⚠️ 'auto' 报错 in ov 2.3.1，用固定值；0.4-1.0 常用范围
-# result in adata.obs['leiden']
-```
+> 代码模板：references/analysis/templates/sc_basic.md「聚类」节。
 
 > **Cluster stability is part of the evidence** (meta-methodology ④). `resolution='auto'` is a starting point, not proof. For clusters that anchor key conclusions:
 > - Bootstrap / sub-sampling stability (re-cluster on 80% subsamples × 10 runs, Jaccard similarity per cluster; >0.7 = stable)
@@ -238,23 +178,11 @@ resolutions = [0.3, 0.6, 1.0]
 
 ## 6. Cell cycle scoring
 
-```python
-ov.pp.score_genes_cell_cycle(adata, species='human')  # 'human' | 'mouse'
-# adata.obs: S_score, G2M_score, phase
-```
+> 代码模板：references/analysis/templates/sc_basic.md「细胞周期」节。
 
 ## 7. Batch correction / integration
 
-```python
-# Lightweight: Harmony (in PCA space, seconds)
-ov.single.batch_correction(adata, methods='harmony', batch_key='sample')
-# ⚠️ 参数名是 methods（复数）！method= 被 **kwargs 静默吞掉，会默认跑 harmony
-
-# Deep: scVI (generative model, captures non-linear batch effects)
-ov.single.batch_correction(adata, methods='scVI', batch_key='sample')  # 注意大小写: 'scVI' 不是 'scvi'
-# NOTE: after scVI, recompute neighbors/umap using adata.obsm['X_scVI'] as use_rep
-ov.pp.neighbors(adata, use_rep='X_scVI'); ov.pp.umap(adata)
-```
+> 代码模板：references/analysis/templates/sc_basic.md「批次校正」节。
 
 Decision: Harmony for shallow batch / fast iteration; scVI for complex batch and CNS main figures (original scvi-tools is now merged in, params pass through).
 
@@ -264,29 +192,14 @@ Decision: Harmony for shallow batch / fast iteration; scVI for complex batch and
 > - **Over-correction signal**: bio conservation drops sharply → downgrade method (scVI → Harmony → or no integration if batch is small)
 >
 > Install: `pip install scib-metrics` (Luecken et al. 2022 Nat Methods), then:
-> ```python
-> from scib_metrics.benchmark import Benchmarker
-> # compute iLISI/cLISI/ASW_batch/ASW_celltype on X_pca vs X_scVI vs X_harmony
-> ```
+> 代码模板：templates/sc_basic.md「批次校正」节末尾的整合诊断块。
 > A corrected embedding with great batch mixing but poor bio conservation has **erased real biology** — your DE / trajectory / annotation downstream will be silently wrong.
 
 > **Time-series / spatial alignment** (multi-timepoint development, spatial OT registration): Harmony/scVI are not optimal — **moscot** (optimal transport, Nature 2024) is SOTA here. But moscot **is not installed in the sc env and not wrapped by omicverse**. If needed: `pip install moscot`, then call native per [moscot.readthedocs.io](https://moscot.readthedocs.io/); output feeds CellRank's RealTimeKernel. Routine batch correction does NOT need moscot.
 
 ## 8. Markers + annotation
 
-```python
-# markers
-ov.single.find_markers(adata, groupby='leiden', method='wilcoxon')  # groupby 必需！默认 method='cosg'
-# COSG is more robust for rare populations but slower
-
-# annotation (pick as needed)
-ov.single.pySCSA(adata)             # reference-free, marker → auto annotation
-ov.single.AnnotationRef(adata, adata_ref=ref_adata, celltype_key='celltype')  # ref 必须是 AnnData 对象，不是字符串
-# ref_adata = sc.read_h5ad('reference_annotated.h5ad')  # 先加载参考集
-# 或走 scop: RunCellTypist(srt, model='Immune_All_Low.pkl') / RunSingleR(srt, ref='HumanPrimaryCellAtlas')
-# or ov.single.Annotation(adata).annotate(..., ref='scmulan')  # scmulan: FM-based annotator new in ov
-ov.single.gptcelltype(adata)        # LLM-assisted, needs API key
-```
+> 代码模板：references/analysis/templates/sc_annotation.md「Marker + 注释」节。
 
 > ⚠️ **Foundation-model reality check (2025)**: scGPT / Geneformer / scFoundation / UCE do **not** dominate annotation or perturbation prediction. Ahlmann-Eltze et al. *Nat Methods* 2025 ([s41592-025-02772-6](https://www.nature.com/articles/s41592-025-02772-6)) showed 5 FMs all lose to a linear baseline for perturbation; Kedzierska et al. *Genome Biol* 2025 ([s13059-025-03574-x](https://link.springer.com/article/10.1186/s13059-025-03574-x), 107+ citations) and Wu et al. *Genome Biol* 2025 ([s13059-025-03781-6](https://link.springer.com/article/10.1186/s13059-025-03781-6), 22-tissue benchmark) show Geneformer/scGPT zero-shot annotation is brittle and simple methods (CellTypist/SingleR/scVI) often win. **Rule: always benchmark any FM against a simple baseline (CellTypist / SingleR / scVI + logistic) and only adopt the FM if it clearly wins for your specific task.** `ov.fm` does **not** exist in omicverse (as of `compat.yaml` verified version) — use FMs as standalone packages. Frontier options: **scNET** (Nat Methods 2025, PPI-enhanced gene embedding), **TranscriptFormer** (CZI 2025, first generative multi-species FM), **UCE** (cross-species embedding) — all experimental, baseline first.
 
@@ -302,15 +215,7 @@ Annotation labels are **hypotheses, not ground truth**. Every label is a predict
 - One-step clustering at high resolution + auto-annotation to 30 subtypes → unstable, irreproducible labels
 
 **3. Multi-method cross-validation (mandatory for key cell types)**:
-```python
-# Run ≥2 methods, build a cross-tab, inspect disagreement
-ov.single.AnnotationRef(adata, adata_ref=ref_adata, celltype_key='celltype')   # method 1: reference-based
-adata.obs['anno_singleR'] = <SingleR labels>               # method 2
-# Cross-tabulate: where do they disagree?
-import pandas as pd
-pd.crosstab(adata.obs['celltypist'], adata.obs['anno_singleR'])
-# Clusters with low agreement → label 'Unknown' or resolve with manual markers
-```
+> 代码模板：references/analysis/templates/sc_annotation.md「Marker + 注释」节的多方法交叉验证块。
 The disagreement rate IS your uncertainty. Don't hide it — report it.
 
 **4. Canonical-marker manual validation (the ground-truth backstop)**:
@@ -341,35 +246,9 @@ Auto-annotation without marker validation = trusting an unverified black box.
 
 ## 8.5 Pseudobulk DE (Core Rule 2 — see top-level SKILL.md)
 
-> Core Rule 2 要求 pseudobulk DE（禁止 per-cell Wilcoxon 当 DE 报告）。以下是可执行代码。
+> Core Rule 2 要求 pseudobulk DE（禁止 per-cell Wilcoxon 当 DE 报告）。可执行代码见模板层。
 
-```python
-import scanpy as sc
-import omicverse as ov
-
-# Step 1: 聚合到 pseudobulk（sample × celltype 级别）
-# ⚠️ 必须用 raw counts layer（不是 normalized .X）
-pb = sc.get.aggregate(adata, by=['sample', 'celltype'], func='sum', layer='counts')
-# pb 是 AnnData: obs = sample×celltype 组合, X = 聚合后的 counts
-
-# Step 2: 过滤低计数组合（<10 cells 的 sample×celltype 不可靠）
-# 聚合前的 cell 数存在 pb.obs 中（取决于 aggregate 版本，检查 pb.obs.columns）
-pb = pb[pb.obs['sample'].notna()].copy()  # 基本清洗
-
-# Step 3: DE（omicverse 包装的 pyDESeq2）
-de = ov.bulk.pyDEG(pb, groupby='condition', vs='ctrl',
-                   celltype_key='celltype',   # 按 celltype 分组做
-                   method='DESeq2')           # 'DESeq2' | 'edgeR' | 'limma'
-# 输出: DataFrame with log2FC, padj, pvalue per gene per celltype
-
-# Step 4: 过滤 + 报告
-sig = de[(de['padj'] < 0.05) & (de['log2FC'].abs() > 1.0)]
-print(f"Significant DE genes: {len(sig)} (padj<0.05 & |log2FC|>1)")
-
-# Step 5: 保存 checkpoint
-adata.write_h5ad('checkpoints/08_annotation.h5ad')
-pb.write_h5ad('checkpoints/08_pseudobulk.h5ad')
-```
+> 代码模板：references/analysis/templates/sc_annotation.md「Pseudobulk DE」节。
 
 > **Postcheck (Core Rule 4)**: DE 完成后必须跑 `python scripts/postcheck.py` —— 检查 DE 列名一致性、housekeeping 基因异常富集、logFC 量级、per-cell vs pseudobulk 误用。FAIL 必须解决才能进下游。
 
@@ -381,21 +260,7 @@ pb.write_h5ad('checkpoints/08_pseudobulk.h5ad')
 
 ## 9. Downstream: communication / trajectory
 
-```python
-# Cell-cell communication (LIANA+ consensus recommended — Dimitrov et al. Mol Syst Biol 2024, 251+ citations;
-# multi-method + multi-resource aggregation, the 2024 mainstream consensus path; supersedes single-tool CellChat/CellPhoneDB)
-ov.single.run_liana(adata, groupby='celltype')   # groupby 必需！method='rank_aggregate' (consensus)
-ov.single.run_cellphonedb_v5(adata)             # alternative: CellPhoneDB v5 (multi-omics/spatial)
-ov.pl.ccc_heatmap(adata)
-# Spatial communication → spatial/omicverse-spatial (COMMOT/FlowSig)
-
-# Trajectory / fate inference (CellRank 2 is now primary, Nat Methods 2024; supersedes plain Monocle/Slingshot)
-# ⚠️ 前置：需 spliced/unspliced layers → 先走 single-cell/rna-velocity
-ov.single.cellrank_fate(adata, cluster_key='celltype')   # unified kernel framework, probabilistic fate
-ov.single.Fate(adata, pseudotime='dpt_pseudotime')       # pseudotime-based fate
-# classic py-monocle2 still available (simple pseudotime)
-ov.single.Monocle(adata)
-```
+> 代码模板：references/analysis/templates/sc_downstream.md「细胞通讯（CCC）」与「轨迹」节。
 
 > **Postcheck (Core Rule 4)**: CCC 完成后跑 `python scripts/postcheck.py` —— 检查单方法依赖、ligand-receptor 方向、background expression。
 
@@ -430,9 +295,9 @@ Verified available in omicverse (`sc` env; version in `compat.yaml`). Pick by wh
 
 > **Spatial multi-omics** (Stereo-seq/Visium HD with multiple modalities) → `spatial/multiomics` (cellpose + SpatialData), not this section.
 
-## 9c. Differential abundance / cell-type composition (NOT in omicverse — use standalone)
+## 9c. Differential abundance / cell-type composition (ov.single.DCT wrapper + standalone alternatives)
 
-> omicverse has `ov.pl.cellproportion` / `ov.pl.bardotplot` for **visualization only**. There is no omicverse wrapper for compositional-aware statistical testing. Do NOT apply plain chi-square / Fisher / t-test to cell-type proportions — they violate the compositional constraint (sum to 1) and inflate false positives.
+> omicverse's `ov.pl.cellproportion` / `ov.pl.bardotplot` are **visualization only**. For compositional-aware statistical testing, `ov.single.DCT` now wraps sccoda/milopy/milo (see `references/analysis/templates/sc_annotation.md`「细胞比例/差异丰度」节); standalone Milo/scCODA/propeller remain alternatives. Do NOT apply plain chi-square / Fisher / t-test to cell-type proportions — they violate the compositional constraint (sum to 1) and inflate false positives.
 
 | Method | Language | When to use | Install |
 |---|---|---|---|
@@ -448,11 +313,7 @@ Verified available in omicverse (`sc` env; version in `compat.yaml`). Pick by wh
 
 ## 10. Visualization (see visualization/figure-production)
 
-```python
-ov.pl.embedding(adata, basis='X_umap', color='celltype')
-ov.pl.dotplot(adata, var_names=markers, groupby='celltype')
-ov.pl.violin(adata, keys=['CD3D'], groupby='celltype')
-```
+> 代码模板：references/plotting_reference.md（plot_umap/plot_dotplot/plot_violin 统一入口）。
 
 ## Prerequisites (where inputs come from)
 

@@ -29,9 +29,11 @@ SKILL.md (router)
 │   ├── meta_methodology.md (8 self-check principles + step-gate + hypothesis ledger)
 │   ├── omicverse_guide.md (ov.* API cheat-sheet)
 │   ├── story_builder.md (results → biological narrative)
-│   └── discovery_miner.md (analysis → candidate discoveries)
+│   ├── discovery_miner.md (analysis → candidate discoveries)
+│   ├── analysis/         # 知识层（decision_guide/analysis_flow/paper_paradigms/paper_directions/discipline）
+│   │   └── templates/    # 模板层（可执行分析代码：setup/sc_basic/sc_annotation/sc_downstream/spatial/bulk）
 ├── scripts/
-│   ├── cns_style.py (one-shot aesthetics + smart_plot: 26 helpers + 18 plot_xxx entry points)
+│   ├── cns_style/ 包 (one-shot aesthetics + smart_plot plot_* 统一入口)
 │   ├── api_check.py (API verification + --diff mode)
 │   ├── postcheck.py (scientific rigor auto-check)
 │   └── scop_api_check.R (scop API verification)

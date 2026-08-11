@@ -1,8 +1,10 @@
 # 空间转录组分析
 
-## 5. 空转分析
+> **本文件 = 可执行代码模板层**（怎么调 API，照抄并按数据改造）。方法选型与"为什么"见知识层：[`../decision_guide.md`](../decision_guide.md)（生物学问题→方法）、[`../analysis_flow.md`](../analysis_flow.md)（结果→下一步）。执行警告（参数名/顺序/obsm key）就在代码注释里，随片段一起拷贝。
 
-### 5.1 数据 IO
+## 空转分析
+
+### 数据 IO
 ```python
 # ⚠️ 读取函数在 ov.io（不是 ov.space）；Visium 标准用 scanpy 的 sc.read_visium
 # Visium 标准（scanpy）
@@ -14,15 +16,14 @@ adata = ov.io.read_xenium('xenium_out/')
 adata = ov.io.read_nanostring('cosmx/')
 ```
 
-### 5.2 空转 QC + 预处理
-> 同单细胞流程，完整代码见 [`sc_basic.md`](sc_basic.md) §2.2-§2.4。空转特有注意：
+### 空转 QC + 预处理
+> 同单细胞流程，完整代码见 [`sc_basic.md`](sc_basic.md) 的 QC/预处理节。空转特有注意：
 > - n_HVGs 可比单细胞多（3000 vs 2000）
 > - `layers['counts']` 必须保留（去卷积需要）
 > - ⚠️ PCA 在 obsm['scaled|original|X_pca']（非默认 'X_pca'）
 
-### 5.3 空间邻居图（所有空间分析前置）
+### 空间邻居图（所有空间分析前置）
 ```python
-# 来源：omicverse-spatial §3
 # ⚠️ 参数名是 n_neighs（不是 n_neighbors）；method→coord_type
 ov.space.spatial_neighbors(adata, spatial_key='spatial', n_neighs=6, coord_type='generic')
 # delaunay=True 用于三角剖分；Visium hex grid 用默认 generic
@@ -30,9 +31,8 @@ ov.space.spatial_neighbors(adata, spatial_key='spatial', n_neighs=6, coord_type=
 # ⚠️ 是 ov.space 不是 ov.pp（ov.pp.spatial_neighbors 不存在）
 ```
 
-### 5.4 空间 domain
+### 空间 domain
 ```python
-# 来源：omicverse-spatial §4
 # ⚠️ pySTAGATE 必填 num_batch_x/num_batch_y（切片网格划分，单切片填 1,1）
 ov.space.pySTAGATE(adata, num_batch_x=1, num_batch_y=1, spatial_key=[0,1])
 # spatial_key 指向 obsm 列索引（如 obsm['spatial'] 的第0/1列）
@@ -44,7 +44,6 @@ ov.pp.leiden(adata, resolution=0.6)
 # 非 ov 包装（standalone）：BANKSY / BINARY / GraphST / MENDER / SpatialGlue
 ```
 
-⭐ 新增（5.4 补充）：
 ```python
 # CAST（GPU 加速空间聚类，需现建 norm_1e4 layer）
 # ⚠️ CAST 依赖分层归一化后的表达量，必须先手动建 layer='norm_1e4'
@@ -53,7 +52,16 @@ adata.layers['norm_1e4'] = sc.pp.normalize_total(adata, target_sum=1e4, inplace=
 ov.space.CAST(adata, layer='norm_1e4', device='cuda:0')
 
 # GASTON（空间等深线 IsoDepth，识别空间梯度/边界结构）
-ov.space.GASTON(adata)
+gaston = ov.space.GASTON(adata)
+gaston.get_gaston_input(get_rgb=False, spot_umi_threshold=50)
+gaston.train(isodepth_arch=[20,20], expression_fn_arch=[20,20],
+             num_epochs=10000, num_restarts=30, out_dir='result/gaston')
+gaston.cal_iso_depth(num_domains=10)            # derive discrete domains
+gaston.plot_isodepth(show_streamlines=True)     # continuous isodepth map
+gaston.plot_clusters(domain_colors=...)         # discrete domain labels
+# Full API: bin_data / filter_genes / get_restricted_adata /
+#   get_top_pearson_residuals / load_rescale / pw_linear_fit / restrict_spot /
+#   plot_clusters_restrict / plot_gene_gastonrex / plot_gene_pwlinear / plot_gene_raw
 
 # STT（单细胞空间轨迹推断，需 obsm['xy_loc'] + obs['Region'] 列）
 ov.space.STT(adata, spatial_loc='xy_loc', region='Region')
@@ -67,15 +75,13 @@ ov.space.cellcharter(adata, n_clusters=8, use_rep='X_pca', n_layers=3)
 ov.space.merge_cluster(adata, groupby='mclust', use_rep='STAGATE', threshold=0.05)
 ```
 
-### 5.5 空间变异基因（SVG）
+### 空间变异基因（SVG）
 ```python
-# 来源：omicverse-spatial §5
 # spatial_autocorr：Moran's I / Geary's C 空间自相关
 ov.space.spatial_autocorr(adata, mode='moran')   # mode='geary' for Geary's C
 svg = adata.var.query('moranI > 0.3').index
 ```
 
-⭐ 新增（5.5 补充）：
 ```python
 # svg（PROST 法，ov 主推的 SVG 鉴定方法）
 #   platform 按平台指定（'visium'/'stereo-seq' 等），n_svgs 控制输出数量
@@ -87,16 +93,14 @@ ov.space.svg(adata, mode='prost', n_svgs=3000, platform='visium')
 ov.space.sepal(adata, max_neighs=6, n_iter=30000, dt=0.001)
 ```
 
-### 5.6 空间去卷积
+### 空间去卷积
 ```python
-# 来源：deconvolution SKILL.md（cell2location 为主）
 # cell2location：需 scRNA 参考 + 空转数据
 # 参考：skills/spatial/deconvolution/examples/deconvolve_spatial.py
 # ov 包装：ov.space.Deconvolution（cell2location/RCTD/Tangram/SPOTlight/CARD）
 # 详见 skills/spatial/deconvolution/SKILL.md
 ```
 
-⭐ 新增（5.6 补充）：
 ```python
 # CellLoc / CellMap（轻量去卷积/细胞映射，无需 MCMC 训练）
 ov.space.CellLoc(adata_sc, adata_sp, use_rep_sc='X_pca', use_rep_sp='X_pca')
@@ -110,7 +114,7 @@ ov.space.salvage_secondary_labels(adata, primary_label='labels_he',
 ov.space.split_purify(adata, deconvolution_weights, reference, layer='counts')
 ```
 
-### 5.7 空间统计 ⭐ 新增
+### 空间统计
 ```python
 # 前置：全部需要先跑 ov.space.spatial_neighbors 建图 + obs 中有 cluster_key 列
 ov.space.spatial_neighbors(adata, spatial_key='spatial', n_neighs=6, coord_type='generic')
@@ -135,7 +139,7 @@ ov.space.centrality_scores(adata, cluster_key='celltype')
 ov.space.var_by_distance(adata, groups='celltype', cluster_key='celltype')
 ```
 
-### 5.8 Visium HD bin→cell ⭐ 新增
+### Visium HD bin→cell
 ```python
 # bin2cell：Visium HD bin 级表达 → 单细胞级表达
 # ⚠️ 依赖 cellpose 核分割产出的 adata.obs['labels_joint']（labelled 结果）
@@ -145,7 +149,7 @@ ov.space.bin2cell(adata, labels_key='labels_joint', spatial_keys=['spatial'],
                   diameter_scale_factor=None, add_geometry=True)
 ```
 
-### 5.9 SPATA2 工具层 ⭐ 新增
+### SPATA2 工具层
 ```python
 # SPATA2 集成工具（辅助层，非独立分析：坐标/样本信息/组织轮廓等）
 # spata2_get_coords：取坐标并附带 obs 变量（include_obs 指定附带列）
@@ -160,9 +164,8 @@ ov.space.spata2_identify_outliers(adata, method='dbscan')
 ov.space.spata2_remove_outliers(adata)
 ```
 
-### 5.10 空间通讯
+### 空间通讯
 ```python
-# 来源：omicverse-spatial §6
 ov.space.Cal_Spatial_Net(adata)                    # 构建 LR 网络（helper 可用）
 # ⚠️ create_communication_anndata 的 clustering_column 参数必填（指定细胞分群列）
 ov.space.create_communication_anndata(adata, clustering_column='celltype')
@@ -171,9 +174,8 @@ ov.space.create_communication_anndata(adata, clustering_column='celltype')
 # ⚠️ ov.space.COMMOT 无公开方法（只有 _commot 私有 + helper）
 ```
 
-### 5.11 其他空间分析工具 ⭐ 新增
+### 其他空间分析工具
 ```python
-# 来源：omicverse-spatial（API 签名以 ov 2.3.1 实测为准）
 # clusters：通用空间聚类（支持多种方法）
 ov.space.clusters(adata, methods='kmeans', spatial_key='spatial')
 

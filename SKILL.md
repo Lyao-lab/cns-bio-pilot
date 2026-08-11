@@ -70,7 +70,7 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (worker/
 | Bulk RNA-seq / pathway / enrichment | `general-bio/omicverse-bulk` | omicverse ov.bulk |
 | Cell-type proportion / differential abundance (Milo/scCODA/propeller) | `single-cell/omicverse-pipeline` §9c (or scop RunMilo/RunscCODA) | omicverse / scop |
 | CNV inference / inferCNV / copykat | `single-cell/omicverse-pipeline` (or scop RunCNV) | omicverse / scop |
-| **Figures** (iterative: design A → look → adjust B → ... → assemble) | `visualization/figure-production` | cns_style.py + ov.pl |
+| **Figures** (iterative: design A → look → adjust B → ... → assemble) | `visualization/figure-production` | cns_style 包 + ov.pl |
 | Schematics / mechanism diagrams / graphical abstract | `visualization/scientific-schematics` | matplotlib + networkx (纯代码模板) |
 | **Manuscript writing** (Methods / Results / Figure Legends) | `presentation/manuscript-writing` | LLM |
 | Slides (lab meeting / conference / defense) | `presentation/scientific-slides` | python-pptx / Beamer |
@@ -111,9 +111,10 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 | `references/omicverse_skills_examples.md` | External reference — curated patterns from omicverse-skills repo (marked "absorbed" vs "reference") |
 | `references/story_builder.md` | **After analysis, before drawing/writing** — how to turn results into a biological story (5-step method: findings → causal chain → main message → figure mapping → story arc) |
 | `references/discovery_miner.md` | **Right after analysis** — scan each result type (DE/proportion/CCC/trajectory/niche) for candidate discoveries, score priority, exclude false positives, determine story level |
-| `scripts/cns_style.py` | Import at top of every plotting script (26+ helpers + 40 smart_plot entry points: plot_umap/volcano/dotplot/plot_ccc/plot_ridge/plot_upset/...) |
+| `scripts/cns_style/` | Import at top of every plotting script — 包（from cns_style import *），plot_* 统一入口（plot_umap/volcano/dotplot/plot_ccc/plot_ridge/plot_upset/...） |
 | `scripts/postcheck.py` | After any analysis (scientific rigor auto-check) |
 | `references/analysis_reference.md` | Analysis code templates (QC/DE/CCC/spatial/bulk) — the plotting_reference equivalent for analysis |
+| `references/analysis/templates/` | Executable analysis code templates (setup/sc_basic/sc_annotation/sc_downstream/spatial/bulk) — the ONLY copy-source for analysis code |
 | `references/analysis/decision_guide.md` | **Biology question → analysis method decision table** (28 questions: "which cells communicate?" → LIANA+; "spatial colocalization?" → nhood_enrichment; etc.) |
 | `references/analysis/analysis_flow.md` | **Autonomous analysis flow tree** — how to interpret each step's results to decide the next step (QC→cluster→annotation→DE/CCC/trajectory branches → cross-validation → logic closure) |
 | `references/analysis/paper_paradigms.md` | **High-impact paper analysis paradigms** — 3 analysis backbones (scRNA-led / spatial-led / structural), protagonist cell selection, 3 spatial validation modes, CCC full chain, convergence point patterns (from 13 CNS papers) |

@@ -3,7 +3,7 @@
 > 本文件摘录自 omicverse-skills 仓库（https://github.com/omicverse/omicverse-skills），作为外部优质参考。
 > **注意**：omicverse-skills 用 ForbiddenCity 配色 + ov.pl API，与 cns_style 的 Morlandi Nord 体系不同。
 > 标注约定：
-> - ✅ 已吸收 = 该模式已实现进 `scripts/cns_style.py`，直接用 cns_style 函数即可
+> - ✅ 已吸收 = 该模式已实现进 `scripts/cns_style/` 包（原 cns_style.py），直接用 cns_style 函数即可
 > - 📎 参考 = 非 cns_style 标准，借鉴设计思路或用 ov.pl 原生 API 时参考
 
 ---
@@ -174,7 +174,7 @@ finalize_figure(fig)
 ---
 
 ## 使用建议
-1. **默认用 cns_style 函数**（Morlandi 配色 + finalize_figure）—— 发表级标准已在 cns_style.py 落地。
+1. **默认用 cns_style 函数**（Morlandi 配色 + finalize_figure）—— 发表级标准已在 cns_style 包落地。
 2. **需要 ov.pl 原生功能时**（如 plot1cell 环形、trajectory_overlay、CellChatViz）参考本文件对应小节，但配色尽量走 cns_style（用 ForbiddenCityBridge 取色后传入）。
 3. **cohort 大规模数据**：用 `cohort_params(n)` 联动调 size/alpha/figsize，不要只调 size。
 4. **绘图前**：用 `assert_anndata_keys(adata, obs_cols=[...], obsm_keys=[...])` 校验，避免运行到一半才 KeyError。

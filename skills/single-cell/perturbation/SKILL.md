@@ -108,7 +108,7 @@ oracle.simulate_shift(perturb_condition={'GeneX': 0.0})
 
 ## 工具
 
-- `scripts/cns_style.py` — 出图美学
+- `scripts/cns_style/ 包` — 出图美学
 - `references/figure_guide.md` — 视觉规格
 - pertpy 1.0+ / decoupler / CellOracle / scop 0.8.9
 

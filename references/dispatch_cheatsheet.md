@@ -9,20 +9,20 @@
 
 ## 0. 分析代码模板位置（开工前必查）
 
-分析代码模板已模块化到 `references/analysis/`，按分析阶段拆分——写分析代码前**必须查对应子模块**，不要凭记忆写（API 可能已更新）：
+分析代码已分层：**知识层**（决策/为什么，无代码）在 `references/analysis/`，**代码模板层**（可执行，唯一拷贝源）在 `references/analysis/templates/`——写分析代码前**必须查对应模板**，不要凭记忆写（API 可能已更新）：
 - **不知道该做什么分析？** 先查 `references/analysis/decision_guide.md`（生物学问题→分析方法决策表，28 个问题映射）
 - **自主分析不知下一步追什么？** 查 `references/analysis/analysis_flow.md`（每步结果→下一步决策树）
 - **想像高分文章一样设计分析路线？** 查 `references/analysis/paper_paradigms.md`（3 种分析主干 + 主角细胞选择 + 空间验证模式）
 
 | 分析任务 | 查这个文件 |
 |---|---|
-| QC / preprocess / 降维 / 聚类 / 批次校正 | `references/analysis/sc_basic.md` |
-| 注释 / DE / 富集 / 差异丰度 / SCENIC / CNV | `references/analysis/sc_annotation.md` |
-| 细胞通讯 / 轨迹 / Velocity / AUCell | `references/analysis/sc_downstream.md` |
-| 空转（domain/SVG/去卷积/统计/Visium HD） | `references/analysis/spatial.md` |
-| Bulk（DE/GSEA/WGCNA/PPI） | `references/analysis/bulk.md` |
+| QC / preprocess / 降维 / 聚类 / 批次校正 | `references/analysis/templates/sc_basic.md` |
+| 注释 / DE / 富集 / 差异丰度 / SCENIC / CNV | `references/analysis/templates/sc_annotation.md` |
+| 细胞通讯 / 轨迹 / Velocity / AUCell | `references/analysis/templates/sc_downstream.md` |
+| 空转（domain/SVG/去卷积/统计/Visium HD） | `references/analysis/templates/spatial.md` |
+| Bulk（DE/GSEA/WGCNA/PPI） | `references/analysis/templates/bulk.md` |
 | 分析纪律红线 | `references/analysis/discipline.md` |
-| 数据 IO 速查 | `references/analysis/README.md` |
+| 数据 IO + 全局 import | `references/analysis/templates/setup.md` |
 
 ## A. 分析严谨性（违反 = 科学错误）
 

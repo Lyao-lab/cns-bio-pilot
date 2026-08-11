@@ -1,10 +1,9 @@
 # 注释 + 差异分析 + 富集 + 比例
 
-## 3. 注释 + 差异分析 + 富集 + 比例
+> **本文件 = 可执行代码模板层**（怎么调 API，照抄并按数据改造）。方法选型与"为什么"见知识层：[`../decision_guide.md`](../decision_guide.md)（生物学问题→方法）、[`../analysis_flow.md`](../analysis_flow.md)（结果→下一步）。执行警告（参数名/顺序/obsm key）就在代码注释里，随片段一起拷贝。
 
-### 3.1 Marker + 注释
+### Marker + 注释
 ```python
-# 来源：omicverse-pipeline §8
 ov.single.find_markers(adata, groupby='leiden', method='wilcoxon')
 # groupby 必需！默认 method='cosg'（稀有群体更稳但慢）
 
@@ -22,9 +21,19 @@ ov.single.AnnotationRef(adata, adata_ref=ref_adata, celltype_key='celltype')
 # ref_adata 必须是 AnnData 对象（不是字符串）
 ```
 
-### 3.2 Pseudobulk DE（Core Rule 2 必须）
 ```python
-# 来源：omicverse-pipeline §8.5（API 签名以 ov 2.3.1 实测为准）
+# 多方法交叉验证：分歧率=不确定度，关键类型必做
+# Run ≥2 methods, build a cross-tab, inspect disagreement
+ov.single.AnnotationRef(adata, adata_ref=ref_adata, celltype_key='celltype')   # method 1: reference-based
+adata.obs['anno_singleR'] = <SingleR labels>               # method 2
+# Cross-tabulate: where do they disagree?
+import pandas as pd
+pd.crosstab(adata.obs['celltypist'], adata.obs['anno_singleR'])
+# Clusters with low agreement → label 'Unknown' or resolve with manual markers
+```
+
+### Pseudobulk DE（Core Rule 2 必须）
+```python
 # ⭐ 快速探索：ov 封装的条件间 per-cell DE（wilcoxon / memento-de）
 deg_obj = ov.single.DEG(adata, condition='condition',
     ctrl_group='Control', test_group='Disease', method='wilcoxon')
@@ -50,9 +59,8 @@ deg = ov.bulk.pyDEG(count_df)
 # 必须有 ≥3 biological replicates per condition
 ```
 
-### 3.3 富集分析
+### 富集分析
 ```python
-# 来源：omicverse-bulk §4（API 签名以 ov 2.3.1 实测为准）
 # ⚠️ geneset_enrichment 需要 pathways_dict（基因集字典）
 # 用 ov.utils.geneset_prepare 获取，或传字符串用 Enrichr 内置库
 pathway_dict = ov.utils.geneset_prepare('GO_Biological_Process_2023', organism='Human')
@@ -60,12 +68,11 @@ pathway_dict = ov.utils.geneset_prepare('GO_Biological_Process_2023', organism='
 result = ov.bulk.geneset_enrichment(gene_list=up_genes,
                                      pathways_dict=pathway_dict,
                                      organism='Human')  # ⚠️ organism 不是 org
-ov.bulk.geneset_plot(adata)
+ov.bulk.geneset_plot(enrich_res=result)   # 收富集结果 DataFrame，不是 adata
 ```
 
-### 3.4 细胞比例/差异丰度
+### 细胞比例/差异丰度
 ```python
-# 来源：omicverse-pipeline §9c
 # ⚠️ 禁止 chi-square/Fisher 检验比例（违反 compositional 约束）
 
 # ⭐ ov 封装的差异丰度（内置 sccoda/milopy/milo，不再需要 standalone R/Python 工具）
@@ -80,9 +87,8 @@ dct_obj = ov.single.DCT(adata, condition='condition',
 # ov.pl.cellproportion(adata, celltype_clusters='celltype', groupby='condition', legend=True)
 ```
 
-### 3.5 高级分析工具 ⭐ 新增
+### 高级分析工具
 ```python
-# 来源：omicverse-pipeline + omicverse-analysis（API 签名以 ov 2.3.1 实测为准）
 # SCENIC：转录因子调控网络分析（CNS 文章标配）
 scenic = ov.single.SCENIC(adata, db_glob='cytolambda.db', motif_path='motifs.tbl',
                           n_jobs=8, species='human')
@@ -104,7 +110,7 @@ milo = ov.single.Milo()
 cv = ov.single.CellVote(adata)
 ```
 
-### 3.6 Celltype annotation transfer（跨数据集注释迁移）
+### Celltype annotation transfer（跨数据集注释迁移）
 ```python
 # ⭐ 从已注释的参考数据集迁移注释到新数据集
 # ov 提供多种 transfer 方式，常用 scanpy 的 ingest 或 ov.single.Annotation 的 ref 模式

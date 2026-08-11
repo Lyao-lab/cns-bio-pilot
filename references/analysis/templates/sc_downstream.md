@@ -1,10 +1,11 @@
 # 下游分析：通讯 + 轨迹 + 多组学
 
-## 4. 下游：通讯 + 轨迹 + 多组学
+> **本文件 = 可执行代码模板层**（怎么调 API，照抄并按数据改造）。方法选型与"为什么"见知识层：[`../decision_guide.md`](../decision_guide.md)（生物学问题→方法）、[`../analysis_flow.md`](../analysis_flow.md)（结果→下一步）。执行警告（参数名/顺序/obsm key）就在代码注释里，随片段一起拷贝。
 
-### 4.1 细胞通讯（CCC）
+## 下游：通讯 + 轨迹 + 多组学
+
+### 细胞通讯（CCC）
 ```python
-# 来源：omicverse-pipeline §9
 # ⚠️ LIANA 需要 adata.raw（含所有基因的归一化表达），HVG 子集化前必须设 adata.raw=adata
 ov.single.run_liana(adata, groupby='celltype')   # LIANA+ consensus（推荐）
 ov.single.run_cellphonedb_v5(adata)               # CellPhoneDB v5（备选）
@@ -12,9 +13,8 @@ ov.pl.ccc_heatmap(adata)
 # ⚠️ CCC 措辞用"associated with/enriched for"，禁"regulates/activates"
 ```
 
-### 4.2 轨迹
+### 轨迹
 ```python
-# 来源：omicverse-pipeline §9
 # ⭐ 新 API：TrajInfer（Palantir-based 轨迹推断）
 Traj = ov.single.TrajInfer(adata, basis="X_umap", groupby="clusters",
     use_rep="scaled|original|X_pca", n_comps=50)
@@ -36,19 +36,17 @@ ov.single.Monocle(adata)
 # ⚠️ pseudotime 是排序不是时间，禁止"速率/时长"表述
 ```
 
-### 4.3 多组学整合
+### 多组学整合
 ```python
-# 来源：omicverse-pipeline §9b + multiomics_integration.md
 # 按 modal 组合选方法（完整决策表见 omicverse-pipeline §9b）：
 ov.single.GLUE_pair(adata)      # scRNA + scATAC
 ov.single.pyMOFA(adata)         # ≥3 modalities
 ov.single.Metabolism(adata)     # scRNA + 代谢
-# 完整 API 见 references/multiomics_integration.md（per-modality 代码）
+# 完整 per-modality 代码见 skills/single-cell/omicverse-pipeline/references/multiomics_integration.md
 ```
 
-### 4.4 其他下游工具 ⭐ 新增
+### 其他下游工具
 ```python
-# 来源：omicverse-pipeline + omicverse-analysis（API 签名以 ov 2.3.1 实测为准）
 # StaVIA：VIA 轨迹分析（替代 cellrank_fate）
 via = ov.single.StaVIA(adata, use_rep='scaled|original|X_pca', n_comps=50, basis='X_umap')
 
@@ -60,7 +58,7 @@ cs = ov.single.CrossSpecies(adatas=[adata_human, adata_mouse], species=['human',
                             method='sym', ref_species='human')
 ```
 
-### 4.5 CellPhoneDB v5（CCC 替代方法）
+### CellPhoneDB v5（CCC 替代方法）
 ```python
 # ⭐ CellPhoneDB v5（除 LIANA+ 外的另一个主流 CCC 方法）
 ov.single.run_cellphonedb_v5(adata, cpdb_file_path='cellphonedb/',
@@ -69,7 +67,7 @@ ov.single.run_cellphonedb_v5(adata, cpdb_file_path='cellphonedb/',
 # 结果可视化：ov.pl.cpdb_heatmap / cpdb_network / cpdb_plot_interaction
 ```
 
-### 4.6 RNA Velocity（轨迹前置）
+### RNA Velocity（轨迹前置）
 ```python
 # ⭐ scVelo velocity（需先安装 scvelo）
 vdata = ov.single.velocity(adata)
@@ -77,7 +75,7 @@ vdata = ov.single.velocity(adata)
 # 注意：velocity 需要 spliced/unspliced counts（需 velocytelo 或 kb-python 产出）
 ```
 
-### 4.7 AUCell（SCENIC 配套富集）
+### AUCell（SCENIC 配套富集）
 ```python
 # ⭐ AUCell：基于 regulon 活性评分的富集
 # 通常在 SCENIC 后跑，对每个 regulon 算 AUC 评分

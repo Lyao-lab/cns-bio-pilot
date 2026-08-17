@@ -1,7 +1,9 @@
 """_palette — cns_style sub-module"""
 
+import numpy as np
+from matplotlib.colors import to_rgb
 from ._constants import *
-from ._helpers import _check_ov
+from ._helpers import _check_ov, _lighten_color
 
 
 # ============================================================
@@ -112,6 +114,44 @@ def palette_from_names(celltypes, color_names):
         print(f"⚠️  palette_from_names: {len(color_names)} colors for "
               f"{len(celltypes)} cell types — 不足部分未映射，请补齐 color_names.")
     return {ct: bridge.get(name) for ct, name in zip(celltypes, color_names)}
+
+
+# ============================================================
+# 19b. is_dark / alpha_ramp / focus_ramp — 颜色工具（源自 figures4papers）
+# ============================================================
+
+def is_dark(hex_color, threshold=128):
+    """True if luminance (0.299R+0.587G+0.114B) < threshold → bar/cell 上用白字，否则黑字。
+
+    Usage:
+        label_color = 'white' if is_dark(bar_color) else 'black'
+    """
+    c = hex_color.lstrip('#')
+    r = int(c[0:2], 16)
+    g = int(c[2:4], 16)
+    b = int(c[4:6], 16)
+    return 0.299*r + 0.587*g + 0.114*b < threshold
+
+
+def alpha_ramp(hex_color, n, lo=0.25, hi=1.0):
+    """同一色相的 n 个 RGBA 元组，alpha 从 hi→lo 线性递减：**首项最实，末项最透明**。
+
+    消融/组件对比用：数据按"完整模型在前、消融越多越靠后"排列后直接 zip 使用——
+    完整模型=hi(实)，去掉组件越多越透明（信息编码在 alpha 里）。
+    """
+    base = to_rgb(hex_color)
+    alphas = np.linspace(hi, lo, n)
+    return [(base[0], base[1], base[2], a) for a in alphas]
+
+
+def focus_ramp(focus_hex, base_hex, n, lighten_step=0.11):
+    """[focus_hex] + (n-1) 个逐步提亮的 base_hex（复用 _helpers._lighten_color）。
+
+    '本方法 vs 基线' 用：焦点饱和、基线可辨识的单色渐褪（比全灰好在基线仍可指认）。
+    返回列表第 0 项即 focus_hex 原样，其余为 _lighten_color 的 RGB 元组（0-1 floats）。
+    """
+    return [focus_hex] + [_lighten_color(base_hex, amount=(i + 1) * lighten_step)
+                          for i in range(n - 1)]
 
 
 # ============================================================

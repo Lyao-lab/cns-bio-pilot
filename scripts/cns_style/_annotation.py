@@ -111,3 +111,36 @@ def gene_annotation_kwargs(fontsize=7):
     }
 
 
+# ============================================================
+# 9d. mark_events() — 曲线上标事件（'*' 手工防撞梯，源自 figures4papers）
+# ============================================================
+
+def mark_events(ax, x, y, events, dy=0.06, fontsize=7, arrow_lw=0.6, color='#2E3440'):
+    """在曲线 y(x) 上标注事件。events: dict {x_value: label}。
+
+    label 里的每个 '*' 把文字再抬高一个 dy*(ylim span)——手工防撞梯（源自 figures4papers）。
+    箭头 '-|>'，shrinkA=shrinkB=0；文字白色描边光晕（与 add_cluster_labels 一致）。
+
+    Usage:
+        mark_events(ax, months, cumsum, {'2023-03': 'GPT-4*', '2023-12': 'Gemini 1.0**'})
+    """
+    import matplotlib.patheffects as pe
+    x_idx = {t: i for i, t in enumerate(x)}
+    y0, y1 = ax.get_ylim()
+    for xv, label in events.items():
+        if xv not in x_idx:
+            continue
+        i = x_idx[xv]
+        y_pt = float(y[i])
+        n_stars = label.count('*')
+        ax.annotate(
+            label.replace('*', ''),
+            xy=(i, y_pt),
+            xytext=(i, y_pt + (1 + n_stars) * dy * (y1 - y0)),
+            ha='center', va='bottom', fontsize=fontsize, color=color,
+            path_effects=[pe.withStroke(linewidth=2.0, foreground='white')],
+            arrowprops=dict(arrowstyle='-|>', lw=arrow_lw, color=color,
+                            shrinkA=0, shrinkB=0, mutation_scale=6),
+        )
+
+

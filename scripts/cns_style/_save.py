@@ -179,6 +179,9 @@ def save_panel(fig, name, outdir='panels', journal=True, fmt='pdf', show=None):
 
     dpi = plt.rcParams['savefig.dpi'] if journal else 300
     fig.savefig(path, dpi=dpi, bbox_inches='tight', pad_inches=0.1)
+    # 空文件检查（源自 figures4papers 的 run-验证契约）：输出写穿 → 立即报错
+    if os.path.getsize(path) == 0:
+        raise RuntimeError(f"[save_panel] 输出文件为空: {path}")
     if not show:
         plt.close(fig)
     print(f"Saved: {path} (dpi={dpi})" + (" [figure displayed in notebook]" if show else ""))

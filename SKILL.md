@@ -48,6 +48,7 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (worker/
 | 转录因子 / TF / regulon / SCENIC / GRN | `omicverse-pipeline` §SCENIC（ov.single.SCENIC）|
 | 生存分析 / survival / KM / Kaplan | `general-bio/omicverse-bulk`（ov.pl.kaplan_meier/survival）|
 | 画图 / 绘图 / figure / panel / 拼图 | `visualization/figure-production` |
+| 雷达 / radar / 多指标对比 / 整合基准对比 | `visualization/figure-production`（plot_radar，每辐条独立量程归一）|
 | 机制图 / 流程图 / schematic / 图形摘要 | `visualization/scientific-schematics` |
 | PPT / 汇报 / 幻灯片 / slides / 答辩 | `presentation/scientific-slides` |
 | 网页报告 / HTML / report / 在线分享 / web report | `presentation/web-report` |

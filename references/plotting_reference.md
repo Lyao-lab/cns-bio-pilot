@@ -42,6 +42,9 @@
 | 通讯热图 | `plot_ccc_heatmap(adata, plot_type='heatmap', save=...)` | 需liana预计算；plot_type='dot'/'tile' |
 | PCA方差比 | `plot_pca_variance(adata, n_pcs=30, save=...)` | QC标配；选PCs数 |
 | HVG散点 | `plot_hvg_scatter(adata, save=...)` | QC标配；均值vs离散 |
+| 雷达图（多指标方法对比） | `plot_radar(values, axis_labels, axis_ranges=...)` | 每辐条独立量程归一；整合基准对比首选 |
+| 消融/组件对比 barh | `alpha_ramp(hex, n)` + `ax.barh(...)` | 首项最实=完整模型；数值标签在条外用 NEAR_BLACK |
+| 曲线事件标注 | `mark_events(ax, x, y, events)` | label 加 '*' 抬高防撞 |
 
 ## 1. 全局开头（每个脚本第一行）
 
@@ -590,6 +593,74 @@ plot_hvg_scatter(adata, save='AM_hvg_scatter')
 # 内部：x=log mean，y=log variance（或 dispersion），HVG 着红色
 # 常用：可结合 sc.pp.highly_variable_genes 结果着色
 ```
+
+### 3.31 Radar plot（雷达图——多指标/整合基准方法对比）
+
+**统一入口**（mpl 手绘 polar，ov 无对应函数）：多辐条雷达图——每根辐条按自己的量程归一化（`axis_ranges={轴名:(lo,hi)}`，缺省按各轴数据 min/max），归一后统一映射到 [r_lo, r_hi]；异量纲指标（如 iLISI/cLISI/ASW_batch/ASW_celltype/GraphConn 整合基准对比）可一图比完。
+
+```python
+import sys; sys.path.insert(0, 'scripts/')
+from cns_style import *
+set_cns_style_journal('nature')
+import numpy as np
+
+labels = ['iLISI', 'cLISI', 'ASW_batch', 'ASW_celltype', 'GraphConn']
+vals = np.array([
+    [0.82, 0.74, 0.62, 0.68, 86.2],   # Harmony
+    [0.79, 0.77, 0.66, 0.71, 80.1],   # scVI
+    [0.35, 0.31, 0.12, 0.52, 93.4],   # 未校正
+])
+ranges = {'iLISI': (0, 1), 'cLISI': (0, 1), 'ASW_batch': (0, 1),
+          'ASW_celltype': (0, 1), 'GraphConn': (0, 100)}   # ⚠️ 异量纲轴各按合理范围
+fig, ax = plot_radar(vals, labels, series_names=['Harmony', 'scVI', '未校正'],
+                     axis_ranges=ranges)
+save_panel(fig, 'integration_radar', fmt='png')
+```
+
+**注意**：异量纲指标必须显式传 `axis_ranges`（GraphConn 0-100 与 0-1 混排时缺省归一会压扁前者）；≤3 系列最佳，>4 会糊；spoke 标签已按 |sin(angle)| 加 offset 防挤；辐条 GREY lw=0.4、外环 NEAR_BLACK lw=0.6（grid off 后手绘补回）；图例右外置（铁律 1）。
+
+### 3.32 消融/对比柱——alpha_ramp / focus_ramp 两个食谱
+
+**α 编码消融完整度**（barh）：`alpha_ramp(hex_color, n, lo=0.25, hi=1.0)` → 同一色相 n 个 RGBA，首项最实(hi)→末项最透明(lo)；数据按"完整模型在前、消融越多越靠后"排列后直接 zip。
+
+```python
+colors = alpha_ramp('#0F4D92', 6)          # 首项 alpha=1.0（完整模型），逐项变透明
+# vals/stds 按同一顺序排列：完整模型在前，消融越多越靠后
+bars = ax.barh(range(len(vals)), vals, xerr=stds, color=colors,
+               ecolor='#4C566A', capsize=3, error_kw=dict(lw=0.8))
+for b, v, s in zip(bars, vals, stds):      # 标签在条外（白底）→ 一律深字
+    ax.text(b.get_width() + s + 0.015, b.get_y() + b.get_height() / 2,
+            f'{v:.3f}', va='center', fontsize=6, color=NEAR_BLACK)
+# ⚠️ is_dark(hex) 只在标签压色块上时用（选白/黑字）；条外白底用白字 = 不可见（真实踩坑）
+```
+
+**焦点+渐褪"本方法 vs 基线"**（柱）：`focus_ramp(focus_hex, base_hex, n, lighten_step=0.11)` → `[focus_hex] + (n-1) 个逐步提亮的 base_hex`——焦点饱和、基线可辨识的单色渐褪（比全灰好在基线仍可指认）。
+
+```python
+colors = focus_ramp('#0F4D92', '#D4685F', 5)    # 第 0 项=焦点色原样，其余逐步提亮
+ax.bar(x, y, color=colors,
+       error_kw=dict(elinewidth=0.8, capthick=0.8, capsize=2))
+```
+
+> 数值标在 `height+std+2%` 处，fontsize 6（条上白底 → NEAR_BLACK）。
+
+### 3.33 累计/趋势曲线 + 事件标注（mark_events）
+
+**统一入口**（mpl）：`mark_events(ax, x, y, events, dy=0.06, fontsize=7, arrow_lw=0.6, color='#2E3440')` 在曲线 y(x) 上标注事件（给药、发病、模型发布时间点）；`events: dict {x_value: label}`；白色描边光晕文字 + `'-|>'` 箭头（shrinkA=shrinkB=0）；label 中每个 `'*'` 把文字再抬高一个 `dy*(ylim span)`——手工防撞梯。
+
+```python
+from cns_style import _lighten_color            # ⚠️ import * 不带下划线名，需具名导入
+from matplotlib.colors import to_rgb
+
+light_fill = _lighten_color(MORLANDI[0], 0.6)                # 浅填充
+dark_edge = tuple(c * 0.5 for c in to_rgb(MORLANDI[0]))      # 同色相加深描边
+ax.fill_between(x, 0, y, color=light_fill, linewidth=0)
+ax.plot(x, y, color=dark_edge, lw=1.2)
+ax.set_ylim(0, y.max() * 1.45)          # 先定 ylim，mark_events 要读它
+mark_events(ax, x, y, {3: '处理开始', 8: '模型A*', 16: '模型B**'})  # '*'越多抬越高
+```
+
+> **图案小贴士（hatch 双序列区分——黑白打印/色盲友好）**：`ax.fill_between(..., hatch='//', edgecolor='black')` 后叠一层同形状 `facecolor='none', edgecolor='white', linewidth=2`，白描边视觉擦除 hatch 边框（源自 figures4papers）。
 
 ## 4. 统计标注（add_significance_bracket）
 

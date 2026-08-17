@@ -16,6 +16,10 @@ from ._helpers import (_check_ov, _HAS_OV, _lighten_color, _adata_to_tidy,
                         assert_anndata_keys, init_manifest, load_manifest,
                         _resolve_group_mask, _resolve_signal)
 from ._layout import _fs, _FIG_SCALE
+# 显式导出移植自 figures4papers 的新公共接口（doc 任务依赖这些签名）
+from ._palette import is_dark, alpha_ramp, focus_ramp
+from ._annotation import mark_events
+from .plots_stats import plot_radar
 from .plots_embedding import *
 from .plots_expression import *
 from .plots_stats import *

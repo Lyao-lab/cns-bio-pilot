@@ -29,6 +29,7 @@
 | **堆叠面积/柱+点组合** | §3.21-§3.22 | §5.7 |
 | **堆叠火山/UpSet/Venn/森林/回归** | §3.23-§3.27 | §5.2/§5.8 |
 | **通讯热图/PCA方差比/HVG散点** | §3.28-§3.30 | §5.5/§5.1 |
+| **雷达图（多指标方法对比）** | §3.31 | §5.13 |
 
 ---
 
@@ -67,6 +68,8 @@
 | **空间 CCC** | 空间箭头/向量场 + 配受体相邻面板 | 空转 CCC 最低证据=共定位；chord 在空转退潮 | 通讯分-距离曲线 | §3.7 |
 | **scRNA+空转联合** | 三件套：scRNA UMAP + 同色系空间投影 + mapping score 图 | 只展示投影结果不做验证=审稿拒点 | 基因级验证散点 | §2.1+§2.6 |
 | **TF/regulon 活性** | TF×cluster 活性 heatmap | 定位→UMAP 着色；定量比较→violin | 二值化 regulon heatmap | §2.5 |
+| 多指标方法/整合基准对比（异量纲） | 雷达图（每辐条独立量程） | 指标>6 或系列>4 | 分面小柱图 | §3.31 |
+| 消融/组件贡献对比 | 同色相 alpha 渐变 bar（完整=实） | 需指认每个基线时 | focus_ramp 焦点+渐褪柱 | §3.32 |
 
 ### 证据等级（每个生物学结论至少配一张定量图）
 
@@ -235,6 +238,14 @@ cns_style 包同时支持两层，所有图型默认 ov.pl 优先：
 - figsize=(5,5) square；omicverse 走 `CellChatViz` → `netVisual_chord_cell`（自动配色 + 布局）
 - → 代码模板见 plotting_reference.md §3.2
 
+### 5.13 Radar（多尺度方法对比）
+- **≤3 系列最佳**，>4 会糊（fill α=0.06 叠加后难以分辨）
+- 异量纲指标 **axis_ranges 必须显式传**（如 GraphConn 0-100 与 0-1 混排；缺省按各轴数据 min/max 归一 → 压扁大范围轴）
+- 顶点 scatter 标出真实数据点（s=6）；每辐条外侧只标该轴 max 数值（原始单位，沿辐条旋转）
+- 外环 NEAR_BLACK lw=0.6 / 辐条 GREY lw=0.4（grid off 后手绘补回）；spoke 标签按 |sin| 加 offset 防挤
+- figsize 默认 (3.2, 3.2)；legend 右外置（铁律 1）
+- → 代码模板见 plotting_reference.md §3.31（plot_radar）
+
 ---
 
 ## 6. 拼图规则
@@ -370,6 +381,18 @@ cns_style 包同时支持两层，所有图型默认 ov.pl 优先：
 - 画图前预先规划 legend 位置（`bbox_to_anchor` 底部或右外置）
 - 跑完后检查 finalize 的 warning（"Legend moved to outside-right"）
 - 如果 Panel B 因为 legend 移位变空 → 去掉 Panel B（信息冗余时）或把 legend 放 Panel A 内
+
+### 11.7 figures4papers 移植技巧（Nature MI/ICML/NeurIPS 图库提炼）
+
+> 从 figures4papers 图库（Nature MI 社群的 ICML/NeurIPS 论文图脚本）移植配色/标注技巧到 cns_style 的实践沉淀；对应实现见 plotting_reference §3.32/§3.33 与 cns_style 的 `alpha_ramp`/`focus_ramp`/`mark_events`/`is_dark`。
+
+- **大画布 vs 实物尺寸**：源库用 24-52 英寸大画布 + 24-54pt 字号、再在 LaTeX 里缩小——**我们不用**，cns_style 坚持实物尺寸（2.5-3.5 英寸）+ 7-8pt 直接出图；只移植技巧，不移植画布哲学
+- **alpha 编码信息**：消融完整度用同一色相透明度表达（`alpha_ramp`），比多色更聚焦——读者一眼看"完整性梯度"，不用猜色块归属
+- **焦点+渐褪 ramp**：比"其余全灰"好在基线仍可在图例中指认（`focus_ramp`）
+- **数值标签位置**：压色块上 → `is_dark()` 选字色（白/黑字）；色块外 → 一律 NEAR_BLACK（白字白底不可见的真实踩坑）
+- **事件标注防撞梯**：label 中 `'*'` 计数抬高文字（`mark_events`），多事件叠标不用手工逐条调 y
+- **hatch+白描边**：黑白打印/色盲友好的双序列区分（fill_between hatch 后叠同形状白描边擦边框）
+- **图例可独占一个 subplot**：多指标小倍数图共享颜色时 `ax.legend(handles, ...)` + `ax.set_axis_off()`，图例自占一格不挤数据区
 
 ---
 

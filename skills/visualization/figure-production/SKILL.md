@@ -194,7 +194,7 @@ python skills/visualization/figure-production/scripts/main.py \
 
 ## 工具
 
-- `scripts/cns_style/ 包` — 一键美学 + smart_plot 统一入口（26 辅助函数 + 18 个 plot_xxx：plot_umap / plot_volcano / plot_dotplot / ... 自动 ov/mpl 降级）
+- `scripts/cns_style/ 包` — 一键美学 + smart_plot 统一入口（plot_xxx 系列：plot_umap / plot_volcano / plot_dotplot / plot_radar / ... 自动 ov/mpl 降级；配色与标注 helper：alpha_ramp / focus_ramp / mark_events / is_dark，清单见 tool_registry.md）
 - `references/plotting_reference.md` — 代码速查（唯一代码参考）
 - `references/figure_guide.md` — 视觉规格
 - `scripts/main.py`（本 skill 下）— 拼图脚本（函数式 assemble() API，示例见 scripts/example.py）

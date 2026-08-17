@@ -1168,3 +1168,122 @@ def plot_hvg_scatter(adata, ax=None, figsize=None, save=None, show=None, **kwarg
     if save:
         save_panel(fig, save, show=show)
     return fig, ax
+
+
+# ============================================================
+# 20.40 plot_radar — 多尺度雷达（mpl polar，源自 figures4papers）
+# ============================================================
+
+def plot_radar(values, axis_labels, series_names=None, axis_ranges=None, colors=None,
+               ax=None, figsize=(3.2, 3.2), r_lo=0.15, r_hi=0.9,
+               fill_alpha=0.06, lw=1.0, show_spoke_max=True, label_fontsize=6,
+               tick_fontsize=5.5, legend_fontsize=6):
+    """多尺度雷达图（每根辐条按自己的量程归一化）。
+
+    values: (n_series × n_axes) array/DataFrame；axis_ranges: None(按各轴数据 min/max) 或
+    {axis_label: (lo, hi)} / list[(lo,hi)]（异量纲指标各按其合理范围归一——iLISI/cLISI/ASW 同图的关键）。
+    归一后统一映射到 [r_lo, r_hi]；顶点 scatter 标出真实数据点；手绘辐条+外环(grid off)；
+    每辐条外侧只标该轴 max 数值(show_spoke_max)；spoke 标签按 |sin(angle)| 加 offset 防挤；
+    适用于：方法/整合基准的多指标对比（batch mixing × bio conservation 一图比）。返回 (fig, ax)。
+
+    Usage:
+        plot_radar(vals, ['iLISI', 'cLISI', 'ASW_batch', 'ASW_celltype', 'GraphConn'],
+                   series_names=['Harmony', 'scVI', '未校正'],
+                   axis_ranges={'iLISI': (0, 1), 'GraphConn': (0, 100)})
+    """
+    was_df = isinstance(values, pd.DataFrame)
+    df_columns = list(values.columns) if was_df else None
+    values = np.asarray(values, dtype=float)
+    if values.ndim != 2:
+        raise ValueError("plot_radar: values 需为 (n_series x n_axes) 二维数组/DataFrame")
+    n_series, n_axes = values.shape
+    if len(axis_labels) != n_axes:
+        raise ValueError(f"plot_radar: axis_labels 长度 {len(axis_labels)} != 轴数 {n_axes}")
+    if series_names is None and df_columns is not None:
+        series_names = df_columns
+    if series_names is not None and len(series_names) != n_series:
+        raise ValueError(f"plot_radar: series_names 长度 {len(series_names)} != 系列数 {n_series}")
+
+    # NaN 按轴 nanmean 填充（整轴全 NaN → 0）
+    if np.isnan(values).any():
+        fill = np.where(np.isnan(values).all(axis=0), 0.0, np.nanmean(values, axis=0))
+        values = np.where(np.isnan(values), fill, values)
+
+    # 每轴 (lo, hi)：axis_ranges 显式给定（dict 按标签查、缺失回退数据 min/max）或数据 min/max
+    def _data_range(j):
+        lo, hi = float(np.min(values[:, j])), float(np.max(values[:, j]))
+        if hi - lo <= 1e-12:
+            lo, hi = 0.0, 1.0
+        return (lo, hi)
+
+    if axis_ranges is None:
+        ranges = [_data_range(j) for j in range(n_axes)]
+    elif isinstance(axis_ranges, dict):
+        # dict 键缺失 → 该轴回退数据 min/max
+        ranges = [tuple(axis_ranges[lbl]) if lbl in axis_ranges else _data_range(j)
+                  for j, lbl in enumerate(axis_labels)]
+    else:
+        ranges = [tuple(r) for r in axis_ranges]
+        if len(ranges) != n_axes:
+            raise ValueError(f"plot_radar: axis_ranges 长度 {len(ranges)} != 轴数 {n_axes}")
+
+    # 各轴按自身量程归一 → 统一映射到 [r_lo, r_hi]
+    norms = np.zeros_like(values)
+    for j in range(n_axes):
+        lo, hi = ranges[j]
+        span = hi - lo
+        if span <= 0:
+            norms[:, j] = (r_lo + r_hi) / 2
+        else:
+            norms[:, j] = r_lo + (r_hi - r_lo) * np.clip((values[:, j] - lo) / span, 0.0, 1.0)
+
+    angles = np.linspace(0, 2 * np.pi, n_axes, endpoint=False)
+    angles_closed = np.append(angles, angles[0])
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize, subplot_kw={'projection': 'polar'})
+    else:
+        fig = ax.figure
+    if colors is None:
+        colors = MORLANDI
+
+    for m in range(n_series):
+        r_closed = np.append(norms[m], norms[m][0])
+        col = colors[m % len(colors)]
+        ax.plot(angles_closed, r_closed, color=col, linewidth=lw,
+                label=series_names[m] if series_names is not None else None)
+        ax.fill(angles_closed, r_closed, color=col, alpha=fill_alpha)
+        ax.scatter(angles, norms[m], color=col, s=6, zorder=5, edgecolors='none')
+
+    ax.set_theta_zero_location('N')
+    ax.set_ylim(r_lo, r_hi)
+    ax.grid(False)
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    # 手绘辐条 + 外环（grid off 后手动补回）
+    for a in angles:
+        ax.plot([a, a], [r_lo, r_hi], color=GREY, linewidth=0.4, zorder=4)
+    ax.plot(angles_closed, np.full_like(angles_closed, r_hi),
+            color=NEAR_BLACK, linewidth=0.6, zorder=4)
+    ax.set_xticks(angles)
+    ax.set_xticklabels([])
+
+    # spoke 标签：|sin(angle)| offset 防挤（头顶/脚底最远，两侧最近）
+    for a, lbl in zip(angles, axis_labels):
+        offset = 2 + 6 * abs(np.sin(a))
+        ax.text(a, r_hi + offset, str(lbl), fontsize=label_fontsize,
+                ha='center', va='center', transform=ax.transData, clip_on=False)
+    # 每辐条外侧标该轴 max 数值（原始单位，沿辐条旋转）
+    if show_spoke_max:
+        for a, j in zip(angles, range(n_axes)):
+            v = float(np.max(values[:, j]))
+            txt = f'{v:.0f}' if v == int(v) else f'{v:.2f}'
+            rot = np.degrees(a)
+            ax.text(a, r_hi + 1.0, txt, fontsize=tick_fontsize,
+                    ha='center', va='center', rotation=rot, rotation_mode='anchor',
+                    transform=ax.transData, clip_on=False)
+
+    if series_names is not None:
+        ax.legend(loc='center left', bbox_to_anchor=(1.05, 0.5), frameon=False,
+                  fontsize=legend_fontsize)
+    return fig, ax

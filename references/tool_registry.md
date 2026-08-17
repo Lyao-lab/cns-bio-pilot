@@ -182,6 +182,13 @@
 - **相关规则**: B1 B2 B3
 - **机检**: finalize_figure 内置；无数值比例列 → ValueError
 
+### plot_radar | category: plotting | verified ✅
+- **inputs**: values((n_series × n_axes) array/DataFrame), axis_labels(list), series_names=None, axis_ranges=None({轴名:(lo,hi)}，异量纲轴必须显式传；缺省按各轴数据 min/max), colors=None
+- **outputs**: PDF 多尺度雷达图（每辐条按自身量程归一化 → 异量纲多指标方法/整合基准对比一图比完）
+- **路由**: mpl 手绘 polar（ov 无）；grid off 后手绘辐条+外环，spoke 标签按 |sin| 加 offset 防挤
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置（save_panel 收尾）；values 非二维/axis_labels 数量不符 → ValueError
+
 ## 校验脚本（4 个）
 
 ### postcheck.py | category: validation | verified ✅
@@ -285,6 +292,34 @@
 - **outputs**: hex 色值；ov 可用则精确色，否则 fallback
 - **路由**: ov.pl.ForbiddenCity() 命名色板桥，最小环境不崩溃
 - **相关规则**: 命名色板统一入口
+- **机检**: 无
+
+### is_dark | category: helper | verified ✅
+- **inputs**: hex_color(str), threshold=128
+- **outputs**: bool——luminance (0.299R+0.587G+0.114B) < threshold 为 True
+- **路由**: 标签放在填充色之上时选字色（True→白字，False→黑字）
+- **相关规则**: 标签在色块外侧（白底）时一律 NEAR_BLACK——白字白底不可见
+- **机检**: 无
+
+### alpha_ramp | category: helper | verified ✅
+- **inputs**: hex_color(str), n(int), lo=0.25, hi=1.0
+- **outputs**: 同一色相 n 个 RGBA，首项最实(hi)→末项最透明(lo)
+- **路由**: 消融/组件对比——数据按"完整模型在前、消融越多越靠后"排列后直接 zip
+- **相关规则**: alpha 编码完整度，比多色更聚焦
+- **机检**: 无
+
+### focus_ramp | category: helper | verified ✅
+- **inputs**: focus_hex(str), base_hex(str), n(int), lighten_step=0.11
+- **outputs**: [focus_hex] + (n-1) 个逐步提亮的 base_hex（RGB 元组）
+- **路由**: "本方法 vs 基线"柱图——焦点饱和、基线可辨识的单色渐褪（比全灰好在基线仍可指认）
+- **相关规则**: 返回第 0 项即 focus_hex 原样
+- **机检**: 无
+
+### mark_events | category: helper | verified ✅
+- **inputs**: ax, x, y, events(dict {x_value: label}), dy=0.06, fontsize=7, arrow_lw=0.6, color='#2E3440'
+- **outputs**: 就地标注事件（白色描边光晕文字 + '-|>' 箭头，shrinkA=shrinkB=0）
+- **路由**: 累计/趋势曲线标注时间点（给药、发病、模型发布）；label 中每个 '*' 抬高一个 dy*(ylim span)——手工防撞梯
+- **相关规则**: 调用前先 set_ylim（函数要读 ax.get_ylim()）
 - **机检**: 无
 
 ---

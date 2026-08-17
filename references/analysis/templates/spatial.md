@@ -169,9 +169,19 @@ ov.space.spata2_remove_outliers(adata)
 ov.space.Cal_Spatial_Net(adata)                    # 构建 LR 网络（helper 可用）
 # ⚠️ create_communication_anndata 的 clustering_column 参数必填（指定细胞分群列）
 ov.space.create_communication_anndata(adata, clustering_column='celltype')
-# COMMOT 需 standalone：pip install commot → ct.tl.commot(...)
+# COMMOT 有两条路：
+# ① ov 包装（fetal_heart VIC 项目实测可用，omicverse 2.3.1）：
+db = ov.external.commot.pp.ligand_receptor_database(
+    species='human', signaling_type='Secreted Signaling', database='CellChat')
+db.columns = ['ligand', 'receptor', 'pathway', 'type']
+db_filt = ov.external.commot.pp.filter_lr_database(db, adata, heteromeric=True, min_cell_pct=0.01)
+ov.external.commot.tl.spatial_communication(
+    adata, database_name='CellChat', df_ligrec=db_filt,
+    dis_thr=500., heteromeric=True, pathway_sum=True)
+# 结果：adata.obsm['commot-CellChat-sum-sender'/'-receiver']（每 LR 一列）
+# ② standalone：pip install commot → ct.tl.commot(...)
 # 或 LIANA+ spatial mode：ov.single.run_liana(adata, ...) with spatial coords
-# ⚠️ ov.space.COMMOT 无公开方法（只有 _commot 私有 + helper）
+# ⚠️ ov.space.COMMOT 顶层无公开方法（只有 _commot 私有 + helper）
 ```
 
 ### 其他空间分析工具

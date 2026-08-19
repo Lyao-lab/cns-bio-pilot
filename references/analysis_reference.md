@@ -53,7 +53,7 @@
 | SVG | `ov.space.svg/spatial_autocorr/sepal` | templates/spatial.md | |
 | 空间去卷积 | `ov.space.Deconvolution/CellLoc/CellMap` | templates/spatial.md | 需 scRNA 参考 |
 | 空间统计 | `ov.space.nhood_enrichment/ripley/…` | templates/spatial.md | 先 spatial_neighbors |
-| 空间通讯 | `ov.space.Cal_Spatial_Net` + COMMOT standalone | templates/spatial.md | ov 无 COMMOT 公开方法 |
+| 空间通讯 | `ov.space.Cal_Spatial_Net` + `ov.external.commot`（或 standalone） | templates/spatial.md | ov.space 顶层无 COMMOT；wrapper 在 ov.external.commot |
 | Bulk DE | `ov.bulk.pyDEG(count_df)` | templates/bulk.md | pyDESeq2 包装 |
 | Bulk 富集/GSEA | `ov.bulk.geneset_enrichment/pyGSEA(gene_rnk=…)` | templates/bulk.md | gene_rnk 非 rank_series |
 | Bulk WGCNA | `ov.bulk.pyWGCNA(anndata=…)` | templates/bulk.md | anndata=/networkType |

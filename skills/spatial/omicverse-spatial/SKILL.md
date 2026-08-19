@@ -103,7 +103,7 @@ Decision: default STAGATE (wrapped); isoform-aware or continuous-depth domains �
 
 ## 6. Spatial cell-cell communication
 
-> **API correction (see compat.yaml)**: `ov.space.COMMOT` does **not** exist as a public method (only `_commot` private + `create_communication_anndata` helper). For spatial CCC, use the **COMMOT standalone package** or **squidpy.gr.nhood_enrichment / liana spatial mode**.
+> **API correction (see compat.yaml)**: `ov.space.COMMOT` 顶层 does **not** exist (only `_commot` private + `create_communication_anndata` helper) — but the wrapper **`ov.external.commot.pp/tl`** works end-to-end (fetal_heart 项目实测, ov 2.3.1): `ligand_receptor_database → filter_lr_database → spatial_communication`，结果在 `obsm['commot-CellChat-sum-sender'/'-receiver']`。也可用 **COMMOT standalone** 或 **squidpy.gr.nhood_enrichment / liana spatial mode**。
 
 > 代码模板：references/analysis/templates/spatial.md「空间通讯」。
 

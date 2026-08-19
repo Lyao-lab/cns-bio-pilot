@@ -55,7 +55,7 @@ adata = ov.read('data.h5ad')
 | Spatial domains (wrapped) | `ov.space.pySTAGATE` / `pySTAligner` / `pySpaceFlow` | STAGATE/STAligner/SpaceFlow |
 | Spatial domains (standalone) | BANKSY / GraphST / BINARY / MENDER / SpatialGlue (NOT wrapped — install separately) | — |
 | Spatial alignment | `ov.space.pySTAligner` / SLAT | STAligner |
-| Spatial communication | `ov.space.Cal_Spatial_Net(adata)` + `create_communication_anndata` (COMMOT standalone: `pip install commot`) | COMMOT |
+| Spatial communication | `ov.space.Cal_Spatial_Net(adata)` + `create_communication_anndata`；COMMOT wrapper: `ov.external.commot.tl.spatial_communication`（或 standalone `pip install commot`） | COMMOT |
 | Spatial tensor | `STT` (Spatial Transition Tensor) | STT |
 | **Deconvolution** | `ov.space.Deconvolution` (unifies cell2location/Tangram/RCTD/Starfysh/flashdeconv) | cell2location / RCTD standalone |
 | **Cell segmentation (Visium HD bin→cell)** | `ov.space.bin2cell(adata, labels_key=)` + `visium_10x_hd_cellpose_expand()` + `sync_visium_hd_seg_geometries()` | bin2cell standalone / cellpose |

@@ -3,6 +3,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# JOURNAL_PRESETS lives in _style; without this import the local
+# figure_for_journal() shadowing _style's copy raises NameError.
+from ._style import JOURNAL_PRESETS
+
 
 # Global figure scale factor — set by set_cns_style_journal()
 # 1.0 = generic (notebook/report), 0.7 = nature/cell (compact print)

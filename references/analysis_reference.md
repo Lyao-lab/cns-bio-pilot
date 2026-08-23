@@ -1,6 +1,6 @@
 # 分析流程代码速查（Analysis Reference）
 
-> 本文件是 cns-bio-pilot 所有分析流程的**索引**——worker 派发时引用对应子模块即可获得标准分析代码。
+> 本文件是 cns-bio-pilot 所有分析流程的**索引**——执行者（主智能体自身或任意子智能体）写分析代码时引用对应子模块即可获得标准分析代码。
 > 内容已分层：知识层（决策/为什么，无代码）在 `references/analysis/`，代码模板层（可执行，唯一拷贝源）在 `references/analysis/templates/`。
 > 依赖版本以 compat.yaml 为准。API 经 api_check.py 验证存在。
 > 绘图代码见 `plotting_reference.md`。

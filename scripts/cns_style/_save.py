@@ -146,17 +146,19 @@ def save_panel(fig, name, outdir='panels', journal=True, fmt='pdf', show=None):
         name: 文件名（不含扩展名）
         outdir: 输出目录（默认 'panels'，自动创建）
         journal: True → dpi 走 rcParams['savefig.dpi']；False → 固定 300
-        fmt: 'pdf' | 'png' | 'svg'（默认 'pdf'）
+        fmt: 'pdf' | 'png' | 'svg'（默认 'pdf'）；支持 '+' 连接的多格式一次性输出，
+             如 'png+pdf'（先 png 供自检、后 pdf 矢量交付，close 前完成全部写出）
         show: None（默认）→ 自动检测：Jupyter notebook 中为 True（savefig 后不 close，
               figure 在 cell 输出显示）；纯脚本中为 False（savefig 后 close）。
               True → 强制保留显示（notebook 场景）；
               False → 强制 close（脚本批处理场景）
 
     Returns:
-        str: 保存的完整路径
+        str 单格式时的保存路径；多格式时为路径列表
 
     Usage:
-        save_panel(fig, 'A_umap')   # → 保存到 panels/A_umap.pdf，返回路径
+        save_panel(fig, 'A_umap')              # → panels/A_umap.pdf
+        save_panel(fig, 'A_umap', fmt='png+pdf')  # → panels/A_umap.png + .pdf
     """
     import os
     if show is None:
@@ -167,25 +169,29 @@ def save_panel(fig, name, outdir='panels', journal=True, fmt='pdf', show=None):
         except Exception:
             show = False
     finalize_figure(fig)  # 强制 pre-save 检查（铁律 1/2 + 栅格化）
-    # name 含路径分隔符 → 视为完整路径（不再拼 outdir）；否则拼 outdir/name
-    if '/' in name or '\\' in name:
-        path = f'{name}.{fmt}'
-        out_dir = os.path.dirname(path)
-        if out_dir:
-            os.makedirs(out_dir, exist_ok=True)
-    else:
-        os.makedirs(outdir, exist_ok=True)
-        path = f'{outdir}/{name}.{fmt}'
+    fmts = [f.strip() for f in str(fmt).split('+') if f.strip()] or [fmt]
+    paths = []
+    for f in fmts:
+        # name 含路径分隔符 → 视为完整路径（不再拼 outdir）；否则拼 outdir/name
+        if '/' in name or '\\' in name:
+            path = f'{name}.{f}'
+            out_dir = os.path.dirname(path)
+            if out_dir:
+                os.makedirs(out_dir, exist_ok=True)
+        else:
+            os.makedirs(outdir, exist_ok=True)
+            path = f'{outdir}/{name}.{f}'
 
-    dpi = plt.rcParams['savefig.dpi'] if journal else 300
-    fig.savefig(path, dpi=dpi, bbox_inches='tight', pad_inches=0.1)
-    # 空文件检查（源自 figures4papers 的 run-验证契约）：输出写穿 → 立即报错
-    if os.path.getsize(path) == 0:
-        raise RuntimeError(f"[save_panel] 输出文件为空: {path}")
+        dpi = plt.rcParams['savefig.dpi'] if journal else 300
+        fig.savefig(path, dpi=dpi, bbox_inches='tight', pad_inches=0.1)
+        # 空文件检查（源自 figures4papers 的 run-验证契约）：输出写穿 → 立即报错
+        if os.path.getsize(path) == 0:
+            raise RuntimeError(f"[save_panel] 输出文件为空: {path}")
+        paths.append(path)
     if not show:
         plt.close(fig)
-    print(f"Saved: {path} (dpi={dpi})" + (" [figure displayed in notebook]" if show else ""))
-    return path
+    print(f"Saved: {' + '.join(paths)} (dpi={dpi})" + (" [figure displayed in notebook]" if show else ""))
+    return paths[0] if len(paths) == 1 else paths
 
 
 # ============================================================

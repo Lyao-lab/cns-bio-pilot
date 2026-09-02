@@ -58,3 +58,10 @@ spatialdata:
   last_verified: "2026-07-26"
   breaking_changes:
     "0.1 -> 0.7": ".table -> .tables[TABLE_KEY] (dict access)"
+
+arc-state:
+  verified_against: "0.11.1"
+  compatible_range: ">=0.11, <0.12"
+  last_verified: "2026-09-02"
+  note: "独立 CLI（uv tool install arc-state），PyTorch torch>=2.7，Python 3.11-3.12，不装进 sc env。verified_against = 对 PyPI 最新版 + 官方 README 文档核对（CLI 工具不跑 ov/pt api_check）；flags 以 state --help 实测为准。权重非商业 license，用必引 State (Cell 2026)"
+  breaking_changes: {}

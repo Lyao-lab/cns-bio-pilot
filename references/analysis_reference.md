@@ -25,6 +25,7 @@
 | [analysis/templates/sc_downstream.md](analysis/templates/sc_downstream.md) | CCC / 轨迹 / 多组学 |
 | [analysis/templates/spatial.md](analysis/templates/spatial.md) | 空转全流程 |
 | [analysis/templates/bulk.md](analysis/templates/bulk.md) | Bulk DE / GSEA / WGCNA / PPI |
+| [analysis/templates/sc_perturbation_state.md](analysis/templates/sc_perturbation_state.md) | Arc State 扰动预测（zero/few-shot 推理 / 微调 / SE 检索 / linear baseline 铁律） |
 
 ## 速查卡（分析任务 → 模板模块 → 入口函数）
 
@@ -58,6 +59,7 @@
 | Bulk 富集/GSEA | `ov.bulk.geneset_enrichment/pyGSEA(gene_rnk=…)` | templates/bulk.md | gene_rnk 非 rank_series |
 | Bulk WGCNA | `ov.bulk.pyWGCNA(anndata=…)` | templates/bulk.md | anndata=/networkType |
 | Bulk PPI | `ov.bulk.pyPPI(species=9606)` | templates/bulk.md | species=NCBI id |
+| 扰动响应预测（in silico） | `state tx infer/train`（arc-state CLI） | templates/sc_perturbation_state.md | 预测≠验证；非商业 license；必须 vs linear baseline |
 | 分析纪律红线 | — | analysis/discipline.md | Pseudobulk/counts/措辞 |
 
 数据 IO 完整说明见 templates/setup.md 与 templates/spatial.md。

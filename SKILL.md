@@ -4,7 +4,7 @@ description: 生信分析全流程技能库（空间转录组、单细胞、bulk
 compatibility: Requires Python 3.11+ with omicverse/scanpy/scvelo (conda env 'sc'), squidpy (env 'st'), R 4.5.3 with scop 0.8.9. See compat.yaml for version details.
 license: GPL-3.0
 metadata:
-  version: "22.3"
+  version: "22.5"
   author: Lyao-lab
 ---
 
@@ -20,7 +20,9 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (**any s
 - **(narrow task)** paste the 2-3 relevant rules directly (e.g. `[A2] pseudobulk DE; [A4] 批次校正后禁 DE`)
 - **(needs decision table)** `开工前读 <skill根目录>/references/figure_guide.md §0.1 数据→图型决策表`
 
-`dispatch_cheatsheet.md` condenses the 26 hard rules (A 分析严谨性 9 / B 绘图 7 / C API 4 / D 迭代 6) from 7 reference files into 75 lines — one reference replaces hand-writing 30 rules every time. **Skipping injection = the sub-agent will violate rules it never saw.**
+> **Narrow-task floor**: any task that executes analysis/plotting code must include **[A10] ipynb 代码台账** among the pasted rules — A10 applies to every code-executing task regardless of analysis type (R included: `nb_log.py --kernel r`).
+
+`dispatch_cheatsheet.md` condenses the 27 hard rules (A 分析严谨性 10 / B 绘图 7 / C API 4 / D 迭代 6) from 7 reference files into ~80 lines — one reference replaces hand-writing 30 rules every time. **Skipping injection = the sub-agent will violate rules it never saw.**
 
 ## Quick Route（关键词→子skill 索引，borrowed from Biomni prompt-retriever）
 
@@ -41,7 +43,7 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (**any s
 | 高分空转 / Visium HD / Stereo-seq / MERFISH | `spatial/multiomics` |
 | 蛋白组 / CODEX / IMC / MIBI | `spatial/proteomics` |
 | 速度 / velocity / RNA velocity / fate | `single-cell/rna-velocity` |
-| 扰动 / Perturb-seq / perturbation | `single-cell/perturbation` |
+| 扰动 / Perturb-seq / perturbation / State / 虚拟细胞 / virtual cell / 药物响应预测 | `single-cell/perturbation` |
 | R / Seurat / scop | `single-cell/scop` |
 | bulk / 路径 / 通路 / enrichment / 富集 | `general-bio/omicverse-bulk` |
 | CNV / inferCNV / copykat | `omicverse-pipeline` |
@@ -62,7 +64,7 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (**any s
 | scRNA-seq full pipeline (QC→cluster→annotate→DE→CCC→trajectory) | `single-cell/omicverse-pipeline` | omicverse (Python) |
 | R/Seurat pipeline or scop-wrapped tools (133 Run\* verbs) | `single-cell/scop` | scop (R) |
 | RNA velocity / fate inference | `single-cell/rna-velocity` | omicverse + scvelo |
-| Perturbation (measured Perturb-seq OR in silico prediction) | `single-cell/perturbation` | pertpy / CellOracle / scop |
+| Perturbation (measured Perturb-seq OR in silico prediction) | `single-cell/perturbation` | pertpy / CellOracle / scop / Arc State (arc-state CLI) |
 | Study design / research planning (pre-analysis) | `single-cell/research-planner` | zero-code methodology |
 | Spatial transcriptomics (Visium/Xenium/Stereo-seq; domains/SVG/CCC) | `spatial/omicverse-spatial` | omicverse ov.space |
 | Spatial deconvolution (cell2location/RCTD/Tangram/SPOTlight/CARD) | `spatial/deconvolution` | omicverse / scop |
@@ -84,6 +86,7 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (**any s
 | `sc` | omicverse (see `compat.yaml`) + scanpy + scvelo + scvi + tangram + spatialdata + pertpy + decoupler | `conda activate sc` |
 | `st` | squidpy (older scanpy) | `conda activate st` |
 | `scop_env` (conda) | R 4.5.3 + scop 0.8.9 + Seurat | `~/miniforge3/envs/scop_env/bin/Rscript` |
+| `state` (uv tool) | Arc State 扰动预测 CLI（PyTorch；独立环境，GPU；版本见 compat.yaml `arc-state`） | `uv tool install arc-state` |
 
 Package versions: **`compat.yaml`** (single source of truth). After any upgrade: `python scripts/api_check.py --diff`.
 
@@ -92,14 +95,18 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 1. **Fact-based; ask when unsure; never fabricate.** Every number/dataset/accession/API must have a source. Missing info → `[AUTHOR TO SPECIFY]`.
 2. **Pseudobulk for single-cell DE.** Per-cell Wilcoxon inflates false positives. Aggregate by sample×celltype → DESeq2/edgeR.
 3. **Search before implementing.** omicverse/scop wrapper → standalone package → R/Bioconductor → adapt → from-scratch (last resort). GEO → GEOparse.
-4. **Postcheck is mandatory** *(automated, per-analysis)*. After any quantitative analysis (DE/deconvolution/CCC/composition), run `python scripts/postcheck.py`. FAIL must be resolved before proceeding. **Acceptance gate**: when the main agent accepts a bioinformatics deliverable from **any executor** (a sub-agent of any name, or a result it produced itself), it must confirm the matching machine-check has run and PASSED — `postcheck.py` after DE/deconv/CCC/composition; `qa_deck.py` + `validate_presentation.py` after PPT; `api_check.py --diff` after package upgrades. If the executor did not attach machine-check output, the main agent re-runs it before accepting. For the full rule set that executors must follow, see `references/dispatch_cheatsheet.md` (condensed hard rules A1-A9 / B1-B7 / C1-C4 / D1-D6) — inject it into dispatch prompts per the ⚠️ Dispatch Injection section at the top of this file.
+4. **Postcheck is mandatory** *(automated, per-analysis)*. After any quantitative analysis (DE/deconvolution/CCC/composition), run `python scripts/postcheck.py`. FAIL must be resolved before proceeding. **Acceptance gate**: when the main agent accepts a bioinformatics deliverable from **any executor** (a sub-agent of any name, or a result it produced itself), it must confirm the matching machine-check has run and PASSED — `postcheck.py` after DE/deconv/CCC/composition; `qa_deck.py` + `validate_presentation.py` after PPT; `api_check.py --diff` after package upgrades. If the executor did not attach machine-check output, the main agent re-runs it before accepting. For the full rule set that executors must follow, see `references/dispatch_cheatsheet.md` (condensed hard rules A1-A10 / B1-B7 / C1-C4 / D1-D6) — inject it into dispatch prompts per the ⚠️ Dispatch Injection section at the top of this file.
 5. **Save checkpoints.** After each major step (QC/cluster/annotation/DE), save `adata.write_h5ad('checkpoints/XX_step.h5ad')`. Upstream changes → re-run from last valid checkpoint.
 6. **Runtime API self-adaptation.** Do NOT trust hardcoded version numbers or assume API signatures. Before calling any ov.*/pt.*/sc.* function for the first time, verify with `inspect.signature(func)`. Run `python scripts/api_check.py --diff` after any package upgrade.
 7. **Step-gate + hypothesis ledger** *(agent self-check, per-step)*. Every analysis follows meta_methodology §7 (step-gate sanity checks after each step) and §8 (hypothesis ledger + provenance + conclusion grading).
    > *Rationale*: The planner-verifier dual loop is the proven-optimal pattern for bioinformatics agents (K-Dense Analyst outperforms single-model by 6 points on BixBench via per-step verification).
 8. **Result-driven iteration** *(human gate, per-batch)*. Biology is evidence-driven, NOT linear like software. After each analysis batch: review results → **discuss direction with researcher** → revise plan → next batch. Pause for researcher input on decisions that need human judgment (cell-type naming, which signal to chase, threshold calibration). Full procedure: `research-planner` Phase R. **Autopilot exception**: if the user explicitly authorizes "just run it through, don't stop at every step", agent may merge batches into a continuous run, but MUST do one full Phase R review (R1 ledger update + R2 decision-point retro) before final delivery, and record the authorization in `analysis_log.md`.
    > *Rationale*: A pipeline that auto-runs QC→cluster→DE→CCC→figures without pausing to interpret results produces data dredging, not science. But a rule that ignores real usage ("跑完别停") gets silently bypassed — the autopilot exception keeps the ledger alive while respecting user autonomy.
-9. **Notebook-organized workflow** *(ipynb per task)*. Analysis and plotting code lives in Jupyter notebooks (.ipynb), one task per notebook. Structure: Cell 1 = shared setup (imports + `set_cns_style` + load data, run once); subsequent cells = one logical step each (one QC step, one panel, one DE round). Re-run only the cell you change — data stays in memory across cells. `save_panel` auto-displays figures in notebook output (`show=None` detects Jupyter → figure shows in cell + PDF saved to disk). **CLI fallback** (no Jupyter kernel): save double format — `save_panel(fig, name, fmt='png')` for self-inspection (Read the PNG to check before next panel) + `fig.savefig(name + '.pdf')` for vector delivery. Checkpoints (Rule 5) and `analysis_log` (meta §8b) are the persistence layer; notebooks are the workflow layer.
+9. **Notebook is the code ledger** *(one .ipynb per task — mandatory in BOTH execution modes)*. Analysis and plotting code lives in Jupyter notebooks (.ipynb), one task per notebook (`notebooks/NN_task.ipynb`, created at task start — before writing any code). Structure: Cell 1 = shared setup (imports + `set_cns_style` + load data, run once); subsequent cells = one logical step each (one QC step, one panel, one DE round). Two execution modes, same persistence duty:
+   - **Kernel mode** (Jupyter kernel available): run cells in the notebook; re-run only the cell you change — data stays in memory across cells. `save_panel` auto-displays figures in notebook output (`show=None` detects Jupyter → figure shows in cell + PDF saved to disk).
+   - **CLI mode** (no Jupyter kernel — the default for sub-agents): execute each step as a temp script, then immediately append the exact executed code + stdout + key figures into the task notebook: `python scripts/nb_log.py <nb> -t "step" -c step.py -o step.log -f panels/X.png` (auto-creates the notebook; embeds figures as cell outputs). CLI changes the execution path, NOT the persistence duty — **code that never lands in the .ipynb counts as not run** (irreproducible). Figures in CLI mode save double format via `save_panel(fig, name, fmt='png+pdf')` — PNG for self-inspection (Read it before the next panel) + PDF for vector delivery.
+   Checkpoints (Rule 5) and `analysis_log` (meta §8b) are the data/provenance layer; the notebook is the code/workflow layer — both layers are mandatory.
+   > *Rationale*: Agents without a Jupyter kernel used to treat "CLI fallback" as license to leave code in ephemeral scripts — analysis ran, figures existed, but nothing reproducible remained. Making the notebook a code ledger (append-after-execute, 1 command per step) closes the loophole.
 10. **Deliverable gate** *(mandatory, post-convergence)*. When the analysis story converges (Phase R loop done + researcher agrees, Rule 8), the agent MUST produce at least one deliverable package — not just leave figures on disk. Default outputs: PPT (`scientific-slides`, for meeting/defense) or HTML report (`web-report`, for online sharing — no PowerPoint needed to view). Choose based on audience: lab meeting → PPT; remote collaborator → HTML; both if the user wants. The deliverable embeds real figures + key findings (with source labels `[实测]/[文献]/[推断]`) + hypothesis ledger + method/reproducibility info. **Skipping this = analysis done but nothing delivered.**
 
 ## Key Files
@@ -114,6 +121,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 | `references/discovery_miner.md` | **Right after analysis** — scan each result type (DE/proportion/CCC/trajectory/niche) for candidate discoveries, score priority, exclude false positives, determine story level |
 | `scripts/cns_style/` | Import at top of every plotting script — 包（from cns_style import *），plot_* 统一入口（plot_umap/volcano/dotplot/plot_ccc/plot_ridge/plot_upset/...） |
 | `scripts/postcheck.py` | After any analysis (scientific rigor auto-check) |
+| `scripts/nb_log.py` | CLI 模式下把实际执行的代码/输出/图追加进任务 notebook（Core Rule 9 代码台账） |
 | `references/analysis_reference.md` | Analysis code templates (QC/DE/CCC/spatial/bulk) — the plotting_reference equivalent for analysis |
 | `references/analysis/templates/` | Executable analysis code templates (setup/sc_basic/sc_annotation/sc_downstream/spatial/bulk) — the ONLY copy-source for analysis code |
 | `references/analysis/decision_guide.md` | **Biology question → analysis method decision table** (28 questions: "which cells communicate?" → LIANA+; "spatial colocalization?" → nhood_enrichment; etc.) |

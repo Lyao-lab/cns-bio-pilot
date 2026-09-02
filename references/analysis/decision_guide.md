@@ -40,6 +40,7 @@
 | 多个时间点的 DE 模式是什么？ | 多条件 DE | `DEG per condition` → `stacking_vol` / `de_scatter` | [sc_annotation.md](templates/sc_annotation.md) + plots_stats（绘图） | volcano 无法容纳 >1 对比维度 |
 | 批次效应影响我的结论吗？ | 批次校正 | `batch_correction(harmony/scVI)` → 校正前后对比 | [sc_basic.md](templates/sc_basic.md) | ⚠️ 校正后数据禁 DE（信号被抹）[A4]；DE 用 raw counts |
 | 每个细胞类型内 DE 还是组成变化？ | DE vs DA 解耦 | pseudobulk DE（基因层面）+ DCT（比例层面）分开做 | [sc_annotation.md](templates/sc_annotation.md) | 比例变化 ≠ 表达变化，两个问题两个分析 |
+| 没测过的扰动（KO/药物/细胞因子）效果如何？ | in silico 预测：Arc State（跨扰动类型 zero/few-shot，首选）或 GEARS/CPA；单基因 KO 机制向 → CellOracle/scTenifoldKnk | `state tx infer`（arc-state CLI） | [sc_perturbation_state.md](templates/sc_perturbation_state.md) | ⚠️ 预测≠验证；必须 vs linear baseline；非商业 license |
 
 ## 5. 空间组织架构
 
@@ -82,3 +83,4 @@
 | 空转 CCC 无共定位证据 | 纯数据库打分正在退潮 | 配 spatial CCC 或配受体相邻面板 |
 | domain 只有着色图没有定量 | "在哪里"没有"差多少"支撑 | domain 着色 + 组成/密度定量面板成对出现 |
 | 只有 UMAP 没有 dotplot/heatmap | UMAP 是"地图"不是注释证据 | dotplot/heatmap 做注释证据 [A9] |
+| FM 扰动预测不对比 linear baseline | 5 个 FM 曾全输 simple linear（Ahlmann-Eltze, Nat Methods 2025） | 同批数据跑 linear baseline，在留出的实测扰动上验证后才采信 |

@@ -128,6 +128,7 @@ srt <- standard_scop(
 - **DE still requires pseudobulk**: `RunDEtest` defaults to per-cell Wilcoxon; for publication-grade single-cell DE switch to pseudobulk (aggregate by sample × cell type, then DESeq2/edgeR) — meta-methodology principle ③.
 - **Spatial backend check**: before spatial `Run*` verbs, run `SpatialBackendStatus()` to confirm the spatial backend (SpatialExperiment etc) is wired up.
 - After finishing, run `scripts/postcheck.py` (repo root) to verify: DE used pseudobulk, Padj reported, integration diagnostics done, deconvolution quality assessed.
+- **代码台账 (Core Rule 9 / cheatsheet A10)**: R 步骤同样落 ipynb——每步 `Rscript step.R` 成功后 `python scripts/nb_log.py <nb> -t "RunXxx" -c step.R -o step.log --kernel r`（notebook 会建成 R 内核）；Run\* 分析代码不允许只留在临时 .R 文件里。
 
 ## Resources
 - `references/run_verbs_reference.md` — 133 verified Run\* verbs organized by domain (QC/DR/Integration/Annotation/DE/Trajectory/Velocity/CCC/GRN/Spatial/Deconvolution/Composition/CNV/Pathway) + (short) Capability gaps table

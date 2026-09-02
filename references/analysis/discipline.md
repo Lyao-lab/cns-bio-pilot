@@ -24,4 +24,5 @@
 | 空间分析前置 spatial_neighbors | 所有空间方法崩溃 | omicverse-spatial §3 |
 | 每步后跑 postcheck | 错误传到下游 | Core Rule 4 |
 | 每步存 checkpoint | 无法回溯重算 | Core Rule 5 |
+| 分析代码落 ipynb 台账（CLI 执行也不例外） | 代码丢失 = 不可复现 | dispatch_cheatsheet A10 |
 

@@ -165,6 +165,7 @@ fig, ax = plot_spatial(adata_sp, color='Cxcl12', save='D_spatial')
 - Cell 1 只跑一次（load adata）；改某 panel 只重跑对应 cell
 - 每个 panel cell 调 `plot_xxx(save='X_name')` → 自动存 PDF 到 `panels/` + 在 cell 输出显示（溯源）
 - `show=False` 可强制不显示（脚本批处理）；`show=True` 强制显示
+- 无 Jupyter 内核（CLI 执行）时：panel 脚本跑完同样要落账——`python scripts/nb_log.py <figure的ipynb> -t "Panel A" -c panel_a.py -f panels/A_umap.png`（Core Rule 9 / A10）；图用 `fmt='png+pdf'` 双格式（PNG 自检 + PDF 交付）
 - 拼图在最后一个 cell（命令行 `main.py`）或 `nbconvert --execute` 一键重跑
 
 ---

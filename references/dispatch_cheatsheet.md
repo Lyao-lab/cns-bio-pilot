@@ -24,6 +24,7 @@
 | Bulk（DE/GSEA/WGCNA/PPI） | `references/analysis/templates/bulk.md` |
 | 分析纪律红线 | `references/analysis/discipline.md` |
 | 数据 IO + 全局 import | `references/analysis/templates/setup.md` |
+| 代码落 ipynb 台账（无内核 CLI 执行时） | `scripts/nb_log.py`（规则 A10） |
 
 ## A. 分析严谨性（违反 = 科学错误）
 
@@ -36,6 +37,7 @@
 - **[A7] 组成数据禁 chi-square/Fisher**：比例和为 1 的 compositional 约束 → 必须 Milo/scCODA/propeller | 卡方检验比例 = 统计错误 | 机检：postcheck C1
 - **[A8] 措辞纪律**：CCC 只能"associated with / enriched for"，禁"regulates/activates/drives"（无功能证据）；pseudotime 是排序不是时间；结论必须分级（已验证/数据支持/推测）| 过度因果措辞 = 审稿拒点 | 机检：postcheck L1/L2
 - **[A9] 注释是假说非 ground truth**：层级注释（先 lineage 后 subtype）；auto-annotation 后必须 marker 人工验证；无 marker 的 cluster 标 Unknown 不硬凑 | 硬凑注释 = 错误结论 | 机检：自觉
+- **[A10] 代码必须落 ipynb 台账**：每任务一个 `notebooks/NN_task.ipynb` 开工即建；有 Jupyter 内核 → 直接在 notebook 分 cell 执行；无内核（CLI 执行，子智能体默认）→ 每步执行成功后立刻 `python scripts/nb_log.py <nb> -t "步骤名" -c step.py -o step.log` 把实际执行代码 + stdout 追加进 notebook（关键图加 `-f panels/X.png` 嵌入 cell 输出）| 代码不落账 = 分析不可复现（等同没跑），验收不通过 | 机检：验收时查 notebook 存在且含各步 code cell
 
 ## B. 绘图规范（违反 = 图不达标）
 
@@ -78,6 +80,7 @@
 [规则] 本任务必须遵守：[A2] pseudobulk DE（禁 per-cell Wilcoxon）；[A4] 批次校正后禁 DE。
 [验收] 完成后跑 python scripts/postcheck.py <产物> --type de，FAIL 必须修。
 ```
+窄任务下限：凡任务会执行分析/绘图代码，[A10] ipynb 台账必须列入注入清单（与具体分析类型无关，总适用；R 代码 `--kernel r`）。
 
 **需要完整决策表**：
 ```
@@ -88,6 +91,7 @@
 | 产物类型 | 脚本 | 覆盖规则 |
 |---|---|---|
 | DE/deconv/CCC/composition | `scripts/postcheck.py <产物> --type <类型>` | A1-A8（D3/D4/L1/L2/C1/F1） |
+| ipynb 代码台账 | 验收时查 `notebooks/*.ipynb` 存在且含各步 code cell | A10 |
 | PPT | `qa_deck.py` + `validate_presentation.py` | A1（占位符）+ 字号/几何 |
 | 包升级/环境变更 | `scripts/api_check.py --diff` | C2/C3 |
 | 绘图 | （finalize_figure 内置） | B3 |

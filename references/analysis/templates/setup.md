@@ -12,6 +12,8 @@ ov.plot_set()   # 与 ov.ov_plot_set() 等价（别名）
 adata.layers['counts'] = adata.X.copy()
 ```
 
+> **落 ipynb（Core Rule 9 / A10）**：上面这段全局开头 = 任务 notebook（`notebooks/NN_task.ipynb`）的 Cell 1，任务开工即建。有 Jupyter 内核直接在 notebook 里分 cell 跑；CLI 执行时每步跑完立刻 `python scripts/nb_log.py <nb> -t "步骤名" -c step.py -o step.log` 落账——CLI 只是执行方式，不免除落账义务。
+
 ## 数据 IO 速查
 
 | 数据类型 | 函数 | 备注 |

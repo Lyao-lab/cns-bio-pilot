@@ -59,6 +59,7 @@ np.random.seed(42); torch.manual_seed(42)   # provenance: fixed seed (meta §8b)
 > Cell 7: §9 Downstream (CCC / trajectory)
 > ```
 > 每 cell 结束存 checkpoint（Core Rule 5）→ kernel 重启后 `sc.read_h5ad('checkpoints/XX.h5ad')` 直接恢复。每个 checkpoint 同时是 Phase R 复盘的交接点。
+> 无 Jupyter 内核时（CLI 执行，子智能体默认）：按上述 cell 划分写成 step 脚本执行，每步成功后立刻 `python scripts/nb_log.py <nb> -t "Cell N: ..." -c step.py -o step.log` 把代码+输出追加为对应 cell（Core Rule 9 / cheatsheet A10）——notebook 台账不能省，代码不落账等同没跑。
 
 ## 1. Load data (keep `layers['counts']`)
 

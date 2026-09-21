@@ -29,6 +29,7 @@
 | 信号角色热图 | `plot_signaling_heatmap(comm_scores, save=...)` | outgoing/incoming；celltype×pathway |
 | 山脊图 | `plot_ridge(adata, keys=..., groupby=..., save=...)` | >5组分布比较；overlap=0.6 |
 | 箱线图 | `plot_boxplot(adata, keys=..., groupby=..., save=...)` | 抖动点+箱体；简洁替代violin |
+| 云雨图 | `plot_raincloud(data, x=..., y=..., save=...)` | 半小提琴+箱线+雨点三合一；n≥5 才画琴；test='mwu' 参照组括号 |
 | 核密度 | `plot_kde(data, x=..., y=..., hue=..., save=...)` | 单/双变量密度；data=DataFrame |
 | 直方图 | `plot_histplot(data, x=..., hue=..., save=...)` | QC标配；bins='auto' |
 | 抖动散点 | `plot_stripplot(data, x=..., y=..., hue=..., save=...)` | 每点可见；summary='mean' |
@@ -661,6 +662,26 @@ mark_events(ax, x, y, {3: '处理开始', 8: '模型A*', 16: '模型B**'})  # '*
 ```
 
 > **图案小贴士（hatch 双序列区分——黑白打印/色盲友好）**：`ax.fill_between(..., hatch='//', edgecolor='black')` 后叠一层同形状 `facecolor='none', edgecolor='white', linewidth=2`，白描边视觉擦除 hatch 边框（源自 figures4papers）。
+
+### 3.34 Raincloud（云雨图——半小提琴+箱线+雨点三合一）
+
+**统一入口**（mpl 直绘，ov 无对应函数）：一组一列，左半小提琴（分布形状）+ 白底箱线（分位数）+ 右侧雨点（每点=一观测/一样本）——分组分布对比的高信息密度形态。单细胞数据**必须先聚合到样本级**（每点=一供体中位数）再画，禁止细胞级混样当重复。
+
+```python
+from cns_style import plot_raincloud
+# 样本级聚合：每 donor 每组中位数（每 donor ≥10 细胞）
+df = (obs.groupby(['donor', 'cell_state'])['score']
+         .median().reset_index())
+plot_raincloud(df, x='cell_state', y='score',
+               order=['vCM1', 'vCM2', 'vCM4'],
+               colors={'vCM1': '#b8bcc2', 'vCM2': '#b8bcc2', 'vCM4': '#C0392B'},
+               test='mwu', save='AH_raincloud')
+# data: tidy DataFrame（x=分组列, y=数值列）；AnnData 自动转 tidy
+# 左琴仅 n≥5（kde_min_n）组绘制，小组自动退化为箱线+雨点；kde_bw 控制平滑度
+# test='mwu' → 各组 vs 第一组（ref=... 可换参照）Mann-Whitney U 错位括号，标星+p 值
+# show_n=True x 刻度附 (n=..)；highlight 组用红/其余灰是 CNS 常用强调法
+# 源自 mHeart 外部验证 149f/149g 实战（EV Fig 1A/1C、2A/2B 同款）
+```
 
 ## 4. 统计标注（add_significance_bracket）
 

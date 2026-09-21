@@ -26,6 +26,7 @@
 | **Pseudotime** | §3.3 | §5.11 |
 | **cellproportion** | §3.5 | §5.7 |
 | **山脊/箱线/KDE/直方/抖动散点** | §3.16-§3.20 | §5.4 |
+| **云雨图（半小提琴+箱线+雨点）** | §3.34 | §5.4 |
 | **堆叠面积/柱+点组合** | §3.21-§3.22 | §5.7 |
 | **堆叠火山/UpSet/Venn/森林/回归** | §3.23-§3.27 | §5.2/§5.8 |
 | **通讯热图/PCA方差比/HVG散点** | §3.28-§3.30 | §5.5/§5.1 |
@@ -46,7 +47,7 @@
 | **细胞类型注释总览** | UMAP 按类型着色 | 仅作"地图"；注释**证据**用 dotplot/heatmap | dotplot（marker 紧凑展示）；heatmap（严谨证据） | §2.1/§2.3/§2.5 |
 | **marker 注释证据** | dotplot（点=%表达，色=均值） | 基因>20 或需展示表达分布 | violin（每基因分布）；heatmap（genes×cells 带 metadata 条） | §2.3/§2.4/§2.5 |
 | **严谨注释证据**（审稿级） | genes×cells heatmap（带类型/样本/condition 注释条） | 细胞太多→按类均值 heatmap | ridge plot | §2.5 |
-| **比例变化（有重复）** | 分组柱/点图（每点=一样本）+ 统计检验 | 条件>3→heatmap（celltype×condition） | 箱线图；Milo beeswarm（无预定义 cluster） | §2.7 |
+| **比例变化（有重复）** | 分组柱/点图（每点=一样本）+ 统计检验 | 条件>3→heatmap（celltype×condition） | 云雨图；箱线图；Milo beeswarm（无预定义 cluster） | §2.7/§3.34 |
 | **比例变化（无重复）** | 堆叠柱（100%归一化） | **只能放 supplement**，正文不可做条件比较 | — | §3.5 |
 | **局部丰度变化（无预定义cluster）** | Milo beeswarm（logFC 映射 KNN 图节点） | 需配类型/空间注释才可读 | DA neighborhood heatmap | §3.8 |
 | **DE 单一对比** | volcano（pseudobulk 前提！） | per-cell Wilcoxon 做的 DE **禁止**画 volcano | MA plot | §2.2 |

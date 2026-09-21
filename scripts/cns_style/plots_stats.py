@@ -1287,3 +1287,102 @@ def plot_radar(values, axis_labels, series_names=None, axis_ranges=None, colors=
         ax.legend(loc='center left', bbox_to_anchor=(1.05, 0.5), frameon=False,
                   fontsize=legend_fontsize)
     return fig, ax
+
+
+# ============================================================
+# 20.41 plot_raincloud — 云雨图（左半小提琴+白底箱线+右侧雨点三合一；
+#        源自 mHeart 外部验证 149f/149g 实战模板）
+# ============================================================
+
+def plot_raincloud(data, x, y, order=None, colors=None, ax=None, figsize=None,
+                   save=None, show=None, half_width=0.28, box_width=0.11,
+                   rain_offset=0.10, rain_jitter=0.08, rain_size=11,
+                   kde_bw=0.3, kde_min_n=5, violin_alpha=0.55,
+                   box_edge=None, median_color=None, show_n=True,
+                   test=None, ref=None, seed=1, **kwargs):
+    """云雨图：每组 = 左半小提琴(n≥kde_min_n) + 白底箱线 + 右侧雨点（每点=一观测/一样本）。
+
+    data: tidy DataFrame（x=分组列名, y=数值列名）；AnnData 自动转 tidy。
+    order: 组顺序；colors: {组: hex} 或列表，缺省 MORLANDI 循环。
+    test='mwu': 各组 vs ref 组（默认第一组）Mann-Whitney U 错位显著性括号。
+    show_n: x 刻度附 (n=..)。样本级数据（每点=一供体/一样本）先聚合到样本级再画。
+    """
+    from scipy.stats import gaussian_kde, mannwhitneyu
+    if hasattr(data, 'var_names'):
+        df = _adata_to_tidy(data, [x, y])
+    else:
+        df = data
+    sub = df[[x, y]].dropna()
+    groups = list(order) if order is not None else list(pd.unique(sub[x]))
+    if colors is None:
+        colors = {g: MORLANDI[i % len(MORLANDI)] for i, g in enumerate(groups)}
+    elif not isinstance(colors, dict):
+        colors = {g: c for g, c in zip(groups, colors)}
+    box_edge = NEAR_BLACK if box_edge is None else box_edge
+    median_color = box_edge if median_color is None else median_color
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.8, 3.0))
+    else:
+        fig = ax.figure
+    rng = np.random.default_rng(seed)
+    arrays = {g: sub.loc[sub[x] == g, y].to_numpy(float) for g in groups}
+    lo = min(v.min() for v in arrays.values() if len(v))
+    hi = max(v.max() for v in arrays.values() if len(v))
+    pad = (hi - lo) * 0.12 if hi > lo else abs(hi) * 0.1 + 1
+    # test 括号预留头顶空间（错位 j 层：hi + pad*(0.5 + 1.05*j) + 文字）
+    ref_g = groups[0] if ref is None else ref
+    non_ref = [g for g in groups if g != ref_g]
+    n_brk = len(non_ref) if test == 'mwu' else 0
+    grid = np.linspace(lo - pad, hi + pad * (0.5 + 1.05 * max(n_brk - 1, 0) + 0.9),
+                       200)
+    for i, g in enumerate(groups):
+        vals = arrays[g]
+        color = colors[g]
+        x0 = float(i)
+        # 左半小提琴（n 太小时 KDE 不稳，退化为箱线+雨点）
+        if len(vals) >= kde_min_n:
+            try:
+                dens = gaussian_kde(vals, bw_method=kde_bw)(grid)
+                dens = dens / dens.max() * half_width
+                dens[grid < vals.min()] = 0
+                dens[grid > vals.max()] = 0
+                ax.fill_betweenx(grid, x0 - dens, x0, color=color,
+                                 alpha=violin_alpha, lw=0, zorder=1)
+            except np.linalg.LinAlgError:
+                pass
+        # 中间白底箱线
+        bp = ax.boxplot([vals], positions=[x0], widths=box_width,
+                        patch_artist=True, showfliers=False, showcaps=True,
+                        manage_ticks=False, zorder=3)
+        for b in bp['boxes']:
+            b.set(facecolor='white', edgecolor=box_edge, lw=1.0)
+        for w in bp['whiskers']:
+            w.set(color=box_edge, lw=1.0)
+        for m in bp['medians']:
+            m.set(color=median_color, lw=1.6)
+        # 右侧雨点
+        rain_x = x0 + rain_offset + rng.normal(0, rain_jitter, size=len(vals))
+        ax.scatter(rain_x, vals, s=rain_size, color=color, alpha=0.8,
+                   lw=0, rasterized=True, zorder=2)
+    # 错位显著性括号：各组 vs ref
+    if test == 'mwu':
+        for j, g in enumerate(non_ref):
+            _, p = mannwhitneyu(arrays[g], arrays[ref_g], alternative='two-sided')
+            y0 = hi + pad * (0.5 + 1.05 * j)
+            xi, xj = groups.index(ref_g), groups.index(g)
+            ax.plot([xi, xi, xj, xj], [y0, y0 + pad * 0.25, y0 + pad * 0.25, y0],
+                    color='#9aa0a6', lw=0.8)
+            stars = '***' if p < 0.001 else '**' if p < 0.01 else '*' if p < 0.05 else 'n.s.'
+            ax.text((xi + xj) / 2, y0 + pad * 0.38,
+                    f'{stars} (p={p:.2f})' if stars != 'n.s.' else f'n.s. (p={p:.2f})',
+                    ha='center', fontsize=7.5, color=NEAR_BLACK)
+    ax.set_xticks(range(len(groups)))
+    ax.set_xticklabels([f'{g}\n(n={len(arrays[g])})' if show_n else str(g)
+                        for g in groups], fontsize=8)
+    ax.set_xlim(-half_width - 0.34, len(groups) - 0.55)
+    ax.set_xlabel('')
+    ax.set_ylabel(str(y), fontsize=9)
+    polish_axes(ax)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, ax

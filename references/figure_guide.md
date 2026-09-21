@@ -402,3 +402,18 @@ cns_style 包同时支持两层，所有图型默认 ov.pl 优先：
 - 外部 omicverse-skills 参考 → `omicverse_skills_examples.md`
 - cns_style 包函数 → 见 tool_registry.md 与包内各模块 docstring（plot_* 统一入口导出见 scripts/cns_style/__init__.py；含 save_panel / assert_anndata_keys / cohort_params / plot_umap / plot_volcano / ...）
 - 流程（先定框架再迭代） → `skills/visualization/figure-production/SKILL.md`
+
+### 12.1 组合体增补（E1-E6，与 cheatsheet 同编号）
+
+单图质量由 B1-B7 + finalize_figure 兜底；**组合体（大 fig / 多面板 deck）的系统性
+失败在 B 系之外**。权威细节只在 `references/bigfig_deck_playbook.md`（防重复漂移），
+绘图时额外硬约束（B8/B9）：
+
+- **[B8] 画布级文字重叠断言**：finalize_figure 只查 ax.texts；`ax.title`、刻度标签、
+  图例必须在脚本里另做 pairwise bbox 断言；字号最后设定——`ax.tick_params(labelsize=...)`
+  会静默覆盖 `set_yticklabels(fontsize=...)` | 漏 = 渲染放大后逐层返工
+- **[B9] 版面字面量防截断**：加构/裁剪/缩放后必须断言"全部文本 artist 在画布内"
+  （tight bbox 会把越界文本包进 PNG，反而把图撑宽失真）；窄轴放不下 N 个刻度名时，
+  用数字刻度+键并入脚注 | 漏 = 图在组合体里被裁/变形
+- 组合体总管线/缓存/渲染/像素门 → `bigfig_deck_playbook.md`（E1-E6）；显著性口径 →
+  `references/analysis/stats_convention.md`

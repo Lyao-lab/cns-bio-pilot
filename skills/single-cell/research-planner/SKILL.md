@@ -6,6 +6,8 @@ metadata:
   author: AIPOCH
 ---
 
+> **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
+
 ## When NOT to use this skill
 - After getting the plan, want to **actually run** single-cell analysis → `single-cell/omicverse-pipeline` (Python) or `single-cell/scop` (R/Seurat)
 - The project is spatial transcriptomics → `spatial/omicverse-spatial` (design + analysis combined); pure design may reference this skill but route to spatial

@@ -3,6 +3,8 @@ name: omicverse-pipeline
 description: 单细胞全流程（ambient 去除→QC→doublet→降维聚类→注释→批次校正→通讯→轨迹）+ 多组学整合（MOFA+/GLUE/CITE-seq/代谢/SIMBA/CEFCON）基于 OmicVerse V2 统一 API，无需在 scanpy/Seurat/scVI/CellTypist 间切换。一个 import omicverse as ov 覆盖 90% 常规分析。当用户要做单细胞、scRNA、多组学、CITE-seq、scRNA+ATAC、代谢、MOFA、GLUE 时触发。
 ---
 
+> **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
+
 ## When NOT to use this skill
 - cell2location spatial deconvolution → use `spatial/deconvolution` (handled by `ov.space.Deconvolution`, but routed there for the full deconvolution workflow + quality assessment)
 - R/Seurat environment, or scop-wrapped tools → use `single-cell/scop` (since scop 0.8.9, this includes CytoTRACE/Palantir/CellChat/Monocle3/SCVELO **plus SCENIC+/Milo/RCTD/BANKSY/SecAct/Giotto/CARD/SCENIC and many more**)

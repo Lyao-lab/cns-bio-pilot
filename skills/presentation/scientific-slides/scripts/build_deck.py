@@ -239,24 +239,35 @@ def _figure_top_text(s, d, preset):
         _place_image(s, img, left=1.0, top=img_top, max_w=SLIDE_W-2.0, max_h=img_h)
     _add_caption(s, d.get("caption"), preset)
 
-# ---- 新布局：figure-grid（2×2 四宫格）----
+# ---- 新布局：figure-grid（默认 2×2；grid_cols 可扩展任意列，cell 内居中）----
 def _figure_grid(s, d, preset):
-    _add_title(s, d.get("title",""), preset)
+    _add_title(s, d.get("title", ""), preset)
     images = d.get("images", [])
     if not images and d.get("image"):
         images = [d["image"]]
-    cell_w = (SLIDE_W - 1.0 - SAFE_GAP) / 2
-    cell_h = (CONTENT_H - SAFE_GAP) / 2
-    positions = [
-        (0.5, CONTENT_TOP),
-        (0.5 + cell_w + SAFE_GAP, CONTENT_TOP),
-        (0.5, CONTENT_TOP + cell_h + SAFE_GAP),
-        (0.5 + cell_w + SAFE_GAP, CONTENT_TOP + cell_h + SAFE_GAP),
-    ]
-    for i, img in enumerate(images[:4]):
-        if Path(img).exists():
-            left, top = positions[i]
-            _place_image(s, img, left=left, top=top, max_w=cell_w, max_h=cell_h)
+    cols = max(1, int(d.get("grid_cols", 2)))
+    rows = max(1, -(-len(images) // cols))
+    cell_w = (SLIDE_W - 1.0 - SAFE_GAP * (cols - 1)) / cols
+    cell_h = (CONTENT_H - SAFE_GAP * (rows - 1)) / rows
+    from PIL import Image as _PIL
+    for i, img in enumerate(images[:cols * rows]):
+        if not Path(img).exists():
+            continue
+        r, c = divmod(i, cols)
+        left = 0.5 + c * (cell_w + SAFE_GAP)
+        top = CONTENT_TOP + r * (cell_h + SAFE_GAP)
+        try:
+            with _PIL.open(_ensure_png(img)) as _im:
+                _ar = _im.size[0] / _im.size[1]
+        except Exception:
+            _ar = 1.6
+        # centre inside the cell (anchor is left/top, so precompute the offset)
+        if cell_w / cell_h > _ar:
+            w, h = cell_h * _ar, cell_h
+        else:
+            w, h = cell_w, cell_w / _ar
+        _place_image(s, img, left=left + (cell_w - w) / 2,
+                     top=top + (cell_h - h) / 2, max_w=w, max_h=h)
     _add_caption(s, d.get("caption"), preset)
 
 # ---- 更新后的 figure-sidebar（防重叠版）----

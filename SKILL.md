@@ -4,7 +4,7 @@ description: 生信分析全流程技能库（空间转录组、单细胞、bulk
 compatibility: Requires Python 3.11+ with omicverse/scanpy/scvelo (conda env 'sc'), squidpy (env 'st'), R 4.5.3 with scop 0.8.9. See compat.yaml for version details.
 license: GPL-3.0
 metadata:
-  version: "22.5"
+  version: "22.6"
   author: Lyao-lab
 ---
 
@@ -16,13 +16,14 @@ Read this file → pick ONE sub-skill → read that sub-skill's SKILL.md → exe
 
 When you delegate any analysis/plotting/API-calling work to a sub-agent (**any sub-agent — regardless of its name/type: worker, researcher, executor, explore, general-purpose, ...**), that sub-agent does NOT load this skill and cannot see this conversation. **Rules not written into the dispatch prompt do not exist for the sub-agent.** (If you execute the work yourself, you already have these rules in context — no injection needed, just follow them.) Before every dispatch, append one of:
 
-- **(default)** `开工前读 <skill根目录>/references/dispatch_cheatsheet.md 并遵守 A-D 全部硬规则。特别注意：[本任务最相关的 2-3 条编号]。`
+- **(default)** `开工前读 <skill根目录>/references/dispatch_cheatsheet.md 并遵守 A-E 全部硬规则。特别注意：[本任务最相关的 2-3 条编号]。`
+- **(组合体：大 fig / 多面板 deck / PPT 拼版)** `开工前读 <skill根目录>/references/bigfig_deck_playbook.md 并遵守 E1-E6 全部硬规则。特别注意：[E2 行宽扣间隙 + E4 内容寻址缓存 + E5 像素级验收门]。`
 - **(narrow task)** paste the 2-3 relevant rules directly (e.g. `[A2] pseudobulk DE; [A4] 批次校正后禁 DE`)
 - **(needs decision table)** `开工前读 <skill根目录>/references/figure_guide.md §0.1 数据→图型决策表`
 
 > **Narrow-task floor**: any task that executes analysis/plotting code must include **[A10] ipynb 代码台账** among the pasted rules — A10 applies to every code-executing task regardless of analysis type (R included: `nb_log.py --kernel r`).
 
-`dispatch_cheatsheet.md` condenses the 27 hard rules (A 分析严谨性 10 / B 绘图 7 / C API 4 / D 迭代 6) from 7 reference files into ~80 lines — one reference replaces hand-writing 30 rules every time. **Skipping injection = the sub-agent will violate rules it never saw.**
+`dispatch_cheatsheet.md` condenses the hard rules (A 分析严谨性 10 / B 绘图 7 / C API 4 / D 迭代 6 / E 组合体与交付 6) from 7 reference files into ~90 lines — one reference replaces hand-writing 30 rules every time. **Skipping injection = the sub-agent will violate rules it never saw.** 组合体任务另见 `references/bigfig_deck_playbook.md`（§1 流水线模板 / §4 可执行机检清单 / §5 按根因归类的踩坑清单）。
 
 ## Quick Route（关键词→子skill 索引，borrowed from Biomni prompt-retriever）
 

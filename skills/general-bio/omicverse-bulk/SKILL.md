@@ -3,6 +3,8 @@ name: omicverse-bulk
 description: Bulk RNA-seq / 表达矩阵全流程（差异表达→富集→WGCNA→PPI→批次校正）基于 OmicVerse V2，纯 Python，无需 R 环境和 DESeq2/clusterProfiler/WGCNA R 包。一个 import omicverse as ov 覆盖 90% bulk 分析。
 ---
 
+> **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
+
 ## When NOT to use this skill
 - Data is single-cell (cell × gene matrix) → use `single-cell/omicverse-pipeline`; for bulk-style DE, do pseudobulk aggregation first, then feed to this skill
 - Data is spatial transcriptomics → use `spatial/omicverse-spatial`

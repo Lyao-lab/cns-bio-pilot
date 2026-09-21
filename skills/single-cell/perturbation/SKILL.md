@@ -3,6 +3,8 @@ name: perturbation
 description: 扰动分析全流程——两条路径：(A) 实测 Perturb-seq 数据分析（Mixscape/pseudobulk DE/pertpy）；(B) 未测扰动的 in silico 预测（Arc State / GEARS/CPA/scGPT 或 GRN-based CellOracle/SCENIC+/scTenifoldKnk）。当用户要做 CRISPR screen 分析、perturbation prediction、gene KO 预测、扰动响应、药物响应预测、Mixscape、GEARS、CellOracle、State、虚拟细胞 (virtual cell) 时触发。
 ---
 
+> **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
+
 ## When NOT to use this skill
 - Only need a single-KO signature without screen design → `single-cell/omicverse-pipeline` (pseudobulk DE + enrichment)
 - Perturbation via RNA-velocity in-silico blockade (RegVelo) → `single-cell/rna-velocity` (`v.regvelo_perturb`)

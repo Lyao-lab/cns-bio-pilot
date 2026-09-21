@@ -6,6 +6,8 @@ license: GPL-3.0
 
 # Web Report
 
+> **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
+
 ## When NOT to use this skill
 - 需要演讲幻灯片（PPT）→ 用 `presentation/scientific-slides`
 - 需要论文正文（Methods / Results / figure legend）→ 用 `presentation/manuscript-writing`

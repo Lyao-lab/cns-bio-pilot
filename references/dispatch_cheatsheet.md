@@ -4,7 +4,7 @@
 > **用途**：执行者凡未读过 skill 主文档（任何子智能体天然如此——不论叫什么名字），注入一句"开工前读本文件并遵守全部硬规则"即可传递 skill 核心纪律，避免其因看不到主会话上下文而违规。主智能体自己执行时同样适用本表（尤其 A2/A4/B1-B3）。
 > **来源**：浓缩自 SKILL.md Core Rules + meta_methodology + figure_guide + plotting_reference。
 > **每条格式**：`[编号] 规则 | 违规后果 | 机检：脚本名/自觉`
-> 只读本文件即可覆盖施工时 95% 的硬约束；需要完整决策表时再读对应 reference。
+> 只读本文件即可覆盖施工时 95% 的硬约束；需要完整决策表时再读对应 reference。（6 系 33 条：A 分析 10 / B 绘图 7 / C API 4 / D 迭代 6 / E 组合体 6——E 系每条较详，细节查 `references/bigfig_deck_playbook.md`）
 
 ---
 
@@ -29,7 +29,7 @@
 ## A. 分析严谨性（违反 = 科学错误）
 
 - **[A1] 基于事实不虚构**：每个数字/数据集/accession/API 必须有来源；缺失标 `[AUTHOR TO SPECIFY]`，绝不编造 | 虚构 = 论文造假 | 机检：postcheck F1（占位符/编造 accession）
-- **[A2] 单细胞 DE 必须 pseudobulk**：禁止 per-cell Wilcoxon（假阳性膨胀）；sample×celltype 聚合 → DESeq2/edgeR；≥3 生物学重复，否则标 exploratory；用 `layers['counts']` 非 normalized | per-cell DE = 结论不可信 | 机检：postcheck D3/D4
+- **[A2] 单细胞 DE 必须 pseudobulk**（显著性三层口径见 `references/analysis/stats_convention.md`：名义/BH校正/CI；跨产物数字只许引唯一计算源表）：禁止 per-cell Wilcoxon（假阳性膨胀）；sample×celltype 聚合 → DESeq2/edgeR；≥3 生物学重复，否则标 exploratory；用 `layers['counts']` 非 normalized | per-cell DE = 结论不可信 | 机检：postcheck D3/D4
 - **[A3] counts layer 先存**：`adata.layers['counts'] = adata.X.copy()` 必须在 QC 前完成 | 缺 counts = DE/velocity 无法做 | 机检：postcheck A1
 - **[A4] 批次校正后禁止 DE**：corrected embedding 不得当 raw counts 做 DE（疾病信号被抹除）；用 raw counts + pseudobulk | 批次校正数据做 DE = FAIL | 机检：postcheck D3
 - **[A5] 每步存 checkpoint**：每个 major step 存 `checkpoints/XX_step.h5ad`；上游变化 → 从该步全部重算，禁复用旧 h5ad/DE/图 | 无 checkpoint = 无法回溯重算 | 机检：自觉
@@ -65,15 +65,31 @@
 - **[D5] provenance 强制**：§0 Init 建 `analysis_log.md`，每 major step 追加参数/阈值/方法/seed/数据 md5/版本 | 缺 = 不可复现 | 机检：自觉
 - **[D6] autopilot 例外**：仅当用户明确授权"跑完别停"时连续跑，但交付前必须做一次完整 Phase R（R1+R2），授权记录进 analysis_log | 未授权却自动跑 = 跳过人工门 | 机检：自觉
 
+## E. 组合体与交付（大 fig / 多面板 deck；违反 = 渲染放大后才暴露的系统性返工）
+
+- **[E1] deck-as-code 流水线**：draw(每面板脚本+save_panel) → compose(几何/排布) → build(shrink→fit_captions→place_panels) → render 预览 → 像素门。完整模板与顺序见 `references/bigfig_deck_playbook.md` §1 | 跳步 = 缓存/几何类缺陷静默进交付 | 机检：自觉
+- **[E2] 行宽公式扣间隙**：多面板行高 = (W − 间隙×(n−1))/Σar；漏扣 → 行块宽于画布、居中把边缘面板推出界（"左缘截断"真因不是缺边距）。组合体外加 ~0.15in 白边 | 边缘面板出画布 | 机检：边缘像素扫描
+- **[E3] 渲染保真**：自写 preview renderer 必须真实字号、按**文本框宽**换行（PIL 量宽，Bold/Oblique 族）、段落级字号回退；字号物理放大（fs×100/72）或按画布宽换行 → 全 deck caption"截断"是幻影，验收结论全错 | 机检：抽一页用真实渲染核对
+- **[E4] 内容寻址缓存**：派生文件名含 内容hash+max_px（`{stem}_{px}_{md5[:12]}.png`）；按输出路径直接复用的缓存（裁剪/合成图）必须校验源 mtime/hash | 旧版本静默进交付物 | 机检：嵌入 md5 == 派生链末文件 md5（逐页）
+- **[E5] 像素级验收门**：每页底/右/顶缘深色像素占比扫描（>1% = 文字出界；caption 截断类字级检查测不出）+ 视觉门只读渲染后 PNG、每页一行 JSON、必须给可定位证据（幻觉不接） | 缺 = 截断/重叠进最终交付 | 机检：自觉（playbook §4 清单）
+- **[E6] 组合叙事一致**：大 fig 先行、deck 按分区拆页、caption 与大 fig 分区标题一致 | 两处叙事漂移 = 答辩翻车点 | 机检：自觉
+
 ---
 
 ## 注入模板（给看不到 skill 主文档的执行者；主智能体自用则跳过注入、直接照表执行）
 
 **通用生信/绘图任务**：
 ```
-[规则] 开工前读 <skill根目录>/references/dispatch_cheatsheet.md 并遵守 A-D 全部硬规则。
+[规则] 开工前读 <skill根目录>/references/dispatch_cheatsheet.md 并遵守 A-E 全部硬规则。
 特别注意：[列出本任务最相关的 2-3 条编号，如 A2 pseudobulk + A5 checkpoint + B1 plot_xxx]。
 ```
+
+**大 fig / 多面板 deck / PPT 组合体任务**：
+```
+[规则] 开工前读 <skill根目录>/references/bigfig_deck_playbook.md 并遵守 E1-E6 全部硬规则。
+特别注意：[E2 行宽扣间隙 + E4 内容寻址缓存 + E5 像素级验收门]。
+```
+组合体任务下限：注入清单必须含 [A10]（ipynb 台账）+ [E4]（缓存纪律）。
 
 **窄任务（只需 2-3 条）**：
 ```
@@ -95,3 +111,7 @@
 | PPT | `qa_deck.py` + `validate_presentation.py` | A1（占位符）+ 字号/几何 |
 | 包升级/环境变更 | `scripts/api_check.py --diff` | C2/C3 |
 | 绘图 | （finalize_figure 内置） | B3 |
+| 组合体像素门 | `scripts/edge_sweep.py <render_dir>`（逐页底/右/顶缘扫描，exit≠0 = 截断） | E5 |
+| 组合体几何/嵌入链/备注 | `scripts/deck_gate.py deck.pptx --expected '{...}' [--embed-map '{...}'] [--notes-block 方法,意义]`（exit≠0 = 截断/越界/旧图/缺备注段） | E4/E5 |
+| 大 fig 拼版 | `scripts/compose_bigfig.py sections.json out.png`（行宽扣间隙/分区标题带/边距） | E1/E2 |
+| 渲染预览（保真） | `scripts/render_slides.py deck.pptx /tmp/dir`（真实字号+按框宽换行） | E3 |

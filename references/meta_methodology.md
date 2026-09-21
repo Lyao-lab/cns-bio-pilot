@@ -23,7 +23,7 @@
 | "this parameter name is correct" | `inspect.signature(func)` — params get renamed across versions (e.g. `tresh` not `thresh`, `methods` not `method`) |
 | "this GEO/PMID/gene name is real" | batch-check NCBI/HGNC — ~20% of LLM citations are fabricated |
 | "DESeq2 assumes replicates" | check `design`, is donor in the model? n≤3 = exploratory only |
-| "CellChat p<0.001 = real signaling" | it assumes mRNA ≈ protein activity; multi-method consensus = evidence |
+| "CellChat p<0.001 = real signaling" | it assumes mRNA ≈ protein activity; multi-method consensus = evidence。措辞纪律见 cheatsheet A8（associated with，禁 drives/regulates） |
 | "deconvolution proportions are true" | the reference is a strong prior; have you validated on simulated ground truth? |
 | "code runs = result correct" | is the geometric / statistical / biological semantics right? No error ≠ correct |
 

@@ -3,6 +3,8 @@ name: scop
 description: 用 scop R 包做单细胞/空转全流程（基于 Seurat，133 verified Run* 动词 in scop 0.8.9）——QC/整合/注释/DE/轨迹/通讯/velocity/GRN/空间域/去卷积/组成型 DA。当用户要用 R、Seurat、scop、R 单细胞、standard_scop/integration_scop/RunPCA/RunUMAP/RunCellChat/RunSCVELO/RunMonocle3/RunSCENICPlus/RunMilo/RunRCTD/RunBANKSY 等 Run* 动词时触发。0.8.9 起 SCENIC+/Milo/scCODA/RCTD/BANKSY/SecAct/Giotto/EcoTyper/SCENIC 等已被 scop 包装。
 ---
 
+> **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
+
 ## When NOT to use this skill
 - Pure Python/AnnData-native large-scale analysis (>1M cells, AnnDataOOM backend) → `single-cell/omicverse-pipeline`
 - Python-only spatial deconvolution via omicverse unified wrapper → `spatial/deconvolution` (but scop ALSO wraps RCTD/cell2location/SPOTlight/etc since 0.8.9)

@@ -1,11 +1,19 @@
 ---
 name: figure-production
-description: 生信发表级图表——逐张迭代设计（看上一张结果决定下一张画什么）→ 每张独立出图验证 → 最后拼成 composite。当用户要画生信图、做发表级 figure、设计主图、拼图、UMAP/volcano/heatmap/dotplot/空间图/PAGA/轨迹/细胞通讯图时触发。
+description: 生信发表级图表——逐张迭代设计（看上一张结果决定下一张画什么）→ 每张独立出图验证（png+pdf 双格式落盘，per-figure ipynb 一面板一 cell）→ deck/composite 由单图拼装。当用户要画生信图、做发表级 figure、设计主图、拼图、UMAP/volcano/heatmap/dotplot/空间图/PAGA/轨迹/细胞通讯图时触发。
 ---
 
 # Figure Production (Iterative Design → Per-Panel Render → Assemble)
 
-**触发词**: 画图 / 出图 / figure / UMAP / tSNE / volcano / heatmap / dotplot / violin / 拼图 / 主图设计 / composite / 发表级 / PAGA / 轨迹 / chord / 细胞通讯 / 空间图
+**触发词**: 画图 / 出图 / figure / UMAP / tSNE / volcano / heatmap / dotplot / violin / 拼图 / 主图设计 / composite / 发表级 / PAGA / 轨迹 / chord / 细胞通讯 / 空转图
+
+> **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
+
+## 🚫 面板导出硬规则（Panel Export Contract，所有绘图代码强制遵守）
+
+1. **一面板一文件、双格式**：每个 panel 必须经 `save_panel(fig, 'X_name', fmt='png+pdf')` 独立落盘（PNG 自检 + PDF 矢量交付）。🚫 禁止只存在于拼接大图/slide 里的面板；🚫 禁止只出 PNG 不出 PDF（或反之）。
+2. **绘图代码 = per-figure ipynb，一面板一 cell**：每个大 figure 维护一个 notebook（`YYYYMMDD_fig<N>_panels.ipynb`，放 `~/code/<项目>/`），**每个 cell 自包含**（imports + 数据加载 + 绘制 + save_panel），单独重跑该 cell 即可重画该面板；cell 上方英文 markdown 旁注一句话说明。`.py` 面板脚本与 notebook cell 保持镜像（改一边同步另一边）：CLI 批量渲染用 `.py`，修改迭代用 ipynb。
+3. **PPT/composite 由单图拼装**：deck 用 `figure-grid` 等布局直接引用各面板文件拼装；composite 只是打印版附加产物，**不得作为面板的唯一存在形式**。幻灯片引用的每张图必须能回溯到磁盘上的独立 png+pdf。
 
 ## 何时使用（When to Use）
 
@@ -183,6 +191,8 @@ python skills/visualization/figure-production/scripts/main.py \
 **拼图只做排版**（label 位置/间距/DPI），不改内容。发现某张比例不对 → 回去重画那张。
 
 > **每张图保持 PDF 格式**（论文正文 + 拼大图都用 PDF 矢量）。PPT 嵌图时 `build_deck.py` 会自动把 PDF 转成 300dpi PNG（需 `pip install pymupdf`），你不需要手动切格式——PDF 是唯一源文件，PPT 只是消费端。
+>
+> **deck 优先用 `figure-grid` 布局直接引用各面板文件拼装**（一面板一 png+pdf，可独立改图重出）；composite PDF 只作打印版附加产物。不要把「拼成一张大图」当作面板的唯一交付形式。
 
 ---
 

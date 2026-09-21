@@ -7,6 +7,8 @@ allowed-tools: Read Write Edit Bash
 
 # Scientific Slides
 
+> **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
+
 ## When NOT to use this skill
 - Writing paper Methods / Results / figure legend text → use `presentation/manuscript-writing`
 - Standalone publication-grade figure (not a slide) → use `visualization/figure-production`
@@ -54,6 +56,7 @@ This skill generates research presentation slides with **python-pptx** (default)
 | 10 | takehome | ≤3 条 take-home | "3 key findings: rewiring / CXCL12 / spatial niche" |
 
 > **规则**：每页标题 = 该页结论（从 story_builder Step 3 主结论/因果链取词）。
+> 页面级 figure 规划（每页论证什么、deliverable 结构）以 `skills/single-cell/research-planner/references/validation_and_figures.md` §Figure and Deliverable Plan 为准——叙事弧与 figure 规划是一体两面，本页不重复定义。
 > **UMAP 全场只用一次**（展示结构，不做定量论证）。
 > 空间图必须配定量 panel（箱线/距离曲线），单独的"好看切片图"不构成证据。
 
@@ -183,6 +186,8 @@ python scripts/validate_presentation.py presentation.pptx
 ```
 
 > **USE SUBAGENTS for visual QA** (from anthropics/pptx): reviewing your own code invites confirmation bias — let a subagent check overlap / overflow / contrast with fresh eyes. "If you don't spot any problem at first glance, you aren't looking closely enough."
+
+> **组合体增补（E1-E6，必守）**：多面板/大 fig deck 施工前读 `references/bigfig_deck_playbook.md`。QA 在此三查之上追加（E5 像素门）：(a) 自写 render 预览器必须真实字号+按框宽换行（否则 caption"截断"是幻影）；(b) 逐页底/右/顶缘深色像素占比扫描 >1% = 文字出界；(c) 视觉门只读渲染后 PNG、要可定位证据；(d) 嵌入 md5 == 源→裁剪→shrink 派生链 md5（E4 内容寻址缓存，防旧版本静默进交付物）。
 
 ## Slide Variants (12 种布局，多样化 + 防重叠)
 

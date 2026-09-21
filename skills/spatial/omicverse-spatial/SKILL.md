@@ -1,6 +1,6 @@
 ---
 name: omicverse-spatial
-description: 空间转录组全流程（IO→空间邻域→QC→空间域→SVG→通讯→可视化）基于 OmicVerse V2 统一 API，覆盖 Visium/Xenium/Nanostring/VisiumHD。一个 import omicverse as ov 完成 90% 常规空转分析。
+description: 空间转录组全流程（IO→空间邻域→QC→空间域→SVG→通讯→可视化）基于 OmicVerse V2 统一 API，覆盖 Visium/Xenium/Nanostring 等常规分辨率平台（高分平台 Stereo-seq/Visium HD/MERFISH 走 spatial/multiomics）。一个 import omicverse as ov 完成 90% 常规空转分析。当用户要做空间转录组、空间 domain、SVG、空间通讯、空转可视化时触发。
 ---
 
 > **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。

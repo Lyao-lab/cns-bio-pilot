@@ -1,6 +1,6 @@
 ---
 name: cns-bio-pilot
-description: 生信分析全流程技能库（空间转录组、单细胞、bulk 组学 + 绘图 + 论文/PPT 产出）。当用户要做生信分析、处理单细胞或空转数据、画发表级图表、写论文/PPT/汇报、构建生物学故事时触发。触发后读取 SKILL.md 路由到具体子 skill。
+description: 生信分析全流程技能库（空间转录组、单细胞、bulk 组学 + 发表级绘图 + 论文/PPT/网页报告产出）。当用户要做生信分析、处理单细胞/空转/空间组学数据、画发表级图表、写论文/PPT/汇报、构建生物学故事时触发；即使任务只涉及其中一个环节（只画一张图、只做一次差异分析、只写一段 Methods）也应使用本技能。
 compatibility: Requires Python 3.11+ with omicverse/scanpy/scvelo (conda env 'sc'), squidpy (env 'st'), R 4.5.3 with scop 0.8.9. See compat.yaml for version details.
 license: GPL-3.0
 metadata:
@@ -57,6 +57,8 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (**any s
 | 网页报告 / HTML / report / 在线分享 / web report | `presentation/web-report` |
 | 论文 / manuscript / methods / 写作 | `presentation/manuscript-writing` |
 | 研究设计 / 规划 / study design | `single-cell/research-planner` |
+
+> **优先级**：平台关键词（高分空转 / Visium HD / Stereo-seq / MERFISH / Slide-seq）命中时一律走 `spatial/multiomics`，其流程内已覆盖 binning 后的聚类/domain 等分析；上表中的 domain / 共定位 / SVG / Ripley 等分析关键词仅对常规分辨率平台（Visium / Xenium）指向 `spatial/omicverse-spatial`。
 
 ## Routing Table
 

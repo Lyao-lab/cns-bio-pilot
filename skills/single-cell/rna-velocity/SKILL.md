@@ -1,6 +1,6 @@
 ---
 name: rna-velocity
-description: RNA velocity 全家桶。基于 OmicVerse V2 的 ov.single.Velo（统一 dynamo/scvelo/latentvelo/graphvelo/regvelo 五引擎）从 spliced/unspliced 推断方向、潜在时间、驱动基因；下游命运推断走 CellRank 2（统一 kernel 框架）；cellDancer/DeepVelo/pyro-Velocity 等未封装算法走原生 fallback。
+description: RNA velocity 全家桶。基于 OmicVerse V2 的 ov.single.Velo（统一 dynamo/scvelo/latentvelo/graphvelo/regvelo 五引擎）从 spliced/unspliced 推断方向、潜在时间、驱动基因；下游命运推断走 CellRank 2（统一 kernel 框架）；cellDancer/DeepVelo/pyro-Velocity 等未封装算法走原生 fallback。当用户要做 RNA velocity、速率、细胞命运推断、latent time、driver gene、CellRank 时触发。
 ---
 
 > **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。

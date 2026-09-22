@@ -31,3 +31,7 @@ desktop.ini
 *.h5seurat
 
 .tmp/
+
+# 验收基线图豁免（视觉回归参照，勿删）
+!scripts/tests/renders_20260921/*.png
+!scripts/tests/renders_20260922/*.png

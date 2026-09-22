@@ -8,12 +8,32 @@ from ._constants import *
 # ============================================================
 # 2. polish_axes(ax) — per-panel finishing touch
 # ============================================================
-def polish_axes(ax, keep_spines=('left', 'bottom'), subtle_grid=False):
+def polish_axes(ax, keep_spines=('left', 'bottom'), subtle_grid=False,
+                variant=None, grid_axis='y'):
     """CNS-grade axis styling: hide top/right spines, tick/grid/label cleanup.
 
     Apply to EVERY panel after plotting. For UMAP/tSNE use clean_umap_axes() instead.
     Gridlines are OFF by default.
+
+    variant='bar': bar-chart look（fetal_heart 76/79 脚本的高频形态）——只留
+    底脊并染 GREY_SCALE['spine']；tick length 2、标签 #444444；值轴浅网格
+    （grid_axis='y' 竖条 / 'x' barh）。此变体忽略 keep_spines/subtle_grid。
     """
+    if variant == 'bar':
+        for side in ('top', 'right', 'left'):
+            ax.spines[side].set_visible(False)
+        sp = ax.spines['bottom']
+        sp.set_visible(True)
+        sp.set_color(GREY_SCALE['spine'])
+        sp.set_linewidth(0.8)
+        ax.tick_params(direction='out', length=2, labelsize=7.5,
+                       colors='#444444')
+        ax.grid(axis=grid_axis, color=GREY_SCALE['grid'], lw=0.6, zorder=0)
+        ax.set_axisbelow(True)
+        if ax.get_xlabel():
+            ax.set_xlabel(ax.get_xlabel(), labelpad=8)
+        return
+
     # Hide top/right spines (CNS convention: only left + bottom)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -145,15 +165,19 @@ def add_scale_bar(ax, length_um=200, px_per_um=1.0, color='white',
     import matplotlib.patheffects as pe
     length_px = length_um * px_per_um
     xlim = ax.get_xlim(); ylim = ax.get_ylim()
-    x0 = xlim[0] + (xlim[1] - xlim[0]) * x_frac
-    y0 = ylim[0] + (ylim[1] - ylim[0]) * y_frac
-    ax.plot([x0, x0 + length_px], [y0, y0], color=color, lw=2.5,
-            solid_capstyle='butt', zorder=10)
-    ax.text(x0 + length_px / 2, y0 + (ylim[1] - ylim[0]) * 0.02,
-            f'{length_um} μm', ha='center', va='bottom', fontsize=fontsize,
-            color=color, zorder=10,
-            path_effects=[pe.withStroke(linewidth=2, foreground='black'
-                         if color == 'white' else 'white')])
+    xdir = 1.0 if xlim[1] > xlim[0] else -1.0        # 翻转轴安全（fetal_heart 实测）
+    xmin, xmax = (xlim[0], xlim[1]) if xdir > 0 else (xlim[1], xlim[0])
+    ymin, ymax = min(ylim), max(ylim)
+    span_x, span_y = xmax - xmin, ymax - ymin
+    x0 = xmin + x_frac * span_x
+    y0 = ymin + y_frac * span_y
+    ax.plot([x0, x0 + xdir * length_px], [y0, y0], color=color, lw=2.5,
+            solid_capstyle='butt', zorder=10, clip_on=False)
+    ax.text(x0 + xdir * length_px / 2, y0 + 0.02 * span_y,
+            f'{length_um:g} μm', ha='center', va='bottom', fontsize=fontsize,
+            color=color, zorder=10, clip_on=False,
+            path_effects=[pe.withStroke(linewidth=2,
+                         foreground='black' if color == 'white' else 'white')])
 
 
 # ============================================================

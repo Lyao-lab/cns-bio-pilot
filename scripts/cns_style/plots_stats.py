@@ -43,7 +43,8 @@ def plot_bar(props, ax=None, figsize=None, save=None, groupby=None, celltype_col
             fig = plt.gcf()
             fig.set_size_inches(*(figsize or (3.0, 2.5)))
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, fig.axes[0] if fig.axes else None
         except Exception as e:
             print(f"[smart_plot] ov.pl.barplot failed ({e}), mpl fallback")
@@ -76,7 +77,8 @@ def plot_bar(props, ax=None, figsize=None, save=None, groupby=None, celltype_col
     ax.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', frameon=False)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -90,27 +92,100 @@ def plot_bar(props, ax=None, figsize=None, save=None, groupby=None, celltype_col
 # ============================================================
 
 def plot_enrichment(enr, ax=None, figsize=None, save=None, top_n=15,
-                    term_col='Term', fdr_col='FDR', count_col='Gene_count', show=None, **kwargs):
-    """Enrichment barh：-log10(FDR) 降序，条右标 gene count，通路名截断。"""
-    terms = enr.nsmallest(top_n, fdr_col)
+                    term_col='Term', fdr_col='FDR', count_col='Gene_count',
+                    group_col=None, group_order=None, per_group=5,
+                    cap=None, pretty_terms=True, value_col=None,
+                    group_colors=None, show=None, **kwargs):
+    """Enrichment barh：-log10(FDR) 降序，条右标 gene count，通路名 pretty 清洗。
+
+    升级（源自 fetal_heart draw_fig2e2_* ORA 系列实战）：
+    group_col → 分组模式：每组取 per_group 条（按 FDR），组标题加粗着色 +
+    组间分隔线，组色与上游 panel 严格一致；FDR>0.05 的通路 y 标签置灰。
+    cap → 极端值轴封顶（如 30）：超限条画到 cap、标签显示真值（核糖体等
+    -log10≈98 的通路不再把其他条压扁）。value_col 可换指标（如 combined score）。
+    """
+    df = enr.copy()
+    df['_v'] = (-np.log10(df[fdr_col].clip(lower=1e-300)) if value_col is None
+                else df[value_col].astype(float))
+    df['_term'] = [_pretty_term(str(t)) if pretty_terms else str(t)[:40]
+                   for t in df[term_col]]
+    if group_col is not None:
+        if group_order is not None:
+            gorder = [g for g in group_order if g in set(df[group_col])]
+        else:
+            gorder = list(df[group_col].dropna().unique())
+        parts = []
+        for g in gorder:
+            sub = df[df[group_col] == g].nsmallest(per_group, fdr_col)
+            parts.append(sub.assign(_group=g))
+        sel = pd.concat(parts, ignore_index=True)
+    else:
+        sel = df.nsmallest(top_n, fdr_col).assign(_group=None)
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize or (3.0, 0.22*len(terms)+0.6))
+        fig, ax = plt.subplots(figsize=figsize or (3.0, 0.24 * len(sel) + 0.6))
     else:
         fig = ax.figure
-    y_pos = range(len(terms))
-    bars = ax.barh(y_pos, -np.log10(terms[fdr_col]), color='#BF616A', height=0.6,
-                   edgecolor='none')
+    if group_colors is None:
+        group_colors = {g: MORLANDI[i % len(MORLANDI)]
+                        for i, g in enumerate(gorder)} if group_col is not None else {}
+    y_pos = np.arange(len(sel))
+    vals = sel['_v'].to_numpy(float)
+    drawn = np.minimum(vals, cap) if cap is not None else vals
+    cols = [group_colors.get(g, '#BF616A') for g in sel['_group']]
+    ax.barh(y_pos, drawn, color=cols, height=0.62, alpha=0.88,
+            edgecolor='none', zorder=2)
     ax.set_yticks(y_pos)
-    ax.set_yticklabels([str(t)[:40] for t in terms[term_col]], fontsize=7)
-    ax.set_xlabel(r'$-$log$_{10}$(FDR)', labelpad=10)
+    ax.set_yticklabels(
+        sel['_term'].tolist(), fontsize=7)
+    # 非显著通路标签置灰（fetal_heart 约定：FDR>0.05 灰、其余 NEAR_BLACK）
+    for t, fdr in zip(ax.get_yticklabels(), sel[fdr_col]):
+        if float(fdr) > 0.05:
+            t.set_color(GREY)
+    ax.set_xlabel(r'$-$log$_{10}$(FDR)' if value_col is None else str(value_col),
+                  labelpad=10)
     ax.invert_yaxis()
-    for b, n in zip(bars, terms[count_col]):
-        ax.text(b.get_width()+0.1, b.get_y()+b.get_height()/2, str(n),
-                va='center', fontsize=6, color=GREY)
-    polish_axes(ax, subtle_grid=False)
+    for yy, v, d, n in zip(y_pos, vals, drawn, sel[count_col]):
+        ax.text(d + 0.1 if cap is None else d + cap * 0.012, yy,
+                (f'{v:.1f}' if cap is None or v < cap else f'{v:.0f}') +
+                (f'  ({n})' if pd.notna(n) else ''),
+                va='center', fontsize=6.3, color=GREY)
+    if group_col is not None:
+        seen = {}
+        for yy, g in zip(y_pos, sel['_group']):
+            seen.setdefault(g, yy)
+        for g, yy in seen.items():
+            ax.text(-0.06, yy - 0.32, str(g), fontweight='bold', fontsize=7.5,
+                    transform=ax.get_yaxis_transform(),
+                    color=group_colors.get(g, NEAR_BLACK), clip_on=False)
+            if yy > 0:
+                ax.axhline(yy - 0.62, color=GREY_SCALE['spine'], lw=0.8,
+                           zorder=1)
+    if cap is not None:
+        ax.set_xlim(0, cap * 1.14)
+    polish_axes(ax, variant='bar', grid_axis='x')
+    ax.spines['left'].set_visible(True)
+    ax.spines['left'].set_color(GREY_SCALE['grid'])
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
+
+
+_MINOR_WORDS = {'of', 'in', 'to', 'and', 'the', 'via', 'or', 'a', 'an', 'for'}
+
+
+def _pretty_term(t, maxlen=48):
+    """富集术语清洗：去数据库前缀、下划线转空格、介词小写、超长截断。"""
+    for pre in ('GOBP_', 'GOCC_', 'GOMF_', 'HALLMARK_', 'REACTOME_', 'KEGG_',
+                'WP_', 'CP:'):
+        if t.startswith(pre):
+            t = t[len(pre):]
+            break
+    words = t.replace('_', ' ').split()
+    out = [w if (w.lower() not in _MINOR_WORDS or i == 0) else w.lower()
+           for i, w in enumerate(words)]
+    s = ' '.join(out)
+    return s if len(s) <= maxlen else s[:maxlen - 1] + '…'
 
 
 # ============================================================
@@ -159,11 +234,13 @@ def plot_lr_bubble(pair_labels, pathway_labels, sizes, mean_expr,
                                     (1.0, f'{s_max:.0f}')]:
                     ax_ov.scatter([], [], s=frac * 200, c='lightgray', edgecolor=NEAR_BLACK,
                                   linewidth=0.3, label=label)
-                ax_ov.legend(title='-log10(p)', loc='upper left', bbox_to_anchor=(1.15, 1.0),
-                             frameon=False, fontsize=6, title_fontsize=7, labelspacing=1.2,
-                             scatterpoints=1)
+                ax_ov.legend(title='-log10(p)', loc='upper left',
+                             bbox_to_anchor=(1.22, 1.0), labelspacing=1.5,
+                             handletextpad=1.6, frameon=False, fontsize=6,
+                             title_fontsize=7, scatterpoints=1)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax_ov
         except Exception as e:
             print(f"[smart_plot] ov.pl.scatterplot failed ({e}), mpl fallback")
@@ -198,7 +275,8 @@ def plot_lr_bubble(pair_labels, pathway_labels, sizes, mean_expr,
     add_elegant_colorbar(scatter, ax, label='Mean expression')
     polish_axes(ax, subtle_grid=False)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -228,14 +306,16 @@ def plot_cellproportion(adata, groupby='condition', celltype_col='celltype',
                                  groupby=groupby, figsize=(3.0, 2.5), **kwargs)
             fig_ov = plt.gcf()
             if save:
-                save_panel(fig_ov, save, show=show)
+                save_panel(fig_ov, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig_ov, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.cellproportion failed ({e}), mpl fallback")
     _cellproportion_mpl(adata, groupby, celltype_col, ax)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -297,7 +377,8 @@ def plot_de_scatter(de_dict, ax=None, figsize=None, save=None,
             n_groups = len(de_dict)
             group_names = list(de_dict.keys())
             group_map = {g: i for i, g in enumerate(group_names)}
-            df_de['x_num'] = df_de['group'].map(group_map)
+            df_de['x_num'] = df_de['group'].map(group_map) + \
+                np.random.uniform(-0.16, 0.16, len(df_de))   # 抖动防熔柱
             ov.pl.scatterplot(data=df_de, x='x_num', y='logFC', hue='padj',
                               cmap='coolwarm_r', alpha=0.7, s=15,
                               figsize=figsize or (min(n_groups * 0.8 + 0.5, 4.0), 2.5))
@@ -306,8 +387,11 @@ def plot_de_scatter(de_dict, ax=None, figsize=None, save=None,
             if ax_ov:
                 ax_ov.set_xticks(range(n_groups))
                 ax_ov.set_xticklabels(group_names, fontsize=7)
+                ax_ov.set_xlabel('')                    # 不泄漏内部列名 x_num
+                ax_ov.set_ylabel('log$_2$FC')
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax_ov
         except Exception as e:
             print(f"[smart_plot] ov.pl.scatterplot failed ({e}), mpl fallback")
@@ -347,7 +431,8 @@ def plot_de_scatter(de_dict, ax=None, figsize=None, save=None,
     ax.set_ylabel(r'log$_2$(Fold Change)', fontsize=10, labelpad=10)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -373,7 +458,8 @@ def plot_milo(milo_result, ax=None, figsize=None, save=None,
             fig = plt.gcf()
             ax_ov = fig.axes[0] if fig.axes else None
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax_ov
         except Exception as e:
             print(f"[smart_plot] ov.pl.compare_groups failed ({e}), mpl fallback")
@@ -400,7 +486,8 @@ def plot_milo(milo_result, ax=None, figsize=None, save=None,
     ax.legend(loc='upper right', frameon=False, fontsize=7)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -447,8 +534,20 @@ def plot_enrichment_scatter(enr_df, x='GeneRatio', y='FDR', size='Count',
                     ax_fig.annotate(str(row[term_col])[:35], (row[x], row['_ylog']),
                                     fontsize=6, color=GREY, ha='left', va='center',
                                     xytext=(4, 0), textcoords='offset points')
+                ax_fig.set_xlabel(str(x))               # 不泄漏内部列名
+                ax_fig.set_ylabel(r'$-$log$_{10}$(FDR)')
+                # size 图例（3 档虚拟点，右下角 clip_on=False）
+                smin, smax = float(df[size].min()), float(df[size].max())
+                for k, f_ in enumerate((1.0, 0.6, 0.25)):
+                    ax_fig.scatter([], [], s=np.interp(f_, (0, 1), (8, 90)),
+                                   c='lightgray', edgecolor=GREY, lw=0.5,
+                                   label=f'{smin + (smax - smin) * f_:.0f}')
+                ax_fig.legend(title=str(size), loc='lower right', frameon=False,
+                              fontsize=6, labelspacing=1.1, borderpad=0.8,
+                              handletextpad=1.2, scatterpoints=1)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax_fig
         except Exception as e:
             print(f"[smart_plot] ov.pl.scatterplot failed ({e}), mpl fallback")
@@ -490,7 +589,8 @@ def plot_enrichment_scatter(enr_df, x='GeneRatio', y='FDR', size='Count',
     add_elegant_colorbar(sc, ax, label=str(color))
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -521,39 +621,42 @@ def plot_kde(data, x, y=None, hue=None, ax=None, figsize=None,
         fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
     else:
         fig = ax.figure
-    if _check_ov():
+    ov_ok = _check_ov() and not (hue is not None and use_y is not None)
+    if ov_ok:
         try:
             import omicverse as ov
             ov.pl.kdeplot(data=df, x=use_x, y=use_y, hue=hue,
                           ax=ax, **kwargs)
             polish_axes(ax)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.kdeplot failed ({e}), mpl fallback")
     _kde_mpl(df, use_x, use_y, hue, ax)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
 
 def _kde_mpl(df, x, y, hue, ax):
-    """mpl KDE：单变量一维曲线 / 双变量等高线。"""
+    """mpl KDE：单变量一维曲线 / 双变量等高线（hue 分组各自画+图例）。"""
     from scipy.stats import gaussian_kde
     if y is None:
-        # 单变量：按 hue 分组画曲线
         if hue is None:
             vals = df[x].dropna().values
             if len(vals) < 2:
                 return
             xs = np.linspace(vals.min(), vals.max(), 300)
-            ax.plot(xs, gaussian_kde(vals)(xs), color=MORLANDI[0], lw=1.5)
-            ax.fill_between(xs, gaussian_kde(vals)(xs),
-                            color=MORLANDI[0], alpha=0.25)
-            ax.set_xlabel(x); ax.set_ylabel('Density')
+            dens = gaussian_kde(vals)(xs)
+            ax.plot(xs, dens, color=MORLANDI[0], lw=1.5)
+            ax.fill_between(xs, dens, color=MORLANDI[0], alpha=0.25)
+            ax.set_xlabel(x)
+            ax.set_ylabel('Density')
         else:
             for i, grp in enumerate(df[hue].astype('category').cat.categories):
                 vals = df.loc[df[hue] == grp, x].dropna().values
@@ -561,31 +664,49 @@ def _kde_mpl(df, x, y, hue, ax):
                     continue
                 xs = np.linspace(vals.min(), vals.max(), 300)
                 c = MORLANDI[i % len(MORLANDI)]
-                ax.plot(xs, gaussian_kde(vals)(xs), color=c, lw=1.5, label=grp)
-                ax.fill_between(xs, gaussian_kde(vals)(xs), color=c, alpha=0.2)
-            ax.set_xlabel(x); ax.set_ylabel('Density')
+                dens = gaussian_kde(vals)(xs)
+                ax.plot(xs, dens, color=c, lw=1.5, label=grp)
+                ax.fill_between(xs, dens, color=c, alpha=0.2)
+            ax.set_xlabel(x)
+            ax.set_ylabel('Density')
             ax.legend(frameon=False, fontsize=7)
-    else:
-        # 双变量：等高线
-        d = df[[x, y]].dropna()
-        if len(d) < 3:
-            return
-        k = gaussian_kde(d.values.T)
-        xi = np.linspace(d[x].min(), d[x].max(), 100)
-        yi = np.linspace(d[y].min(), d[y].max(), 100)
-        X, Y = np.meshgrid(xi, yi)
-        Z = k(np.vstack([X.ravel(), Y.ravel()])).reshape(X.shape)
-        ax.contourf(X, Y, Z, levels=10, cmap=EXPR_CMAP, alpha=0.6)
-        ax.set_xlabel(x); ax.set_ylabel(y)
+        return
+    # 双变量：hue 分组各自 KDE 等高线（3 层）+ 图例
+    groups = ([None] if hue is None else
+              list(df[hue].astype('category').cat.categories))
+    for i, grp in enumerate(groups):
+        sub = df if grp is None else df[df[hue] == grp]
+        px = sub[x].to_numpy(float)
+        py = sub[y].to_numpy(float)
+        m_ok = np.isfinite(px) & np.isfinite(py)
+        px, py = px[m_ok], py[m_ok]
+        if len(px) < 5 or px.std() < 1e-9 or py.std() < 1e-9:
+            continue
+        c = MORLANDI[i % len(MORLANDI)]
+        gx = np.linspace(px.min(), px.max(), 80)
+        gy = np.linspace(py.min(), py.max(), 80)
+        XX, YY = np.meshgrid(gx, gy)
+        try:
+            Z = gaussian_kde(np.vstack([px, py]))(
+                np.vstack([XX.ravel(), YY.ravel()])).reshape(XX.shape)
+        except np.linalg.LinAlgError:
+            continue
+        Z = Z / Z.max()
+        kw = dict(colors=[c], linewidths=1.1, alpha=0.9)
+        if grp is not None:
+            kw['label'] = grp
+        ax.contour(XX, YY, Z, levels=[0.3, 0.6, 0.9], **kw)
+    ax.set_xlabel(x)
+    ax.set_ylabel(y)
+    if hue is not None and len(groups) > 1:
+        # contour 的 label 进不了 legend → 用 Line2D 代理
+        from matplotlib.lines import Line2D
+        handles = [Line2D([], [], color=MORLANDI[i % len(MORLANDI)], lw=1.5,
+                          label=g) for i, g in enumerate(groups)]
+        ax.legend(handles=handles, frameon=False, fontsize=7)
 
 
-# ============================================================
-# 20.28 plot_histplot — 直方图（ov.pl.histplot → mpl hist）
-# ============================================================
 
-# ============================================================
-# 20.28 plot_histplot — 直方图（ov.pl.histplot → mpl hist）
-# ============================================================
 def plot_histplot(data, x, hue=None, bins='auto', ax=None, figsize=None,
                   save=None, show=None, **kwargs):
     """直方图：QC-metric 分布标配。ov.pl.histplot 优先，mpl 兜底。"""
@@ -605,7 +726,8 @@ def plot_histplot(data, x, hue=None, bins='auto', ax=None, figsize=None,
                            ax=ax, **kwargs)
             polish_axes(ax)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.histplot failed ({e}), mpl fallback")
@@ -622,7 +744,8 @@ def plot_histplot(data, x, hue=None, bins='auto', ax=None, figsize=None,
     ax.set_xlabel(x); ax.set_ylabel('Count')
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -652,7 +775,8 @@ def plot_stripplot(data, x, y, hue=None, ax=None, figsize=None,
                             ax=ax, **kwargs)
             polish_axes(ax)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.stripplot failed ({e}), mpl fallback")
@@ -677,7 +801,8 @@ def plot_stripplot(data, x, y, hue=None, ax=None, figsize=None,
     ax.set_ylabel(y)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -689,20 +814,32 @@ def plot_stripplot(data, x, y, hue=None, ax=None, figsize=None,
 # 20.30 plot_stackarea — 细胞比例堆叠面积（ov.pl.cellstackarea → mpl stackplot）
 # ============================================================
 def plot_stackarea(adata, celltype_col='celltype', groupby='condition',
-                   ax=None, figsize=None, save=None, show=None, **kwargs):
-    """细胞比例堆叠面积图：比例随连续/有序变量变化。ov.pl.cellstackarea 优先，mpl 兜底。"""
+                   ax=None, figsize=None, save=None, show=None,
+                   inband_labels=False, number_legend=False, min_band=0.05,
+                   band_fs=7.5, groups_of=None, **kwargs):
+    """细胞比例堆叠面积图：比例随连续/有序变量变化。ov.pl.cellstackarea 优先，
+    mpl 兜底（inband_labels/number_legend 请求时强制走 mpl 以支持带内标注）。
+
+    升级（源自 fetal_heart draw_fig1d_dynamics 实战）：
+    inband_labels → 在带宽 ≥ min_band（比例）的带内放标签，字色按底色亮度
+    自适应（0.299R+0.587G+0.114B < 120 用白字）；number_legend → 带内只放
+    编号、图例给 "编号 全名"（类型多时唯一可读形态）；groups_of={类型: 大类}
+    → 大类边界白粗线分隔。
+    """
     import pandas as pd
+    want_bands = inband_labels or number_legend or groups_of is not None
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
     else:
         fig = ax.figure
-    if _check_ov():
+    if _check_ov() and not want_bands:
         try:
             import omicverse as ov
             ov.pl.cellstackarea(adata, celltype_clusters=celltype_col,
                                 groupby=groupby, ax=ax)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.cellstackarea failed ({e}), mpl fallback")
@@ -720,21 +857,82 @@ def plot_stackarea(adata, celltype_col='celltype', groupby='condition',
         prop.loc[grp] = [counts.get(c, 0) / mask.sum() for c in ct.cat.categories]
     prop = prop.fillna(0.0)
     x = np.arange(len(groups))
-    ax.stackplot(x, *prop.values.T, labels=prop.columns,
-                 colors=[MORLANDI[i % len(MORLANDI)]
-                         for i in range(len(prop.columns))],
+    cts = list(prop.columns)
+    # >8 类自动换扩展 20 色板（防相邻撞色），缺省 8 色
+    pal = MORLANDI_EXTENDED if len(cts) > len(MORLANDI) else MORLANDI
+    colors = [pal[i % len(pal)] for i in range(len(cts))]
+    # 堆叠顺序 = 反转（与图例阅读顺序一致；fetal_heart 约定）
+    order = cts[::-1]
+    colmap = dict(zip(cts, colors))
+    ax.stackplot(x, *[prop[c].values for c in order],
+                 labels=order, colors=[colmap[c] for c in order],
                  alpha=0.85, edgecolor='white', linewidth=0.3)
+    # 底边坐标（绘制顺序 order[0] 在最下）
+    bottoms = np.zeros(len(groups))
+    band_center = {}
+    for c in order:
+        band_center[c] = bottoms + prop[c].values / 2
+        bottoms = bottoms + prop[c].values
+    # 大类边界白粗线（相邻绘制序类型的 groups_of 不同 → 在累计顶边画线）
+    if groups_of is not None:
+        cum = np.zeros(len(groups))
+        prev_g = None
+        for c in order:
+            cur_g = groups_of.get(c)
+            if prev_g is not None and cur_g != prev_g:
+                ax.plot(x, cum, color='white', lw=2.6, zorder=3)
+            cum = cum + prop[c].values
+            prev_g = cur_g
+    # 带内标签（编号或名称；宽度达标才放，字色亮度自适应）
+    if inband_labels or number_legend:
+        nums = {c: i + 1 for i, c in enumerate(cts)}
+        for c in order:
+            w = prop[c].values
+            if w.max() < min_band:
+                continue
+            xi = int(np.argmax(w))
+            lab = str(nums[c]) if number_legend else str(c)[:12]
+            lum = _hex_luma(colmap[c])
+            ax.text(xi, band_center[c][xi], lab, fontsize=band_fs,
+                    color='white' if lum < 120 else NEAR_BLACK,
+                    fontweight='bold', ha='center', va='center', zorder=4)
+    # 图例：Patch 手柄按 cts 顺序配对（编号/颜色一一对应，杜绝错位）
+    from matplotlib.patches import Patch
+    leg_labels = ([f'{i + 1} {c}' for i, c in enumerate(cts)]
+                  if number_legend else cts)
+    ax.legend([Patch(facecolor=colmap[c], edgecolor='none') for c in cts],
+              leg_labels, bbox_to_anchor=(1.02, 0.5), loc='center left',
+              frameon=False, fontsize=7, title=celltype_col)
     ax.set_xticks(x)
     ax.set_xticklabels(groups, fontsize=7, rotation=45 if len(groups) > 8 else 0)
     ax.set_xlabel(groupby)
     ax.set_ylabel('Proportion')
     ax.set_ylim(0, 1)
-    ax.legend(bbox_to_anchor=(1.02, 0.5), loc='center left', frameon=False,
-              fontsize=7, title=celltype_col)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
+
+
+def _hex_luma(hex_color):
+    """相对亮度（YIQ）：<120 视为深底 → 配白字。"""
+    h = hex_color.lstrip('#')
+    return int(h[0:2], 16) * 0.299 + int(h[2:4], 16) * 0.587 + \
+        int(h[4:6], 16) * 0.114
+
+
+def _fmt_range(v):
+    """QC 卡片列顶范围：<1000 用 4 位有效数字，≥1000 用千分位整数。"""
+    return f'{v:,.0f}' if abs(v) >= 1000 else f'{v:.4g}'
+
+
+def _darken_hex(hex_color, factor=0.72):
+    """浅色标题加深一档（白底打印对比度兜底）。"""
+    h = hex_color.lstrip('#')
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return '#{:02x}{:02x}{:02x}'.format(int(r * factor), int(g * factor),
+                                        int(b * factor))
 
 
 # ============================================================
@@ -746,20 +944,22 @@ def plot_stackarea(adata, celltype_col='celltype', groupby='condition',
 # ============================================================
 def plot_bardotplot(adata, groupby, color, ax=None, figsize=None,
                     save=None, show=None, **kwargs):
-    """柱+点组合图：均值柱+分布点双重展示。ov.pl.bardotplot 优先，mpl 兜底。"""
+    """柱+点组合图：均值柱+分布点双重展示。mpl 优先（点层带 jitter，可读）；
+    ov.pl.bardotplot 点层无抖动会熔成实心柱（2026-09 视觉验收实证），engine='ov' 可回旧路径。"""
     import pandas as pd
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
     else:
         fig = ax.figure
-    if _check_ov():
+    if kwargs.pop('engine', 'mpl') == 'ov' and _check_ov():
         try:
             import omicverse as ov
             ov.pl.bardotplot(adata, groupby=groupby, color=color,
                              ax=ax)
             polish_axes(ax)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.bardotplot failed ({e}), mpl fallback")
@@ -812,7 +1012,8 @@ def plot_bardotplot(adata, groupby, color, ax=None, figsize=None,
                   fontsize=7)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -825,8 +1026,9 @@ def plot_bardotplot(adata, groupby, color, ax=None, figsize=None,
 # ============================================================
 def plot_stacking_vol(data_dict, color_dict=None, ax=None, figsize=None,
                       save=None, show=None, **kwargs):
-    """堆叠火山图：多条件 DE 并排比较。直接传参给 ov.pl.stacking_vol。
-    data_dict: {条件名: DE DataFrame}（每含 gene/padj/log2FC 列）
+    """堆叠火山图：多条件 DE 并排比较（每条件一列 mini 火山，共享 y 轴）。
+    data_dict: {条件名: DE DataFrame}（每含 gene/padj/log2FC 列）。
+    ov.pl.stacking_vol 优先（列名自动映射），ov 失败走 mpl 兜底——绝不静默返回。
     """
     import pandas as pd
     if not _check_ov():
@@ -859,7 +1061,8 @@ def plot_stacking_vol(data_dict, color_dict=None, ax=None, figsize=None,
             for cond_name, cond_ax in axes.items():
                 cond_ax.set_title(cond_name, fontsize=10, fontweight='bold', pad=4)
         if save:
-            save_panel(fig, save, show=show)
+            save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             # save_panel 后重新标注（finalize_figure 可能清了 title）
             if isinstance(axes, dict):
                 for cond_name, cond_ax in axes.items():
@@ -881,8 +1084,54 @@ def plot_stacking_vol(data_dict, color_dict=None, ax=None, figsize=None,
                 ax_out = axes
         return fig, ax_out
     except Exception as e:
-        print(f"[smart_plot] ov.pl.stacking_vol failed ({e})")
+        print(f"[smart_plot] ov.pl.stacking_vol failed ({e}), mpl fallback")
+        fig, ax_out = _stacking_vol_mpl(data_dict, color_dict, figsize,
+                                        save, show)
+        if fig is None:
+            raise RuntimeError(
+                f"[smart_plot] plot_stacking_vol 全部路径失败（ov: {e}），"
+                "请检查 data_dict 结构（每条件需含 gene/padj/log2FC 列）")
+        return fig, ax_out
+
+
+def _stacking_vol_mpl(data_dict, color_dict, figsize, save, show):
+    """mpl 兜底：每条件一列 up/down 双色 mini 火山，共享 -log10(p) y 轴。"""
+    conds = list(data_dict)
+    n = len(conds)
+    if n == 0:
         return None, None
+    if color_dict is None:
+        color_dict = {k: MORLANDI[i % len(MORLANDI)] for i, k in enumerate(conds)}
+    fig, axes = plt.subplots(1, n, figsize=figsize or (1.7 * n + 0.6, 3.0),
+                             sharey=True, squeeze=False)
+    vmax = 0.0
+    frames = {}
+    for c in conds:
+        de = data_dict[c]
+        y = -np.log10(de['padj'].clip(lower=1e-300))
+        frames[c] = (de, y)
+        vmax = max(vmax, np.nanquantile(y, 0.995))
+    for k, c in enumerate(conds):
+        a = axes[0][k]
+        de, y = frames[c]
+        fc = de['log2FC'].values
+        sig = (de['padj'].values < 0.05) & (np.abs(fc) > 1)
+        col = color_dict[c]
+        a.scatter(fc[~sig], y[~sig], s=3, color=MUTED, alpha=0.5, lw=0,
+                  rasterized=True)
+        a.scatter(fc[sig], y[sig], s=5, color=col, alpha=0.85, lw=0,
+                  rasterized=True)
+        a.set_title(c, fontsize=8, loc='left', color=col)
+        a.set_xlabel('log2FC', fontsize=7)
+        if k == 0:
+            a.set_ylabel(r'$-$log$_{10}$(padj)', fontsize=7)
+        a.set_ylim(0, vmax * 1.05)
+        polish_axes(a, variant='bar', grid_axis='y')
+        a.tick_params(labelsize=6.5)
+    fig.tight_layout(w_pad=0.6)
+    if save:
+        save_panel(fig, save, show=show)
+    return fig, axes[0]
 # ============================================================
 # 20.33 plot_upset — UpSet 图（ov 专用，无 mpl 兜底）
 # ============================================================
@@ -911,7 +1160,8 @@ def plot_upset(sets, top_n=30, ax=None, figsize=None,
         else:
             fig.set_size_inches(4.0, 2.5)
         if save:
-            save_panel(fig, save, show=show)
+            save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
         return fig, fig.axes[0] if fig.axes else None
     except Exception as e:
         print(f"[smart_plot] ov.pl.upset failed ({e})")
@@ -941,7 +1191,8 @@ def plot_venn(sets, ax=None, figsize=None, save=None, show=None, **kwargs):
             fig = plt.gcf()
             fig.set_size_inches(*(figsize or (2.5, 2.5)))
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, fig.axes[0] if fig.axes else None
     except Exception as e:
         print(f"[smart_plot] ov.pl.venn failed ({e})")
@@ -957,7 +1208,9 @@ def plot_venn(sets, ax=None, figsize=None, save=None, show=None, **kwargs):
 # ============================================================
 def plot_forest(data, estimate, lower=None, upper=None, label=None,
                 group=None, ax=None, figsize=None, save=None, show=None, **kwargs):
-    """森林图：meta-analysis/多研究效应合并。ov.pl.forest 优先，mpl 兜底。
+    """森林图：meta-analysis/多研究效应合并。mpl 优先（无效线语义正确：
+    null_value 默认 auto——估计全为正（OR/HR 类）时无效线=1.0，否则=0；
+    ov 版无效线固定画 0 会误读 OR 结果，2026-09 视觉验收实证）。
     data: DataFrame，estimate/lower/upper/label 是列名。
     """
     import pandas as pd
@@ -965,14 +1218,19 @@ def plot_forest(data, estimate, lower=None, upper=None, label=None,
         fig, ax = plt.subplots(figsize=figsize or (2.5, min(len(data) * 0.3 + 0.5, 3.5)))
     else:
         fig = ax.figure
-    if _check_ov():
+    null_value = kwargs.pop('null_value', 'auto')
+    if null_value == 'auto':
+        _est = pd.to_numeric(data[estimate], errors='coerce').dropna()
+        null_value = 1.0 if (_est.min() > 0) else 0.0
+    if kwargs.pop('engine', 'mpl') == 'ov' and _check_ov():
         try:
             import omicverse as ov
             ov.pl.forest(data=data, estimate=estimate, lower=lower, upper=upper,
                          label=label, group=group, ax=ax, **kwargs)
             polish_axes(ax)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.forest failed ({e}), mpl fallback")
@@ -995,11 +1253,12 @@ def plot_forest(data, estimate, lower=None, upper=None, label=None,
         ax.set_yticks(y)
         ax.set_yticklabels(data.index.astype(str), fontsize=7)
     ax.invert_yaxis()
-    ax.axvline(0, color=GREY, lw=0.8, linestyle='--', zorder=1)
+    ax.axvline(null_value, color=GREY, lw=0.8, ls='--', linestyle='--', zorder=1)
     ax.set_xlabel(estimate)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -1012,7 +1271,8 @@ def plot_forest(data, estimate, lower=None, upper=None, label=None,
 # ============================================================
 def plot_regplot(data, x, y, hue=None, fit='linear', ax=None, figsize=None,
                  save=None, show=None, **kwargs):
-    """回归散点图：带拟合线（相关性分析标配）。ov.pl.regplot 优先，mpl 兜底。"""
+    """回归散点图：散点+拟合线+95% CI 带。mpl 优先（CI 带完整）；
+    ov.pl.regplot 无 CI 层（2026-09 视觉验收实证），engine='ov' 可回旧路径。"""
     import pandas as pd
     if hasattr(data, 'var_names'):   # AnnData
         df = _adata_to_tidy(data, [c for c in (x, y, hue) if c])
@@ -1022,14 +1282,15 @@ def plot_regplot(data, x, y, hue=None, fit='linear', ax=None, figsize=None,
         fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
     else:
         fig = ax.figure
-    if _check_ov():
+    if kwargs.pop('engine', 'mpl') == 'ov' and _check_ov():
         try:
             import omicverse as ov
             ov.pl.regplot(data=df, x=x, y=y, hue=hue, fit=fit,
                           ax=ax, **kwargs)
             polish_axes(ax)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.regplot failed ({e}), mpl fallback")
@@ -1049,17 +1310,38 @@ def plot_regplot(data, x, y, hue=None, fit='linear', ax=None, figsize=None,
     ax.set_xlabel(x); ax.set_ylabel(y)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
 
-def _fit_line(ax, xs, ys, fit='linear', color=None, n=200):
-    """polyfit 拟合线（degree: linear=1, quadratic=2）+ 95% 数据范围。"""
+def _fit_line(ax, xs, ys, fit='linear', color=None, n=200, ci=True):
+    """拟合线 + 95% CI 带：linear/quadratic → 多项式±1.96·残差SD；
+    lowess → LOWESS 曲线 + 残差幅度的 LOWESS 包络带。"""
     mask = ~(np.isnan(xs) | np.isnan(ys))
-    xs, ys = xs[mask], ys[mask]
-    if len(xs) < 2:
+    xs, ys = np.asarray(xs, float)[mask], np.asarray(ys, float)[mask]
+    if len(xs) < 3:
         return
+    c = color or NEAR_BLACK
+    if fit == 'lowess':
+        try:
+            from statsmodels.nonparametric.smoothers_lowess import lowess
+        except ImportError:
+            fit = 'linear'
+        else:
+            order = np.argsort(xs)
+            sm = lowess(ys[order], xs[order], frac=0.7, return_sorted=True)
+            xl, yl = sm[:, 0], sm[:, 1]
+            resid = np.interp(xs, xl, yl) - ys
+            rabs = lowess(np.abs(resid)[order], xs[order], frac=0.7,
+                          return_sorted=True)
+            band = 1.96 * np.interp(xl, rabs[:, 0], rabs[:, 1])
+            ax.plot(xl, yl, color=c, lw=1.4, zorder=4)
+            if ci:
+                ax.fill_between(xl, yl - band, yl + band, color=c,
+                                alpha=0.13, lw=0, zorder=3)
+            return
     deg = {'linear': 1, 'quadratic': 2}.get(fit, 1)
     try:
         coef = np.polyfit(xs, ys, deg)
@@ -1067,25 +1349,23 @@ def _fit_line(ax, xs, ys, fit='linear', color=None, n=200):
         return
     xline = np.linspace(np.nanpercentile(xs, 1), np.nanpercentile(xs, 99), n)
     yline = np.polyval(coef, xline)
-    ax.plot(xline, yline, color=color or NEAR_BLACK, lw=1.2, zorder=4)
+    ax.plot(xline, yline, color=c, lw=1.2, zorder=4)
+    if ci:
+        se = 1.96 * float(np.std(ys - np.polyval(coef, xs)))
+        ax.fill_between(xline, yline - se, yline + se, color=c, alpha=0.13,
+                        lw=0, zorder=3)
 
 
-# ============================================================
-# 20.37 plot_ccc_heatmap — 通讯热图（ov.pl.ccc_heatmap，无 mpl 兜底）
-# ============================================================
-
-# ============================================================
-# 20.38 plot_pca_variance — PCA 方差比（ov.pl.plot_pca_variance_ratio → mpl bar）
-# ============================================================
 def plot_pca_variance(adata, n_pcs=30, ax=None, figsize=None,
                       save=None, show=None, **kwargs):
-    """PCA 方差比图：QC 标配（选 PCs 数）。ov.pl.plot_pca_variance_ratio 优先，mpl 兜底。"""
+    """PCA 方差比图：QC 标配（选 PCs 数）。mpl 优先（方差比柱+累计方差线双轴）；
+    ov 版无累计线且刻度粘连（2026-09 视觉验收实证），engine='ov' 可回旧路径。"""
     import pandas as pd
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
     else:
         fig = ax.figure
-    if _check_ov():
+    if kwargs.pop('engine', 'mpl') == 'ov' and _check_ov():
         try:
             import omicverse as ov
             ov.pl.plot_pca_variance_ratio(adata, n_pcs=n_pcs, show=False,
@@ -1095,7 +1375,8 @@ def plot_pca_variance(adata, n_pcs=30, ax=None, figsize=None,
             ax_ov = fig_ov.axes[0] if fig_ov.axes else ax
             polish_axes(ax_ov)
             if save:
-                save_panel(fig_ov, save, show=show)
+                save_panel(fig_ov, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig_ov, ax_ov
         except Exception as e:
             print(f"[smart_plot] ov.pl.plot_pca_variance_ratio failed ({e}), mpl fallback")
@@ -1116,12 +1397,23 @@ def plot_pca_variance(adata, n_pcs=30, ax=None, figsize=None,
     ax.bar(range(n), ratios, color=MORLANDI[0], alpha=0.8,
            edgecolor='white', linewidth=0.4)
     ax.axhline(ratios.mean(), color=GREY, lw=0.8, linestyle='--')
-    ax.set_xticks(range(0, n, max(1, n // 10)))
+    ax.set_xticks(range(0, n, max(1, int(np.ceil(n / 6)))))
     ax.set_xlabel('PC')
     ax.set_ylabel('Variance ratio')
+    # 累计方差贡献线（右轴）——scree 图标配
+    ax2 = ax.twinx()
+    cum = np.cumsum(ratios) / ratios.sum()
+    ax2.plot(range(1, n + 1), cum, color=CONTRAST_RED, lw=1.2, marker='',
+             zorder=4)
+    ax2.set_ylim(0, 1.05)
+    ax2.set_ylabel('Cumulative', fontsize=7, color=CONTRAST_RED)
+    ax2.tick_params(labelsize=6.5, colors=CONTRAST_RED, length=2)
+    ax2.spines['top'].set_visible(False)
+    ax2.spines['right'].set_color(GREY_SCALE['spine'])
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -1143,9 +1435,13 @@ def plot_hvg_scatter(adata, ax=None, figsize=None, save=None, show=None, **kwarg
         try:
             import omicverse as ov
             ov.pl.highly_variable_genes_scatter(adata, ax=ax, show=False, **kwargs)
+            from matplotlib.ticker import MaxNLocator
+            ax.xaxis.set_major_locator(MaxNLocator(3))    # 稀疏化
+            ax.xaxis.set_major_formatter('{x:.2f}')       # 定点两位（指数串太长）
             polish_axes(ax)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.highly_variable_genes_scatter failed ({e}), mpl fallback")
@@ -1161,12 +1457,16 @@ def plot_hvg_scatter(adata, ax=None, figsize=None, save=None, show=None, **kwarg
                edgecolor='none', rasterized=True, label='Non-HVG')
     ax.scatter(means[hvg], disps[hvg], s=6, alpha=0.8, color=MORLANDI[0],
                edgecolor='none', rasterized=True, label='HVG')
+    from matplotlib.ticker import MaxNLocator
+    ax.xaxis.set_major_locator(MaxNLocator(3))
+    ax.xaxis.set_major_formatter('{x:.2f}')
     ax.set_xlabel('Mean expression')
     ax.set_ylabel('Dispersion')
     ax.legend(frameon=False, fontsize=7)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -1177,7 +1477,8 @@ def plot_hvg_scatter(adata, ax=None, figsize=None, save=None, show=None, **kwarg
 def plot_radar(values, axis_labels, series_names=None, axis_ranges=None, colors=None,
                ax=None, figsize=(3.2, 3.2), r_lo=0.15, r_hi=0.9,
                fill_alpha=0.06, lw=1.0, show_spoke_max=True, label_fontsize=6,
-               tick_fontsize=5.5, legend_fontsize=6):
+               tick_fontsize=5.5, legend_fontsize=6, save=None, show=None,
+               outdir='panels', fmt='pdf'):
     """多尺度雷达图（每根辐条按自己的量程归一化）。
 
     values: (n_series × n_axes) array/DataFrame；axis_ranges: None(按各轴数据 min/max) 或
@@ -1268,9 +1569,9 @@ def plot_radar(values, axis_labels, series_names=None, axis_ranges=None, colors=
     ax.set_xticks(angles)
     ax.set_xticklabels([])
 
-    # spoke 标签：|sin(angle)| offset 防挤（头顶/脚底最远，两侧最近）
+    # spoke 标签：小数据半径偏移（勿用大数——r 为数据单位，曾致 tightbbox 爆炸）
     for a, lbl in zip(angles, axis_labels):
-        offset = 2 + 6 * abs(np.sin(a))
+        offset = 0.07 + 0.10 * abs(np.sin(a))
         ax.text(a, r_hi + offset, str(lbl), fontsize=label_fontsize,
                 ha='center', va='center', transform=ax.transData, clip_on=False)
     # 每辐条外侧标该轴 max 数值（原始单位，沿辐条旋转）
@@ -1278,14 +1579,21 @@ def plot_radar(values, axis_labels, series_names=None, axis_ranges=None, colors=
         for a, j in zip(angles, range(n_axes)):
             v = float(np.max(values[:, j]))
             txt = f'{v:.0f}' if v == int(v) else f'{v:.2f}'
-            rot = np.degrees(a)
-            ax.text(a, r_hi + 1.0, txt, fontsize=tick_fontsize,
-                    ha='center', va='center', rotation=rot, rotation_mode='anchor',
-                    transform=ax.transData, clip_on=False)
+            import matplotlib.patheffects as _pe
+            ax.text(a, r_hi - 0.09, txt, fontsize=tick_fontsize,
+                    ha='center', va='center', rotation=0,
+                    transform=ax.transData, clip_on=False,
+                    path_effects=[_pe.withStroke(linewidth=2.0,
+                                                 foreground='white')])
 
     if series_names is not None:
-        ax.legend(loc='center left', bbox_to_anchor=(1.05, 0.5), frameon=False,
-                  fontsize=legend_fontsize)
+        # 图例置底横排：右侧外置会把 tight 画布撑宽超单栏（2026-09 刊出验收实证）
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.06),
+                  ncols=len(series_names), frameon=False,
+                  fontsize=legend_fontsize, columnspacing=1.4,
+                  handletextpad=0.4)
+    if save:
+        save_panel(fig, save, show=show, outdir=outdir, fmt=fmt)
     return fig, ax
 
 
@@ -1374,7 +1682,9 @@ def plot_raincloud(data, x, y, order=None, colors=None, ax=None, figsize=None,
                     color='#9aa0a6', lw=0.8)
             stars = '***' if p < 0.001 else '**' if p < 0.01 else '*' if p < 0.05 else 'n.s.'
             ax.text((xi + xj) / 2, y0 + pad * 0.38,
-                    f'{stars} (p={p:.2f})' if stars != 'n.s.' else f'n.s. (p={p:.2f})',
+                    (f'{stars} (p<0.001)' if p < 0.001 else
+                     f'{stars} (p={p:.2f})') if stars != 'n.s.'
+                    else f'n.s. (p={p:.2f})',
                     ha='center', fontsize=7.5, color=NEAR_BLACK)
     ax.set_xticks(range(len(groups)))
     ax.set_xticklabels([f'{g}\n(n={len(arrays[g])})' if show_n else str(g)
@@ -1386,3 +1696,363 @@ def plot_raincloud(data, x, y, order=None, colors=None, ax=None, figsize=None,
     if save:
         save_panel(fig, save, show=show)
     return fig, ax
+
+
+# ============================================================
+# 20.42 plot_slope — 斜率图（组成/指标跨条件变化，端点直接标签防撞）
+#   源自 fetal_heart draw_fig1d2_movers / draw_fig2k1_trajectories 实战
+#   （2026-09 人工多轮验证形态：无图例 + 端点带 Δ 标签 + 强调线加粗）
+# ============================================================
+
+def plot_slope(data, value_col=None, entity_col=None, group_col=None,
+               top_n=8, order=None, colors=None, emphasize=None,
+               base_color=None, emph_lw=2.6, base_lw=1.6, label_deltas=True,
+               point=True, gap_pt=12, ax=None, figsize=None, save=None,
+               show=None, **kwargs):
+    """斜率图：每实体一条跨组（≥2 个时间点/条件）的折线，端点直接标注。
+
+    data 两种形态：
+      ① tidy DataFrame + entity_col/group_col/value_col（实体×组×值长表）
+      ② wide DataFrame（index=实体, columns=组）——entity 系参数留空自动识别
+    top_n: 按距行均值的最大偏差选前 N 实体（同时抓净变化与中途峰）。
+    emphasize: 需加粗强调的实体列表（其余走 base_color 灰，视觉层级）。
+    端点标签用 direct_label 像素级防撞（gap_pt），label_deltas 时右端附 +Δ。
+    """
+    if entity_col is not None and group_col is not None and value_col is not None:
+        wide = data.pivot_table(index=entity_col, columns=group_col,
+                                values=value_col, aggfunc='mean')
+    else:
+        wide = data
+    groups = list(order) if order is not None else list(wide.columns)
+    wide = wide[groups]
+    if len(groups) < 2:
+        raise ValueError("plot_slope 需要至少 2 个组（时间点/条件）")
+    dev = (wide - wide.mean(axis=1)).abs().max(axis=1)
+    sel = dev.sort_values(ascending=False).head(top_n).index.tolist()
+    wide = wide.loc[sel]
+    n_g = len(groups)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.4, 0.46 * len(wide) + 0.9))
+    else:
+        fig = ax.figure
+    emphasize = list(emphasize or [])
+    base_color = base_color or GREY_SCALE['guide']
+    if colors is None:
+        colors = {e: base_color for e in wide.index}
+    elif not isinstance(colors, dict):
+        colors = {e: c for e, c in zip(wide.index, colors)}
+    for e in [x for x in wide.index if x not in emphasize] + \
+             [x for x in wide.index if x in emphasize]:
+        row = wide.loc[e].values.astype(float)
+        c = colors.get(e, base_color)
+        ax.plot(range(n_g), row, color=c, lw=emph_lw if e in emphasize else base_lw,
+                zorder=3 if e in emphasize else 2, alpha=0.95,
+                solid_capstyle='round')
+        if point:
+            # 白晕垫底再画白芯环点：端点聚集时不同线的 marker 不互相吞没
+            ax.scatter(range(n_g), row, s=22 * 2.6, color='white', lw=0,
+                       zorder=(4 if e in emphasize else 3) - 0.1)
+            ax.scatter(range(n_g), row, s=22, color=c, marker='o',
+                       facecolor='white', linewidths=1.2,
+                       zorder=4 if e in emphasize else 3)
+    # 端点直接标签（像素防撞 stagger；Δ 两位小数，<0.005 只留名）
+    lefts = [f'{e}' for e in wide.index]
+    rights = []
+    for e in wide.index:
+        d = wide.loc[e, groups[-1]] - wide.loc[e, groups[0]]
+        with_d = f'{e} {d:+.2f}' if abs(d) >= 0.005 else f'{e}'
+        rights.append(with_d if label_deltas else f'{e}')
+    direct_label(ax, wide[groups[0]].values, lefts, x=0, side='left',
+                 gap_pt=gap_pt, fontsize=7.5)
+    direct_label(ax, wide[groups[-1]].values, rights, x=n_g - 1, side='right',
+                 gap_pt=gap_pt, fontsize=7.5)
+    ax.set_xticks(range(n_g))
+    ax.set_xticklabels(groups, fontsize=8)
+    ax.set_xlim(-0.78, n_g - 0.22)
+    # 底部预留 0.3×range：最低系列的端点标签与 x 刻度彻底分层
+    rng_ = wide.values.max() - wide.values.min() + 1e-9
+    ax.set_ylim(wide.values.min() - 0.30 * rng_, wide.values.max() + 0.14 * rng_)
+    polish_axes(ax, variant='bar', grid_axis='y')
+    ax.spines['bottom'].set_visible(False)
+    ax.tick_params(axis='x', length=0, pad=6)
+    if save:
+        save_panel(fig, save, show=show,
+                    outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
+    return fig, ax
+
+
+# ============================================================
+# 20.43 plot_lollipop — 发散棒棒糖（每实体一个效应量，可选第二统计量空心点）
+#   源自 fetal_heart draw_fig2e1_hdwgcna（module-trait 双统计量）/
+#   draw_fig1g_v4_bars（置换 null 带 + 参考线）实战回灌
+# ============================================================
+
+def plot_lollipop(data, label_col, value_col, value2_col=None, pval_col=None,
+                  tag_col=None, order=None, pos_color=None, neg_color=None,
+                  stars=True, ref_line=None, null_band=None,
+                  null_label='random matching', tag_title=None,
+                  value_fmt='{:+.2f}', pair_dy=0.16, ax=None, figsize=None,
+                  save=None, show=None, **kwargs):
+    """发散棒棒糖：stem 从 0 到 value（正/负双色），实心大点=主统计量，
+    可选空心小点=第二统计量（如 Pearson 实心 + Spearman 空心）。
+
+    data: DataFrame；label_col=实体名；value_col=主统计量（r/ρ/log2FC…）；
+    value2_col=第二统计量；pval_col → 值旁星号；tag_col → 右缘身份标签
+    （get_yaxis_transform 坐标）；ref_line=参考值虚线（如 0.8）；
+    null_band=(lo, hi) → 灰底置换零带 + 顶部斜体注释（先算好 2.5–97.5% 分位）。
+    """
+    df = data.copy()
+    if order is not None:
+        df = df.set_index(label_col).loc[order].reset_index()
+    else:
+        df = df.sort_values(value_col, ascending=True).reset_index(drop=True)
+    pos_color = pos_color or CONTRAST_RED
+    neg_color = neg_color or CONTRAST_BLUE
+    n = len(df)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.4, 0.34 * n + 0.7))
+    else:
+        fig = ax.figure
+    if null_band is not None:
+        ax.axvspan(null_band[0], null_band[1], color=GREY_SCALE['grid'],
+                   alpha=0.85, zorder=0)
+        ax.text((null_band[0] + null_band[1]) / 2, n - 0.25, null_label,
+                ha='center', va='bottom', fontsize=6.5, color=GREY,
+                style='italic')
+    ax.axvline(0, color=GREY_SCALE['zero'], lw=1.0, zorder=1)
+    if ref_line is not None:
+        ax.axvline(ref_line, color=GREY_SCALE['guide'], lw=0.9,
+                   ls=(0, (4, 3)), zorder=1)
+    for yi, (_, row) in enumerate(df.iterrows()):
+        v = float(row[value_col])
+        c = pos_color if v >= 0 else neg_color
+        ax.plot([0, v], [yi, yi], color=c, lw=2.2, alpha=0.85, zorder=2)
+        ax.scatter([v], [yi], s=58, color=c, edgecolor='white', lw=0.7,
+                   zorder=3)
+        v2 = row.get(value2_col) if value2_col is not None else None
+        if v2 is not None and pd.notna(v2):
+            v2f = float(v2)
+            # 第二统计量空心点纵向错位 pair_dy 行 + 细连接线：
+            # 两值接近时双点仍可辨（位置横坐标始终真实，不错位造假）
+            ax.plot([v, v2f], [yi, yi - pair_dy], color=GREY_SCALE['zero'],
+                    lw=0.7, zorder=2)
+            ax.scatter([v2f], [yi - pair_dy], s=24, facecolor='none',
+                       edgecolor=c, lw=1.2, zorder=3)
+        star = ''
+        if stars and pval_col is not None and pd.notna(row.get(pval_col)):
+            p = float(row[pval_col])
+            star = '***' if p < 0.001 else '**' if p < 0.01 else \
+                '*' if p < 0.05 else ''
+        x_end = v
+        if v2 is not None and pd.notna(v2):
+            far = max(abs(v), abs(float(v2)))
+            x_end = far if v >= 0 else -far
+        ax.text(x_end, yi + 0.34, value_fmt.format(v) + star,
+                ha='center', fontsize=6.8, color=c if star else GREY,
+                fontweight='bold' if star else 'normal',
+                bbox=dict(boxstyle='round,pad=0.15', fc='white',
+                          ec='none', alpha=0.9), zorder=4)
+        # 行标签避让：正行放 0 左侧、负行放 0 右侧（stem 不穿字）
+        ax.annotate(str(row[label_col]), xy=(0, yi),
+                    xytext=(-8, 0) if v >= 0 else (8, 0),
+                    textcoords='offset points', va='center',
+                    ha='right' if v >= 0 else 'left',
+                    fontsize=7.5, color=NEAR_BLACK, annotation_clip=False)
+        if tag_col is not None and pd.notna(row.get(tag_col)):
+            ax.text(1.03, yi, str(row[tag_col]),
+                    transform=ax.get_yaxis_transform(),
+                    fontsize=6.8, color=GREY, va='center', ha='left')
+    if tag_col is not None and tag_title:
+        ax.text(1.03, n - 0.1, tag_title, transform=ax.get_yaxis_transform(),
+                fontsize=6.8, color=GREY, va='bottom', ha='left',
+                fontweight='bold')
+    ax.set_ylim(-0.6, n - 0.4 + (0.7 if null_band is not None else 0.3))
+    ax.set_yticks([])
+    for side in ('top', 'right', 'left'):
+        ax.spines[side].set_visible(False)
+    ax.spines['bottom'].set_color(GREY_SCALE['spine'])
+    ax.tick_params(length=2, labelsize=7.5, colors='#444444')
+    ax.grid(axis='x', color=GREY_SCALE['grid'], lw=0.6, zorder=0)
+    ax.set_axisbelow(True)
+    if save:
+        save_panel(fig, save, show=show,
+                    outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
+    return fig, ax
+
+
+# ============================================================
+# 20.44 plot_qc_cards — 样本×指标 QC 条形卡片（行=样本，列=指标）
+#   源自 fetal_heart draw_fig1i1_qc 实战（GA 色块 + 行对齐多列条形 + 直标数值）
+# ============================================================
+
+def plot_qc_cards(metrics, covariate=None, covariate_label=None,
+                  covariate_cmap='Blues', row_order=None, formats=None,
+                  ranges=True, highlight=None, bar_colors=None,
+                  cell_w=1.35, label_w=1.15, figsize=None, save=None,
+                  show=None, **kwargs):
+    """样本 QC 条形卡片：每行一样本（首列样本名+协变量色块），每指标一列横条
+    + 右端数值直标 + 列顶范围注释。全轴隐藏，3 秒可读的"表格化条形图"。
+
+    metrics: DataFrame(index=样本, columns=指标, 数值)。
+    covariate: 同 index 的数值 Series（如供体 GA）→ 首列渐变色块 swatch。
+    row_order: 行序（默认按 covariate 升序，最小在上；无 covariate 按原序）。
+    formats: {指标: 格式串}，如 {'detected_genes': '{:,.0f}'}；缺省 '{:,.0f}'。
+    highlight: 需底纹高亮的样本列表。bar_colors: {指标: hex}，缺省 MORLANDI。
+    """
+    from matplotlib import cm as _cm
+    from matplotlib.colors import Normalize as _Normalize
+    from matplotlib.gridspec import GridSpec as _GridSpec
+    df = metrics.copy()
+    if row_order is not None:
+        df = df.loc[[s for s in row_order if s in df.index]]
+    elif covariate is not None:
+        df = df.loc[covariate.loc[df.index].sort_values().index]
+    n, m = df.shape
+    y = np.arange(n)[::-1]                       # 首行在上
+    fmts = formats or {}
+    highlight = set(highlight or [])
+    bar_colors = bar_colors or {c: MORLANDI[i % len(MORLANDI)]
+                                for i, c in enumerate(df.columns)}
+    fig = plt.figure(figsize=figsize or (label_w + m * cell_w, 0.28 * n + 0.8))
+    gs = _GridSpec(1, m + 1, width_ratios=[label_w] + [cell_w] * m,
+                   wspace=0.55, figure=fig)
+    # 首列：样本名 + 协变量色块
+    axl = fig.add_subplot(gs[0])
+    for yy, s in zip(y, df.index):
+        axl.text(0.0, yy, str(s), fontsize=7.5, va='center', ha='left',
+                 color=NEAR_BLACK)
+    if covariate is not None:
+        cmap = plt.get_cmap(covariate_cmap)
+        norm = _Normalize(float(covariate.loc[df.index].min()),
+                          float(covariate.loc[df.index].max()))
+        for yy, s in zip(y, df.index):
+            axl.barh([yy], [0.26], left=0.58, height=0.52,
+                     color=cmap(norm(float(covariate[s]))), lw=0)
+        axl.text(0.71, n - 0.55, covariate_label or
+                 (covariate.name if hasattr(covariate, 'name') else ''),
+                 fontsize=6.5, color=GREY, ha='center', va='bottom')
+    axl.set_xlim(0, 1)
+    axl.axis('off')
+    axl.set_ylim(-0.7, n - 0.3)
+    # 指标列
+    axes_out = [axl]
+    for k, col in enumerate(df.columns):
+        ax = fig.add_subplot(gs[k + 1], sharey=axl)
+        v = df[col].astype(float)
+        for yy, s in zip(y, v.index):
+            if s in highlight:
+                ax.axhspan(yy - 0.5, yy + 0.5, color='#FCEDEB', zorder=0)
+        ax.barh(y, v.values, height=0.60, color=bar_colors[col],
+                alpha=0.9, zorder=2)
+        for yy, vv in zip(y, v.values):
+            ax.text(vv + v.max() * 0.03, yy,
+                    fmts.get(col, '{:,.0f}').format(vv),
+                    fontsize=6.3, color=GREY, va='center')
+        ax.set_title(str(col), pad=15, fontsize=8, loc='left')
+        if ranges:
+            ax.text(0, 1.008,
+                    f'{_fmt_range(v.min())} – {_fmt_range(v.max())}',
+                    transform=ax.transAxes, fontsize=6.3, color=GREY)
+        ax.set_xlim(0, v.max() * 1.24)
+        ax.axis('off')
+        axes_out.append(ax)
+    if save:
+        save_panel(fig, save, show=show,
+                    outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
+    return fig, axes_out
+
+
+# ============================================================
+# 20.45 plot_trend_grid — 样本级小倍数趋势（点径∝n + 标题内嵌统计量）
+#   源自 fetal_heart draw_fig2e_hdwgcna_merged / draw_fig2i_temporal 实战
+# ============================================================
+
+def plot_trend_grid(data, x, y, by, size_col=None, stat_col=None,
+                    pval_col=None, fit='ols', colors=None, highlight=None,
+                    shared_xlim=None, shared_ylim=None, ncols=4, cell_fs=7.5,
+                    figsize=None, save=None, show=None, **kwargs):
+    """小倍数趋势网格：每实体（模块/基因/通路）一面板，样本级散点 + 拟合线；
+    点径∝size_col（如每供体细胞数，权重可视化）；标题内嵌 Spearman ρ 与星号。
+
+    data: tidy DataFrame（x=GA 等连续变量, y=得分, by=实体,
+    可选 size_col=每点权重 / stat_col,pval_col=预计算统计量，缺省现场算 ρ）。
+    fit: 'ols' | 'lowess' | None。highlight 实体红描边+红标题。
+    小倍数替代面条图——原始数据与统计量一体呈现（供体级验证标准形态）。
+    """
+    from scipy.stats import spearmanr
+    entities = list(data[by].dropna().unique())
+    nrows = int(np.ceil(len(entities) / ncols))
+    fig, axes = plt.subplots(nrows, ncols,
+                             figsize=figsize or (2.15 * ncols, 1.75 * nrows),
+                             squeeze=False)
+    highlight = set(highlight or [])
+    if colors is None:
+        colors = {e: MORLANDI[i % len(MORLANDI)] for i, e in enumerate(entities)}
+    elif not isinstance(colors, dict):
+        colors = {e: c for e, c in zip(entities, colors)}
+    for k, e in enumerate(entities):
+        ax = axes[k // ncols][k % ncols]
+        sub = data[data[by] == e]
+        c = colors.get(e, MORLANDI[0])
+        if size_col is not None and len(sub) and sub[size_col].max() > 0:
+            s = 10 + 2.4 * np.sqrt(sub[size_col] / sub[size_col].max()) * 5
+            s = np.asarray(s, float)
+        else:
+            s = np.full(len(sub), 12.0)
+        emph = e in highlight
+        ax.scatter(sub[x], sub[y], s=s, color=c,
+                   edgecolor=CONTRAST_RED if emph else 'white',
+                   linewidths=1.1 if emph else 0.5, zorder=3)
+        if fit and len(sub) >= 3 and sub[x].nunique() >= 2:
+            mode = fit
+            if mode == 'lowess':
+                try:
+                    from statsmodels.nonparametric.smoothers_lowess import lowess
+                    sm = lowess(sub[y], sub[x], frac=0.8)
+                    ax.plot(sm[:, 0], sm[:, 1], color=c, lw=1.6, alpha=0.9,
+                            zorder=2)
+                    mode = None
+                except ImportError:
+                    mode = 'ols'
+            if mode == 'ols':
+                b1, b0 = np.polyfit(sub[x].astype(float),
+                                    sub[y].astype(float), 1)
+                xs = np.array([sub[x].min(), sub[x].max()], float)
+                ax.plot(xs, b0 + b1 * xs, color=c, lw=1.6, alpha=0.9, zorder=2)
+        title = str(e)
+        if len(sub) >= 3:
+            if stat_col is not None:
+                rho = float(sub[stat_col].iloc[0])
+                _, p_val = spearmanr(sub[x].astype(float), sub[y].astype(float))
+            else:
+                rho, p_val = spearmanr(sub[x].astype(float), sub[y].astype(float))
+            if pval_col is not None:
+                p_val = float(sub[pval_col].iloc[0])
+            star = '*' if p_val < 0.05 else ''
+            title += f'  ρ={rho:+.2f}{star}'
+        ax.set_title(title, fontsize=cell_fs, loc='left', pad=3,
+                     color=CONTRAST_RED if emph else
+                     (_darken_hex(c) if _hex_luma(c) > 170 else c),
+                     fontweight='bold' if emph else 'normal')
+        if shared_xlim is not None:
+            ax.set_xlim(shared_xlim)
+        if shared_ylim is not None:
+            ax.set_ylim(shared_ylim)
+        polish_axes(ax)
+        ax.tick_params(labelsize=6.5)
+    for k in range(len(entities), nrows * ncols):
+        axes[k // ncols][k % ncols].axis('off')
+    for row in axes:
+        row[0].set_ylabel(str(y), fontsize=7.5)
+    for a in axes[-1]:
+        if a.axison:
+            a.set_xlabel(str(x), fontsize=7.5)
+    fig.tight_layout(h_pad=0.7, w_pad=0.5)
+    if save:
+        save_panel(fig, save, show=show,
+                    outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
+    return fig, axes

@@ -29,7 +29,8 @@ def plot_paga(adata, ax=None, figsize=None, save=None, threshold=0.05,
                                    figsize=figsize or (2.5, 2.2), show=False)
             fig = plt.gcf()
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, fig.axes[0] if fig.axes else None
         except Exception as e:
             print(f"[smart_plot] ov.pl.trajectory_graph failed ({e}), fallback")
@@ -51,7 +52,8 @@ def plot_paga(adata, ax=None, figsize=None, save=None, threshold=0.05,
     polish_axes(ax)
     ax.set_aspect('equal')   # PAGA 用 embedding 坐标定位节点，必须正方形
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -147,7 +149,8 @@ def plot_pseudotime(adata, genes, pseudotime_col='pseudotime', ax=None,
         polish_axes(a)
     axes[-1].set_xlabel('Pseudotime')
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, axes if len(genes) > 1 else axes[0]
 
 
@@ -185,26 +188,7 @@ def plot_distance_distribution(adata_sp, group_a, group_b, groupby=None,
     # A 每个 spot → B 最近邻的欧氏距离
     tree = cKDTree(coords[mb])
     d, _ = tree.query(coords[ma])
-    if _check_ov():
-        try:
-            import omicverse as ov
-            import pandas as pd
-            if groupby is not None and groupby in adata_sp.obs.columns:
-                g = adata_sp.obs[groupby].loc[ma].astype(str).values
-            else:
-                g = np.array(['All'] * len(d))
-            df_dist = pd.DataFrame({'distance': d, 'group': g, 'hue': 'all'})
-            ov.pl.boxplot(data=df_dist, hue='hue', x_value='group', y_value='distance',
-                          figsize=figsize or (3.0, 2.5))
-            fig = plt.gcf()
-            ax_ov = fig.axes[0] if fig.axes else None
-            if ax_ov:
-                ax_ov.set_ylabel(f'Distance to {group_b} (µm)', fontsize=7)
-            if save:
-                save_panel(fig, save, show=show)
-            return fig, ax_ov
-        except Exception as e:
-            print(f"[smart_plot] ov.pl.boxplot failed ({e}), mpl fallback")
+    # 直走 mpl（含置换检验+零分布绘制；ov 短路版绕过统计，已移除）
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or (3.0, 2.5))
     else:
@@ -252,19 +236,39 @@ def plot_distance_distribution(adata_sp, group_a, group_b, groupby=None,
     if n_perm > 0:
         rng = np.random.default_rng(0)
         below = 0
+        null_means = []
         for _ in range(n_perm):
             pick = rng.permutation(n_obs)[:n_a]
             dp, _ = tree.query(coords[pick])
+            null_means.append(dp.mean())
             if dp.mean() <= observed:
                 below += 1
         above = n_perm - below
         p = (min(below, above) + 1) / (n_perm + 1)  # 双侧经验 p（+1 校正避免 0）
         star = 'ns' if p >= 0.05 else ('*' if p >= 0.01 else '**')
-        ax.text(0.5, 1.03, f'{star} p={p:.2e} (permutation n={n_perm})',
-                transform=ax.transAxes, ha='center', fontsize=8, color=GREY)
+        # 零分布画成灰色 violin 对照（观察值 vs 随机重标签一目了然）
+        pos_null = (len(cats) if groupby is not None and cats else 1) + 1
+        vp = ax.violinplot([null_means], positions=[pos_null], widths=0.7,
+                           showextrema=False, showmedians=True)
+        for b_ in vp['bodies']:
+            b_.set(facecolor=GREY_SCALE['grid'], alpha=0.8, edgecolor='none')
+        vp['cmedians'].set(color=GREY_SCALE['guide'], lw=1.0)
+        ax.scatter([pos_null], [observed], marker='*', s=90,
+                   color=CONTRAST_RED, zorder=5)
+        ax.text(0.97, 0.95, f'{star} p={p:.2e} (permutation n={n_perm})',
+                transform=ax.transAxes, ha='right', va='top', fontsize=7.5,
+                color=GREY, bbox=dict(boxstyle='round,pad=0.2', fc='white',
+                                      ec='none', alpha=0.85))
+        if groupby is None:
+            ax.set_xticks([1, pos_null])
+            ax.set_xticklabels([f'{group_a} (obs)', 'permuted'], fontsize=7)
+        else:
+            ax.set_xticks(list(range(1, len(cats) + 1)) + [pos_null])
+            ax.set_xticklabels(list(cats) + ['perm.'], fontsize=7)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -362,7 +366,8 @@ def plot_nhood_enrichment(adata_sp, cluster_key='celltype',
     add_elegant_colorbar(im, ax, label='z-score')
     polish_axes(ax, subtle_grid=False)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -384,29 +389,6 @@ def plot_colocalization(adata_sp, var_x, var_y, method='spearman',
         method: 'spearman'（默认）或 'pearson'
         groupby: 非 None 时按该 obs 列分色（不分组面）
     """
-    if _check_ov():
-        try:
-            import omicverse as ov
-            import pandas as pd
-            # 提取 var_x 和 var_y 的值（_resolve_signal 返回 (values, kind) 二元组）
-            x_vals, _ = _resolve_signal(adata_sp, var_x)
-            y_vals, _ = _resolve_signal(adata_sp, var_y)
-            df_plot = pd.DataFrame({var_x: x_vals, var_y: y_vals})
-            if groupby is not None and groupby in adata_sp.obs.columns:
-                df_plot[groupby] = adata_sp.obs[groupby].values
-                ov.pl.scatterplot(data=df_plot, x=var_x, y=var_y, hue=groupby,
-                                  corr=method, alpha=0.5, s=8,
-                                  figsize=figsize or (3.0, 2.8))
-            else:
-                ov.pl.scatterplot(data=df_plot, x=var_x, y=var_y,
-                                  corr=method, alpha=0.5, s=8,
-                                  figsize=figsize or (3.0, 2.8))
-            fig = plt.gcf()
-            if save:
-                save_panel(fig, save, show=show)
-            return fig, fig.axes[0] if fig.axes else None
-        except Exception as e:
-            print(f"[smart_plot] ov.pl.scatterplot failed ({e}), mpl fallback")
     import numpy as np
     from scipy.stats import spearmanr, pearsonr
     x, xtype = _resolve_signal(adata_sp, var_x)
@@ -440,17 +422,31 @@ def plot_colocalization(adata_sp, var_x, var_y, method='spearman',
     else:
         ax.scatter(x, y, s=3, alpha=0.3, rasterized=True, color='#5E81AC',
                    edgecolor='none')
-    # 相关标注
+    # 回归线（LOWESS，全点；图必须"看得出相关方向"，不只靠数字）
+    try:
+        from statsmodels.nonparametric.smoothers_lowess import lowess
+        sm = lowess(y, x, frac=0.5)
+        ax.plot(sm[:, 0], sm[:, 1], color=CONTRAST_RED, lw=1.4, alpha=0.9,
+                zorder=4)
+    except ImportError:
+        b1, b0 = np.polyfit(x, y, 1)
+        xs = np.array([x.min(), x.max()])
+        ax.plot(xs, b0 + b1 * xs, color=CONTRAST_RED, lw=1.4, alpha=0.9,
+                zorder=4)
+    # 相关标注：角部 + 白衬底（不压数据点）
     star = 'ns' if p >= 0.05 else ('*' if p >= 0.01 else '**')
     ax.text(0.03, 0.97,
             f'{rho_label}={rho:.2f}, p={p:.2e} {star} ({method.capitalize()})',
-            transform=ax.transAxes, va='top', fontsize=8, color=GREY)
+            transform=ax.transAxes, va='top', fontsize=8, color=GREY,
+            bbox=dict(boxstyle='round,pad=0.2', fc='white', ec='none',
+                      alpha=0.85), zorder=6)
     ax.set_xlabel(var_x, fontsize=10, labelpad=10)
     ax.set_ylabel(var_y, fontsize=10, labelpad=10)
     ax.set_title('Spatial colocalization', fontsize=12, pad=8)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -490,7 +486,8 @@ def plot_deconv_pie(adata_sp, prop_cols=None, cluster_key=None,
             ov.pl.add_pie2spatial(adata_sp, cell_type_columns=prop_cols[:6],
                                   ax=ax_pie, pie_radius=15)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax_pie
         except Exception as e:
             print(f"[smart_plot] ov.pl.add_pie2spatial failed ({e}), mpl fallback")
@@ -566,6 +563,12 @@ def plot_deconv_pie(adata_sp, prop_cols=None, cluster_key=None,
                                        width=None, facecolor=palette[k],
                                        edgecolor='white', linewidth=0.2, zorder=3))
             start += theta
+    # add_patch 不触发 autoscale——必须手动扩 datalim，否则饼画在默认 (0,1) 视野外
+    ax.update_datalim(np.vstack([coords.min(0), coords.max(0)]))
+    ax.autoscale_view()
+    pad = 0.04 * max(coords.max(0) - coords.min(0))
+    ax.set_xlim(coords[:, 0].min() - pad, coords[:, 0].max() + pad)
+    ax.set_ylim(coords[:, 1].min() - pad, coords[:, 1].max() + pad)
     ax.set_aspect('equal')
     clean_umap_axes(ax, xlabel='', ylabel='')
     # 图例外置右侧
@@ -575,7 +578,8 @@ def plot_deconv_pie(adata_sp, prop_cols=None, cluster_key=None,
     ax.legend(handles=handles, loc='center left', bbox_to_anchor=(1.02, 0.5),
               frameon=False, fontsize=7, title='Cell type', title_fontsize=8)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -614,3 +618,139 @@ def _deconv_pie_cluster(adata_sp, cluster_key, spatial_key, max_spots,
 # 20.25-20.39: 分布/统计/集合类图（ov.pl 优先 → mpl 兜底）
 # ============================================================
 
+
+
+# ============================================================
+# 20.46 plot_spatial_zoom — IF 风格空间放大图（自动取框 + inset 定位 + 物理点径）
+#   源自 fetal_heart draw_fig2c_vic_zoom / draw_fig2j1_maps 实战回灌
+#   （免疫荧光式：灰 context → 值着色主信号，低值先画不遮高值）
+# ============================================================
+
+def plot_spatial_zoom(adata, color=None, coords_key='spatial',
+                      threshold_pct=90, buffer_frac=0.30, cmap=None,
+                      vmax='p98', spot_units=1.0, context_color=None,
+                      inset=True, inset_loc=(0.64, 0.05, 0.33, 0.38),
+                      zoom_edge='#B5432F', scale_bar_um='auto',
+                      unit_per_um=1.0, bar_color=None, colorbar=True,
+                      s_range=(2.5, 400), ax=None,
+                      figsize=None, save=None, show=None, **kwargs):
+    """空间放大图：高信号区域自动取框（top threshold_pct 分位掩码 → 闭运算 →
+    最大连通域 bbox + buffer），全片缩略 inset 红框定位。
+
+    adata: 空间对象（obsm[coords_key] 为坐标）；color: obs 列名或与 n_obs
+    等长的数组（信号值）。spot_units: 每点的物理宽度（数据单位）——点径按
+    物理密度恒定缩放（放大倍率变化时组织观感一致）。vmax: 'p98' 取窗口内
+    98 分位（跨图可比请显式传数）；绘制分层：窗外浅灰 context → 窗内按值
+    排序着色（低值先画）。scale_bar_um: 'auto'（按窗口宽 1/4 从
+    100/250/500/1000 里选）或整数 μm；unit_per_um: 每数据单位的 μm 数。
+    """
+    from scipy import ndimage
+    xy = np.asarray(adata.obsm[coords_key][:, :2], float)
+    if color is None:
+        raise ValueError("plot_spatial_zoom 需要 color（obs 列名或值数组）")
+    if isinstance(color, str):
+        vals = np.asarray(adata.obs[color].values, float)
+    else:
+        vals = np.asarray(color, float)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize or (3.6, 3.6))
+    else:
+        fig = ax.figure
+    cmap = cmap or EXPR_CMAP
+    context_color = context_color or GREY_SCALE['grid']
+    # 自动 zoom 框
+    thr = np.percentile(vals, threshold_pct)
+    mask = vals >= thr
+    if mask.sum() >= 3:
+        # 掩码栅格化 → 闭运算 → 最大连通域
+        x0_, x1_ = xy[:, 0].min(), xy[:, 0].max()
+        y0_, y1_ = xy[:, 1].min(), xy[:, 1].max()
+        nx = ny = 200
+        Hg, xe, ye = np.histogram2d(xy[:, 0], xy[:, 1], bins=[nx, ny],
+                                    range=[[x0_, x1_], [y0_, y1_]],
+                                    weights=mask.astype(float))
+        grid = ndimage.binary_closing(Hg > 0, structure=np.ones((3, 3)))
+        lab, nlab = ndimage.label(grid)
+        if nlab > 0:
+            sizes = ndimage.sum(grid, lab, range(1, nlab + 1))
+            li = int(np.argmax(sizes)) + 1
+            iy, ix = np.where(lab == li)
+            gx = xe[:-1] + np.diff(xe) / 2
+            gy = ye[:-1] + np.diff(ye) / 2
+            bx0, bx1 = gx[ix].min(), gx[ix].max()
+            by0, by1 = gy[iy].min(), gy[iy].max()
+            w, h = bx1 - bx0, by1 - by0
+            bx0 -= w * buffer_frac; bx1 += w * buffer_frac
+            by0 -= h * buffer_frac; by1 += h * buffer_frac
+        else:
+            bx0, bx1, by0, by1 = x0_, x1_, y0_, y1_
+    else:
+        bx0, bx1, by0, by1 = xy[:, 0].min(), xy[:, 0].max(), \
+            xy[:, 1].min(), xy[:, 1].max()
+    inwin = (xy[:, 0] >= bx0) & (xy[:, 0] <= bx1) & \
+            (xy[:, 1] >= by0) & (xy[:, 1] <= by1)
+    # vmax（窗口内 p98 或显式）
+    if isinstance(vmax, str):
+        vmax_ = float(np.percentile(vals[inwin], 98)) if inwin.sum() else \
+            float(np.percentile(vals, 98))
+    else:
+        vmax_ = float(vmax)
+    ax.set_xlim(bx0, bx1)
+    ax.set_ylim(by0, by1)
+    ax.set_aspect('equal')
+    # 物理点径：先渲染一次拿 axes 像素密度
+    fig.canvas.draw()
+    bb = ax.get_window_extent()
+    side = max(bx1 - bx0, by1 - by0)
+    px_per_unit = min(bb.width, bb.height) / side
+    s_main = float(np.clip((0.78 * px_per_unit * 72 / fig.dpi * spot_units) ** 2,
+                           *s_range))
+    # 分层绘制：context → 主信号（值排序，低值先画）
+    out_idx = np.where(~inwin)[0]
+    ax.scatter(xy[out_idx, 0], xy[out_idx, 1], s=max(1.5, s_main * 0.25),
+               color=context_color, lw=0, rasterized=True, zorder=1)
+    in_idx = np.where(inwin)[0]
+    order = np.argsort(vals[in_idx])
+    sel = in_idx[order]
+    sc = ax.scatter(xy[sel, 0], xy[sel, 1], s=s_main,
+                    c=np.clip(vals[sel], 0, vmax_), cmap=cmap, vmin=0,
+                    vmax=vmax_, lw=0, rasterized=True, zorder=2)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    ax.set_xticks([]); ax.set_yticks([])
+    if color is not None and isinstance(color, str):
+        ax.set_title(color, fontsize=8, loc='left')
+    # inset 全片缩略图（按信号着色，红框定位可读）+ 细边框
+    if inset:
+        axi = ax.inset_axes(list(inset_loc))
+        axi.scatter(xy[:, 0], xy[:, 1], s=0.9, c=np.clip(vals, 0, vmax_),
+                    cmap=cmap, vmin=0, vmax=vmax_, lw=0, rasterized=True)
+        axi.set_xlim(x0_, x1_); axi.set_ylim(y0_, y1_)
+        axi.set_aspect('equal')
+        axi.set_xticks([]); axi.set_yticks([])
+        for sp_ in axi.spines.values():
+            sp_.set_visible(True)
+            sp_.set_color(GREY_SCALE['spine'])
+            sp_.set_linewidth(0.6)
+        axi.plot([bx0, bx1, bx1, bx0, bx0], [by0, by0, by1, by1, by0],
+                 color=zoom_edge, lw=1.2)
+    # colorbar（颜色-数值映射必备）
+    if colorbar:
+        add_elegant_colorbar(sc, ax,
+                             label=str(color) if isinstance(color, str)
+                             else 'value')
+    # 自适应比例尺（默认深色+白晕，浅底可见；深底组织请传 bar_color='white'）
+    if scale_bar_um is not None:
+        win_um = (bx1 - bx0) * unit_per_um
+        if isinstance(scale_bar_um, str):
+            cands = [100, 250, 500, 1000, 2000]
+            scale_bar_um = min(cands, key=lambda c: abs(c - win_um / 4))
+        add_scale_bar(ax, length_um=scale_bar_um,
+                      px_per_um=1.0 / unit_per_um,
+                      color=bar_color or NEAR_BLACK,
+                      x_frac=0.06, y_frac=0.05)
+    if save:
+        save_panel(fig, save, show=show,
+                    outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
+    return fig, ax

@@ -34,7 +34,7 @@ def plot_ccc(weight_matrix, layout='chord', labels=None, ax=None, figsize=None,
     Returns: (fig, ax)
     """
     if layout == 'chord':
-        return plot_chord(weight_matrix, ax=ax, figsize=figsize,
+        return plot_chord(weight_matrix, labels=labels, ax=ax, figsize=figsize,
                           save=save, show=show, **kwargs)
     elif layout == 'network':
         return plot_ccc_network(weight_matrix, labels=labels, ax=ax,
@@ -54,8 +54,9 @@ def plot_ccc(weight_matrix, layout='chord', labels=None, ax=None, figsize=None,
 # 20.12a plot_chord — Chord/CCC 细胞通讯弦图（plot_ccc 的 chord 布局实现）
 # ============================================================
 
-def plot_chord(weight_matrix, ax=None, figsize=None, save=None, show=None, **kwargs):
-    """Chord/CCC：ov.pl.CellChatViz 优先，mpl+networkx 兜底。"""
+def plot_chord(weight_matrix, labels=None, ax=None, figsize=None, save=None,
+               show=None, **kwargs):
+    """Chord/CCC：ov.pl.CellChatViz 优先，mpl 真弦图兜底（扇区+贝塞尔 ribbon）。"""
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize or recipe_figsize('chord'))
     else:
@@ -73,51 +74,95 @@ def plot_chord(weight_matrix, ax=None, figsize=None, save=None, show=None, **kwa
             else:
                 raise AttributeError("No chord method found in CellChatViz")
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax
         except Exception as e:
             print(f"[smart_plot] ov chord failed ({e}), mpl+networkx fallback")
-    _chord_mpl(weight_matrix, ax)
+    _chord_mpl(weight_matrix, ax, labels=labels)
     ax.set_aspect('equal')
     ax.axis('off')
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
 
-def _chord_mpl(weight_matrix, ax):
-    """mpl chord: circular layout, source-colored arcs."""
-    import networkx as nx
+def _chord_mpl(weight_matrix, ax, labels=None):
+    """真弦图：外环扇区（弧长∝节点总通讯强度）+ 贝塞尔 ribbon（宽∝配对强度、
+    alpha∝强度归一）。≤8 节点；对称化合并双向通讯。"""
+    import matplotlib.patches as mpatches
+    from matplotlib.path import Path as MplPath
     if hasattr(weight_matrix, 'values'):
-        wm = weight_matrix.values
-        labels = list(weight_matrix.index)
+        wm = np.asarray(weight_matrix.values, float)
+        labels = list(weight_matrix.index) if labels is None else labels
     else:
-        wm = np.asarray(weight_matrix)
-        labels = [f'C{i}' for i in range(len(wm))]
-    n = min(len(labels), 8)  # ≤8 cell types
-    wm = wm[:n, :n]; labels = labels[:n]
-    G = nx.DiGraph()
+        wm = np.asarray(weight_matrix, float)
+        labels = labels or [f'C{i}' for i in range(len(wm))]
+    n = min(len(labels), 8)
+    wm = wm[:n, :n]
+    labels = list(labels[:n])
+    wm = 0.5 * (wm + wm.T)
+    np.fill_diagonal(wm, 0)
+    strength = wm.sum(1)
+    if strength.sum() <= 0:
+        raise ValueError('chord: 全零权重矩阵')
+    gap = np.deg2rad(3.0)
+    widths = strength / strength.sum() * (2 * np.pi - n * gap)
+    seg_start, seg_end, mid = [], [], []
+    a = np.pi / 2
     for i in range(n):
-        G.add_node(i)
+        seg_start.append(a)
+        seg_end.append(a - widths[i])
+        mid.append(a - widths[i] / 2)
+        a -= widths[i] + gap
+    R = 1.0
+    palette = [MORLANDI[i % len(MORLANDI)] for i in range(n)]
     for i in range(n):
-        for j in range(n):
-            if i != j and wm[i, j] > 0:
-                G.add_edge(i, j, weight=wm[i, j])
-    pos = nx.circular_layout(G)
-    palette = {i: MORLANDI[i % len(MORLANDI)] for i in range(n)}
+        ax.add_patch(mpatches.Wedge((0, 0), R * 1.06,
+                                    np.degrees(seg_end[i]),
+                                    np.degrees(seg_start[i]),
+                                    width=R * 0.055, facecolor=palette[i],
+                                    edgecolor='white', lw=0.6, zorder=5))
+        lr = R * 1.16
+        ax.text(lr * np.cos(mid[i]), lr * np.sin(mid[i]),
+                str(labels[i])[:10],
+                ha='left' if np.cos(mid[i]) >= 0 else 'right',
+                va='center', fontsize=7, color=NEAR_BLACK)
+    wmax = wm.max()
+    cursor = [seg_start[i] for i in range(n)]
     for i in range(n):
-        x, y = pos[i]
-        ax.scatter(x, y, s=800, color=palette[i], edgecolor='white',
-                   linewidth=1.5, zorder=5)
-        ax.text(x, y, labels[i][:8], ha='center', va='center', fontsize=7,
-                color='white', zorder=6)
-    maxw = max((d['weight'] for _, _, d in G.edges(data=True)), default=1)
-    for u, v, d in G.edges(data=True):
-        w = d['weight']
-        x1, y1 = pos[u]; x2, y2 = pos[v]
-        ax.plot([x1, x2], [y1, y2], color=palette[u], alpha=0.5,
-                lw=0.5 + 3*w/maxw, solid_capstyle='round', zorder=2)
+        for j in range(i + 1, n):
+            w = wm[i, j]
+            if w < 0.02 * wmax:
+                continue
+            ai = min(w / strength[i] * widths[i], widths[i] * 0.85)
+            aj = min(w / strength[j] * widths[j], widths[j] * 0.85)
+            a0, a1 = cursor[i], cursor[i] - ai
+            b0, b1 = cursor[j], cursor[j] - aj
+            cursor[i], cursor[j] = a1, b1
+
+            def _pt(ang):
+                return (R * np.cos(ang), R * np.sin(ang))
+            (x0, y0), (x1, y1) = _pt(a0), _pt(a1)
+            (u0, v0), (u1, v1) = _pt(b0), _pt(b1)
+            k = 0.35     # 控制点收拢系数 → ribbon 圆弧感
+            verts = [(x0, y0), (x0 * k, y0 * k), (u1 * k, v1 * k), (u1, v1),
+                     (u0, v0), (u0 * k, v0 * k), (x1 * k, y1 * k), (x1, y1),
+                     (x0, y0)]
+            codes = [MplPath.MOVETO] + [MplPath.CURVE4] * 3 + \
+                    [MplPath.LINETO] + [MplPath.CURVE4] * 3 + [MplPath.CLOSEPOLY]
+            ax.add_patch(mpatches.PathPatch(
+                MplPath(verts, codes), facecolor=palette[i], edgecolor='none',
+                alpha=0.22 + 0.5 * w / wmax, zorder=3))
+    ax.set_xlim(-1.38, 1.38)
+    ax.set_ylim(-1.38, 1.38)
+    ax.set_aspect('equal')
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
 
 
 # ============================================================
@@ -140,7 +185,8 @@ def plot_spatial_ccc(adata_sp, ligand, receptor, ax=None, figsize=None, save=Non
             ov.pl.spatial_value(adata_sp, color=ligand, library_id=lib_id, ax=ax1)
             ov.pl.spatial_value(adata_sp, color=receptor, library_id=lib_id, ax=ax2)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, (ax1, ax2)
         except Exception as e:
             print(f"[smart_plot] ov.pl.spatial_value failed ({e}), mpl fallback")
@@ -182,7 +228,8 @@ def plot_spatial_ccc(adata_sp, ligand, receptor, ax=None, figsize=None, save=Non
     fig.colorbar(sc, cax=cbar_ax, label='Expression')
     add_scale_bar(ax1, length_um=200, px_per_um=1.0)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, (ax1, ax2)
 
 
@@ -230,7 +277,8 @@ def plot_signaling_heatmap(comm_scores, ax=None, figsize=None, save=None,
     add_elegant_colorbar(im, ax, label='Strength (scaled)')
     polish_axes(ax, subtle_grid=False)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -317,7 +365,8 @@ def plot_ccc_network(weight_matrix, labels=None, ax=None, figsize=None,
     clean_umap_axes(ax, xlabel='', ylabel='')
     ax.set_title('CCC network', fontsize=12, pad=8)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -345,11 +394,15 @@ def plot_ccc_heatmap(adata, plot_type='heatmap', ax=None, figsize=None,
         fig = plt.gcf()
         fig.set_size_inches(*(figsize or (3.5, 3.0)))
         if save:
-            save_panel(fig, save, show=show)
+            save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
         return fig, fig.axes[0] if fig.axes else None
     except Exception as e:
-        print(f"[smart_plot] ov.pl.ccc_heatmap failed ({e})")
-        return None, None
+        # 无 liana/cpdb 预计算时明确报错，绝不静默返回（用户会误以为已出图）
+        raise ValueError(
+            f'[smart_plot] plot_ccc_heatmap 失败: {e}。'
+            '本图型需要预计算的通讯结果（adata.uns["liana_res"] 等）；'
+            '请先跑 liana/cellphonedb（见 analysis_reference CCC 节）。') from e
 
 
 # ============================================================

@@ -34,6 +34,20 @@ NEAR_BLACK = '#2E3440'     # axis/text color (Morlandi polar-night)
 
 GREY = '#4C566A'           # annotation/subtle text (Morlandi grey)
 
+# Reference-line grey scale — 5 levels for guides/annotations (fetal_heart practice)
+GREY_SCALE = {
+    'zero':  '#B9C2CB',    # zero line / neutral reference
+    'guide': '#8A97A5',    # dashed reference line
+    'note':  '#5E6A76',    # in-plot annotation text
+    'spine': '#D5DAE0',    # bar-style bottom spine
+    'grid':  '#EDF0F3',    # subtle gridline
+}
+
+# Semantic contrast pair (blue vs red): compact vs trabecular, inside vs outside,
+# treatment vs control — reserved for TWO-GROUP contrast narratives, not cell types
+CONTRAST_BLUE = '#4C7BA6'
+CONTRAST_RED = '#B5432F'
+
 # Condition colors (reserved for Normal/Disease narrative — NOT for cell types)
 
 # Condition colors (reserved for Normal/Disease narrative — NOT for cell types)

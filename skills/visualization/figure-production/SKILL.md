@@ -1,11 +1,11 @@
 ---
 name: figure-production
-description: 生信发表级图表——逐张迭代设计（看上一张结果决定下一张画什么）→ 每张独立出图验证（png+pdf 双格式落盘，per-figure ipynb 一面板一 cell）→ deck/composite 由单图拼装。当用户要画生信图、做发表级 figure、设计主图、拼图、UMAP/volcano/heatmap/dotplot/空间图/PAGA/轨迹/细胞通讯图/云雨图时触发。
+description: 生信发表级图表——逐张迭代设计（看上一张结果决定下一张画什么）→ 每张独立出图验证（png+pdf 双格式落盘，per-figure ipynb 一面板一 cell）→ deck/composite 由单图拼装。当用户要画生信图、做发表级 figure、设计主图、拼图、UMAP/volcano/heatmap/dotplot/空间图/PAGA/轨迹/细胞通讯图/云雨图/斜率图/棒棒糖图/QC 卡片/趋势小倍数/空间放大图时触发。
 ---
 
 # Figure Production (Iterative Design → Per-Panel Render → Assemble)
 
-**触发词**: 画图 / 出图 / figure / UMAP / tSNE / volcano / heatmap / dotplot / violin / 云雨图 / raincloud / 拼图 / 主图设计 / composite / 发表级 / PAGA / 轨迹 / chord / 细胞通讯 / 空转图
+**触发词**: 画图 / 出图 / figure / UMAP / tSNE / volcano / heatmap / dotplot / violin / 云雨图 / raincloud / 斜率图 / slope / movers / 棒棒糖 / lollipop / QC 卡片 / 趋势小倍数 / 小倍数 / 空间放大 / zoom / inset / 拼图 / 主图设计 / composite / 发表级 / PAGA / 轨迹 / chord / 细胞通讯 / 空转图
 
 > **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
 

@@ -128,6 +128,93 @@ def finalize_figure(fig, move_legend_right=True, check_overlap=True,
 
 
 # ============================================================
+# 8c. assert_no_text_overlap() — 画布级重叠硬断言（finalize 的 strict 版）
+#     （fetal_heart 15+ 脚本手写 harness 的统一封装，2026-09 实战回灌）
+# ============================================================
+
+def assert_no_text_overlap(fig, include_ticks=True, include_legend=True,
+                           check_bounds=False, tol_px=0.5,
+                           raise_on_fail=True, verbose=True):
+    """渲染后逐对检查 fig/ax 文字 bbox：重叠即 raise（把"审图"变成 CI）。
+
+    覆盖 finalize_figure 不查的对象：fig.texts（面板字母/标题/脚注）、ax.title、
+    tick labels、legend。tol_px 容忍贴边接触；check_bounds=True 时另查越出画布
+    （save_panel 用 bbox_inches='tight' 会自动扩边，故默认关）。
+
+    Args:
+        fig: matplotlib Figure
+        include_ticks: 检查 tick label 两两重叠（长旋转标签挤压时能抓到）
+        include_legend: legend 作为整体 bbox 参与检查
+        raise_on_fail: True → AssertionError 列出全部重叠对；False → 只返回 issues 列表
+
+    Usage:
+        stamp_panel(fig, 'a', 'Title', 'methods note ...')
+        assert_no_text_overlap(fig)          # 保存前的机械验收门
+    """
+    fig.canvas.draw()
+    r = fig.canvas.get_renderer()
+    items = []
+
+    def _add(lbl, artist):
+        try:
+            if artist.get_text().strip():
+                items.append((lbl, artist))
+        except Exception:
+            pass
+
+    for t in fig.texts:
+        _add(f"fig.text '{t.get_text()[:24]}'", t)
+    for k, ax in enumerate(fig.axes):
+        if ax.title.get_text():
+            items.append((f"ax{k} title '{ax.title.get_text()[:24]}'", ax.title))
+        for nm, lab in (('xlabel', ax.xaxis.label), ('ylabel', ax.yaxis.label)):
+            if lab.get_text():
+                items.append((f'ax{k} {nm}', lab))
+        for t in ax.texts:
+            _add(f"ax{k} text '{t.get_text()[:24]}'", t)
+        if include_ticks:
+            for t in list(ax.get_xticklabels()) + list(ax.get_yticklabels()):
+                _add(f"ax{k} tick '{t.get_text()[:24]}'", t)
+        if include_legend and ax.get_legend() is not None:
+            items.append((f'ax{k} legend', ax.get_legend()))
+
+    def _isect(a, b):
+        w = min(a.x1, b.x1) - max(a.x0, b.x0)
+        h = min(a.y1, b.y1) - max(a.y0, b.y0)
+        return (w > tol_px and h > tol_px)
+
+    issues = []
+    for i in range(len(items)):
+        for j in range(i + 1, len(items)):
+            try:
+                bi = items[i][1].get_window_extent(renderer=r)
+                bj = items[j][1].get_window_extent(renderer=r)
+            except Exception:
+                continue
+            if _isect(bi, bj):
+                issues.append(f"文字重叠: {items[i][0]} ↔ {items[j][0]}")
+
+    if check_bounds:
+        fb = fig.bbox
+        for lbl, artist in items:
+            try:
+                b = artist.get_window_extent(renderer=r)
+            except Exception:
+                continue
+            if b.x0 < fb.x0 - tol_px or b.x1 > fb.x1 + tol_px or \
+               b.y0 < fb.y0 - tol_px or b.y1 > fb.y1 + tol_px:
+                issues.append(f"越出画布: {lbl}")
+
+    if issues:
+        msg = "[assert_no_text_overlap] " + "; ".join(issues)
+        if raise_on_fail:
+            raise AssertionError(msg)
+        if verbose:
+            print("⚠️  " + msg)
+    return issues
+
+
+# ============================================================
 # 9. add_cluster_labels() — on-plot labels with white halo (Nature 2024 style)
 # ============================================================
 

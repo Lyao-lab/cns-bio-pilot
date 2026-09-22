@@ -10,20 +10,20 @@
 | 要画什么 | 统一入口（自动 ov/mpl 降级） | 关键参数 |
 |---|---|---|
 | UMAP / tSNE | `plot_umap(adata, color=..., save=...)` | basis 换 tSNE；labels=True 加 on-plot 标注 |
-| Volcano | `plot_volcano(de, save=...)` | annotate_top=10；sig_pval/sig_fc 可调 |
+| Volcano | `plot_volcano(de, save=...)` | annotate_top=10 防撞标注；sig_pval/sig_fc 可调 |
 | Dotplot | `plot_dotplot(adata, var_names=..., groupby=..., save=...)` | standard_scale='var'；dendrogram=False |
 | Violin/Box | `plot_violin(adata, keys=..., groupby=..., save=...)` | violin_alpha=0.8；spine #b4aea9；wilcox 自动星号 |
 | Heatmap | `plot_heatmap(adata, var_names=..., groupby=..., save=...)` | Z-score/row；vmin=-2,vmax=2；EXPR_CMAP |
 | Spatial | `plot_spatial(adata_sp, color=..., save=...)` | scale bar 必须有；colorbar 横置 |
 | Bar（比例） | `plot_bar(props, save=...)`（或 adata+groupby） | Y 从 0；95% CI；per-sample dots |
-| 富集条形 | `plot_enrichment(enr, save=..., top_n=15)` | barh 按 -log10(FDR) 降序；条右标 gene count |
+| 富集条形 | `plot_enrichment(enr, save=..., top_n=15)` | barh -log10(FDR) 降序；group_col 分组模式；cap 轴封顶；pretty 术语清洗 |
 | L-R Bubble | `plot_lr_bubble(pair_labels, pathway_labels, sizes, mean_expr, save=...)` | size=-log10(p)；color=mean expr；x_idx/y_idx 可选 |
-| Feature 矩阵 | `plot_feature_matrix(adata, genes, save=..., ncols=3)` | 共享 vmin/vmax=99th pct |
+| Feature 矩阵 | `plot_feature_matrix(adata, genes, save=..., ncols=3)` | 共享 vmin/vmax=99th pct+单一共享色条 |
 | PAGA | `plot_paga(adata, save=..., threshold=0.05)` | 前置 sc.tl.paga；threshold 滤噪声 |
-| Chord / CCC | `plot_chord(weight_matrix, save=...)` | ≤8 cell types；lw∝weight |
+| Chord / CCC | `plot_chord(weight_matrix, labels=..., save=...)` | ≤8 节点；扇区弧长∝强度+贝塞尔 ribbon |
 | Pseudotime | `plot_pseudotime(adata, genes, save=...)` | LOESS lw=1.2；CI 带 alpha=0.15 |
 | cellproportion | `plot_cellproportion(adata, groupby=..., save=...)` | stacked；MORLANDI |
-| DE 分组散点 | `plot_de_scatter(de_dict, save=...)` | 多时点替代火山图；up红/down蓝 |
+| DE 分组散点 | `plot_de_scatter(de_dict, save=...)` | 多时点替代火山图；抖动防熔柱 |
 | 空间 CCC 共表达 | `plot_spatial_ccc(adata_sp, ligand, receptor, save=...)` | 双面板配受体共表达；scale bar |
 | Milo beeswarm | `plot_milo(milo_result, save=...)` | 无预定义cluster的局部丰度；SpatialFDR着色 |
 | 信号角色热图 | `plot_signaling_heatmap(comm_scores, save=...)` | outgoing/incoming；celltype×pathway |
@@ -33,19 +33,29 @@
 | 核密度 | `plot_kde(data, x=..., y=..., hue=..., save=...)` | 单/双变量密度；data=DataFrame |
 | 直方图 | `plot_histplot(data, x=..., hue=..., save=...)` | QC标配；bins='auto' |
 | 抖动散点 | `plot_stripplot(data, x=..., y=..., hue=..., save=...)` | 每点可见；summary='mean' |
-| 堆叠面积 | `plot_stackarea(adata, celltype_col=..., groupby=..., save=...)` | 比例随连续变量变化 |
+| 堆叠面积 | `plot_stackarea(adata, celltype_col=..., groupby=..., save=...)` | 比例随连续变量变化；inband_labels+number_legend 带内编号标签 |
 | 柱+点组合 | `plot_bardotplot(adata, groupby=..., color=..., save=...)` | 均值柱+分布点 |
-| 堆叠火山 | `plot_stacking_vol(data_dict, save=...)` | 多条件DE并排；data_dict={条件:DE} |
+| 堆叠火山 | `plot_stacking_vol(data_dict, save=...)` | 多条件DE并排（ov优先/mpl兜底）；data_dict={条件:DE} |
 | UpSet 图 | `plot_upset(sets, top_n=30, save=...)` | >3组交集；sets={名称:set} |
 | Venn 图 | `plot_venn(sets, save=...)` | ≤4组交集；sets={名称:set} |
-| 森林图 | `plot_forest(data, estimate=..., lower=..., upper=..., save=...)` | meta-analysis |
-| 回归散点 | `plot_regplot(data, x=..., y=..., fit='linear', save=...)` | 相关性分析；fit='lowess'可选 |
-| 通讯热图 | `plot_ccc_heatmap(adata, plot_type='heatmap', save=...)` | 需liana预计算；plot_type='dot'/'tile' |
-| PCA方差比 | `plot_pca_variance(adata, n_pcs=30, save=...)` | QC标配；选PCs数 |
+| 森林图 | `plot_forest(data, estimate=..., lower=..., upper=..., save=...)` | 无效线 auto（OR→1.0，log→0）；null_value 可覆盖 |
+| 回归散点 | `plot_regplot(data, x=..., y=..., fit='linear', save=...)` | 相关性分析；95% CI 带；fit='lowess'可选 |
+| 通讯热图 | `plot_ccc_heatmap(adata, plot_type='heatmap', save=...)` | 需liana预计算（缺失时明确报错）；plot_type='dot'/'tile' |
+| PCA方差比 | `plot_pca_variance(adata, n_pcs=30, save=...)` | QC标配；方差比柱+累计线双轴 |
 | HVG散点 | `plot_hvg_scatter(adata, save=...)` | QC标配；均值vs离散 |
 | 雷达图（多指标方法对比） | `plot_radar(values, axis_labels, axis_ranges=...)` | 每辐条独立量程归一；整合基准对比首选 |
 | 消融/组件对比 barh | `alpha_ramp(hex, n)` + `ax.barh(...)` | 首项最实=完整模型；数值标签在条外用 NEAR_BLACK |
 | 曲线事件标注 | `mark_events(ax, x, y, events)` | label 加 '*' 抬高防撞 |
+| 斜率图（组成 movers） | `plot_slope(wide_df, save=...)` | 端点直接标签带 Δ；top_n 选变化最大；emphasize 强调加粗 |
+| 发散棒棒糖 | `plot_lollipop(df, label_col=..., value_col=..., save=...)` | 实心=主统计量+空心=第二统计量；null_band 置换零带；ref_line |
+| QC 条形卡片 | `plot_qc_cards(metrics, covariate=..., save=...)` | 行=样本、列=指标；GA 渐变色块；数值直标+列顶范围 |
+| 样本趋势小倍数 | `plot_trend_grid(df, x=..., y=..., by=..., save=...)` | 点径∝n_cells；标题内嵌 ρ+星；highlight 红描边 |
+| 空间放大图（IF 风格） | `plot_spatial_zoom(adata_sp, color=..., save=...)` | 自动取框+inset 红框定位；物理点径；自适应比例尺 |
+| 面板字母三件套 | `stamp_panel(fig, 'a', title, subtitle)` | 字母+版内标题+方法学灰副标题（≥8in 宽画布） |
+| 画布级重叠断言 | `assert_no_text_overlap(fig)` | raise 版验收门；补查 fig.texts/title/tick/legend |
+| 直接标签防撞 | `direct_label(ax, ys, texts, side=...)` | 端点标签像素级 stagger，gap_pt 最小行距 |
+| 标签斥力求解 | `layout_labels(fig, ax, texts)` | on-plot 标签 bbox 实测推开（UMAP 标签救星） |
+| bar 风坐标 | `polish_axes(ax, variant='bar', grid_axis='x')` | 只留灰底脊+值轴浅网格（barh 用 'x'，竖条 'y'） |
 
 ## 1. 全局开头（每个脚本第一行）
 
@@ -188,7 +198,8 @@ fig, ax = plot_bar(props, save='G_proportion')
 
 ### 2.8 富集条形图（GO/KEGG）
 
-**统一入口**（自动 ov.pl 优先，mpl 兜底）：水平 barh；`-log10(FDR)` 降序；条右标 gene count；通路名 ≤40 字符截断；`polish_axes` 无 grid。
+**统一入口**（自动 ov.pl 优先，mpl 兜底）：水平 barh；`-log10(FDR)` 降序；条右标 gene count；通路名 pretty 清洗（去 GOBP_/HALLMARK_ 前缀、介词小写、48 字符截断）；`polish_axes(variant='bar')`。
+**升级**（fetal_heart ORA 系列）：`group_col` 分组模式（每组 per_group 条、组标题加粗着色+分隔线、组色跨 panel 一致、FDR>0.05 标签置灰）；`cap` 极端值轴封顶（核糖体类 -log10≈98 不再压扁其他条）；详见速查卡。
 
 ```python
 # enr: pandas DataFrame, 列 Term/FDR/Gene_count（来自 gseapy/GO 工具输出）
@@ -489,6 +500,9 @@ from cns_style import plot_stackarea
 plot_stackarea(adata, celltype_col='celltype', groupby='pseudotime', save='AD_stackarea')
 # 内部：按 groupby 分箱 → 每 bin 各 celltype 比例 → 堆叠面积
 # bin 数过多自动合并；x 轴标签取 bin 中点
+# 升级（fetal_heart fig1d）：inband_labels=True 带内标签（字色按底色亮度自适应）、
+# number_legend=True 带内编号+图例 "编号 全名"（类型>10 时唯一可读形态）、
+# groups_of={类型: 大类} 大类边界白粗线
 ```
 
 ### 3.22 Bar-dot plot（柱+点组合）
@@ -510,8 +524,8 @@ plot_bardotplot(adata, groupby='celltype', color='COL1A1', save='AE_bardot')
 from cns_style import plot_stacking_vol
 de_dict = {'W1': de_df1, 'W2': de_df2, 'W3': de_df3}   # 每张: gene, log2FC, padj
 plot_stacking_vol(de_dict, save='AF_stacking_vol')
-# data_dict={条件名: DE DataFrame}；每条件一列，列内基因按 log2FC 排序
-# 显著=彩点(up红/down蓝)，ns=灰；横线分隔层叠
+# 内部：ov.pl.stacking_vol 优先（列名自动映射），ov 失败走 mpl 兜底
+# （每条件一列 mini 火山、共享 y 轴、显著点着色），绝不静默返回
 ```
 
 ### 3.24 UpSet plot（UpSet 图——>3 组交集）
@@ -681,6 +695,98 @@ plot_raincloud(df, x='cell_state', y='score',
 # test='mwu' → 各组 vs 第一组（ref=... 可换参照）Mann-Whitney U 错位括号，标星+p 值
 # show_n=True x 刻度附 (n=..)；highlight 组用红/其余灰是 CNS 常用强调法
 # 源自 mHeart 外部验证 149f/149g 实战（EV Fig 1A/1C、2A/2B 同款）
+```
+
+### 3.35 Slope chart（斜率图——组成 movers / 跨条件变化）
+
+**统一入口**（mpl 直绘）：每实体一条跨 2-4 个时间点/条件的折线，**无图例**，端点直接标注（带 Δ）；多轮人工验证的最终形态（fetal_heart fig1d2/fig2k1，面条图+图例被淘汰）。
+
+```python
+from cns_style import plot_slope
+# ① wide：index=类型, columns=时间点（值=占比/得分）② tidy+entity/group/value 三列
+plot_slope(wide, top_n=8, order=['13w', '19w', '24w'],
+           emphasize=['VIC'], colors={'VIC': '#B5432F'},
+           label_deltas=True, save='D2_movers')
+# top_n 按距行均值最大偏差选（净变化与中途峰都抓得到）
+# emphasize 实体加粗 2.6 置顶，其余灰 1.6——层级一眼可读
+# 端点标签 direct_label 像素防撞（gap_pt=11），右端自动附 +Δ
+# 源自 fetal_heart draw_fig1d2_movers / draw_fig2k1_trajectories 实战
+```
+
+### 3.36 Diverging lollipop（发散棒棒糖——模块/TF-性状相关 + 置换零带）
+
+**统一入口**（mpl 直绘）：每实体一行，stem 从 0 到 r（正红负蓝），实心大点=主统计量、空心小点=第二统计量（Pearson 实心 + Spearman 空心是 WGCNA/pyscenic 系标准形态）。
+
+```python
+from cns_style import plot_lollipop
+# null 带：对相关矩阵列做 2000 次置换取中位数的 2.5-97.5% 分位
+null = np.percentile([np.median(np.diag(R[:, rng.permutation(R.shape[1])]))
+                      for _ in range(2000)], [2.5, 97.5])
+plot_lollipop(trait_corr, label_col='module', value_col='pearson',
+              value2_col='spearman', pval_col='p', tag_col='ORA_identity',
+              ref_line=0.8, null_band=null, save='E1_lollipop')
+# pval_col → 值旁 *** 星；tag_col → 右缘身份标签（ORA/功能注释列）
+# ref_line=0.8 等虚参考；null_band 灰底+斜体 'random matching' 注释
+# 跨物种保守性/方法对比：value=r，null_band=置换零带——成对条形可换本入口
+# 源自 fetal_heart draw_fig2e1_hdwgcna / draw_fig1g_v4_bars 实战
+```
+
+### 3.37 QC bar cards（样本×指标条形卡片——QC 总览标配）
+
+**统一入口**（mpl 直绘）：行=样本、列=指标，首列样本名+协变量渐变色块（如供体 GA），每指标横条+右端数值直标+列顶范围注释；全轴隐藏的"表格化条形图"，3 秒可读。
+
+```python
+from cns_style import plot_qc_cards
+metrics = obs.groupby('donor').agg(cells='n_cells', median_genes='n_genes',
+                                   mito_pct='pct_mt')          # index=donor
+ga = donors.set_index('donor')['ga_weeks']                     # 协变量
+plot_qc_cards(metrics, covariate=ga, covariate_label='GA (w)',
+              formats={'mito_pct': '{:.1f}'}, highlight=['D07'],
+              save='I1_qc_cards')
+# 行默认按协变量升序（最小在上）；highlight 样本整行红底纹
+# 源自 fetal_heart draw_fig1i1_qc 实战（15 供体×3 指标主图面板）
+```
+
+### 3.38 Trend grid（样本级小倍数趋势——供体验证标准形态）
+
+**统一入口**（mpl 直绘）：每模块/基因/通路一面板，样本级散点+拟合线；点径∝每样本细胞数（权重可视化）；标题内嵌 Spearman ρ+显著性星。**小倍数替代面条图**——原始数据与统计量一体呈现。
+
+```python
+from cns_style import plot_trend_grid
+df = usage_long   # 列: program / donor / ga / score / n_cells
+plot_trend_grid(df, x='ga', y='score', by='program', size_col='n_cells',
+                ncols=4, fit='lowess', highlight=['M1'],
+                shared_ylim=(-2.9, 2.9), save='E1_usage_trends')
+# fit='ols'|'lowess'|None；highlight 实体红描边+红标题
+# 每面板标题自带统计（现场算 ρ，或 stat_col/pval_col 传预计算列）
+# 源自 fetal_heart draw_fig2e_hdwgcna_merged / draw_fig2i_temporal 实战
+```
+
+### 3.39 Spatial zoom（IF 风格空间放大图——局部信号 + inset 定位）
+
+**统一入口**（mpl 直绘）：高信号区自动取框（top 分位掩码→闭运算→最大连通域+buffer），窗内按值着色（低值先画不遮高值）、窗外浅灰 context；inset 全片缩略图红框定位；点径按物理密度恒定缩放；比例尺自适应。
+
+```python
+from cns_style import plot_spatial_zoom
+plot_spatial_zoom(adata_sp, color='vic_score', threshold_pct=90,
+                  vmax='p98', unit_per_um=0.5, save='C_vic_zoom')
+# color: obs 列或数组；spot_units=每点物理宽度（数据单位）→ 放大倍率变、观感不变
+# vmax 跨图请显式传数（多时间点/多样本可比）；unit_per_um 换算比例尺
+# 源自 fetal_heart draw_fig2c_vic_zoom / draw_fig2j1_maps 实战
+```
+
+### 3.40 工具层四件套（stamp_panel / assert_no_text_overlap / direct_label / layout_labels）
+
+```python
+from cns_style import (stamp_panel, assert_no_text_overlap,
+                       direct_label, layout_labels, polish_axes)
+stamp_panel(fig, 'a', 'Composition movers across development',
+            'per-donor medians; n=15; MWU')     # 字母+标题+方法学灰副标题
+polish_axes(ax, variant='bar', grid_axis='x')   # barh 风坐标（灰底脊+浅网格）
+direct_label(ax, ends, [f'{n} {d:+.1f}' ...])    # 端点标签像素级 stagger
+layout_labels(fig, ax, ax.texts)                 # on-plot 标签 bbox 斥力排开
+assert_no_text_overlap(fig)                      # 保存前机械验收门（raise）
+# stamp/assert 是 fetal_heart 62+ 脚本的固定开头+收尾组合（2026-09 回灌）
 ```
 
 ## 4. 统计标注（add_significance_bracket）

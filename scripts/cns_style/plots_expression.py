@@ -9,7 +9,7 @@ from ._layout import *
 from ._save import *
 from ._annotation import *
 from ._helpers import *
-from ._helpers import _check_ov, _adata_to_tidy, _resolve_group_mask, _resolve_signal
+from ._helpers import _check_ov, _adata_to_tidy, _resolve_group_mask, _resolve_signal, _lighten_color
 from ._layout import _fs, _FIG_SCALE
 
 
@@ -29,22 +29,102 @@ def plot_volcano(de, pval_name='padj', fc_name='log2FC', ax=None, figsize=None,
             import omicverse as ov
             ov.pl.volcano(de, pval_name=pval_name, fc_name=fc_name,
                          pval_max=sig_pval, FC_max=sig_fc,
-                         plot_genes_num=annotate_top)
+                         plot_genes_num=0)   # ov 标注无防撞 → 关掉，统一走下方
             fig_ov = plt.gcf()
             fig_ov.set_size_inches(*recipe_figsize('volcano'))
             ax = fig_ov.axes[0] if fig_ov.axes else ax
             fig = fig_ov
+            up = (de[pval_name] < sig_pval) & (de[fc_name] > sig_fc)
+            dn = (de[pval_name] < sig_pval) & (de[fc_name] < -sig_fc)
+            _annotate_volcano_top(ax, de, up, dn, fc_name, pval_name,
+                                  annotate_top)
             if save:                          # 修复：ov 路径也要走 save_panel
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, ax  # ov 自建 figure，直接返回
         except Exception as e:
             print(f"[smart_plot] ov.pl.volcano failed ({e}), mpl fallback")
     _volcano_mpl(de, pval_name, fc_name, ax, annotate_top, sig_pval, sig_fc)
     polish_axes(ax)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
+
+
+def _annotate_volcano_top(ax, de, up, dn, fc_name, pval_name, annotate_top,
+                          fontsize=7):
+    """火山图 top 基因防撞标注：up/down 各取 |FC| 最大 N 个，ax.text 落点后
+    layout_labels 斥力求解开（白晕字，无箭头——保持 tightbbox 干净）。"""
+    from ._annotation import layout_labels
+    import matplotlib.patheffects as pe
+    texts = []
+    y_max = (-np.log10(de[pval_name].clip(lower=1e-300))).max()
+    for mask in (up, dn):
+        sub = de.loc[mask]
+        if len(sub) == 0:
+            continue
+        n = min(annotate_top, len(sub))
+        top = sub.reindex(sub[fc_name].abs().sort_values(ascending=False)
+                          .index).head(n)
+        for idx, r in top.iterrows():
+            gene = r['gene'] if 'gene' in r.index else idx
+            x = float(r[fc_name])
+            y = -np.log10(max(float(r[pval_name]), 1e-300))
+            t = ax.text(x, y + 0.055 * y_max, str(gene), fontsize=fontsize,
+                        ha='center', va='bottom', color=NEAR_BLACK,
+                        path_effects=[pe.withStroke(linewidth=2.5,
+                                                    foreground='white')],
+                        zorder=6)
+            texts.append(t)
+    if texts:
+        # 首选 adjustText（点+标签联合斥力，本职工具；compat 可选依赖）
+        try:
+            from adjustText import adjust_text
+            sig = up | dn
+            xs = de.loc[sig, fc_name].to_numpy(float)
+            ys = (-np.log10(de.loc[sig, pval_name]
+                            .clip(lower=1e-300))).to_numpy(float)
+            if len(xs) > 1500:
+                _idx = np.random.default_rng(0).choice(len(xs), 1500,
+                                                       replace=False)
+                xs, ys = xs[_idx], ys[_idx]
+            adjust_text(texts, x=xs, y=ys, ax=ax,
+                        arrowprops=dict(arrowstyle='-', lw=0.4, color=GREY),
+                        expand=(1.35, 1.6), force_text=(0.4, 0.7),
+                        force_static=(0.5, 0.9),
+                        ensure_inside_axes=True)
+            return texts
+        except ImportError:
+            pass
+        layout_labels(ax.figure, ax, texts)
+        # 点感知避让：实测 bbox 压到显著点 → 上移一格；越左脊 → 右移（≤3 轮）
+        fig = ax.figure
+        sig_mask = up | dn
+        px_ = de.loc[sig_mask, fc_name].to_numpy(float)
+        py_ = (-np.log10(de.loc[sig_mask, pval_name]
+                         .clip(lower=1e-300))).to_numpy(float)
+        for t in texts:
+            for _ in range(3):
+                fig.canvas.draw()
+                r_ = fig.canvas.get_renderer()
+                inv = ax.transData.inverted()
+                b = t.get_window_extent(renderer=r_)
+                (dx0, dy0), (dx1, dy1) = inv.transform(
+                    [(b.x0, b.y0), (b.x1, b.y1)])
+                xl, xh = ax.get_xlim()
+                hit_pt = bool(((px_ > dx0) & (px_ < dx1) &
+                               (py_ > dy0) & (py_ < dy1)).any())
+                out_left = dx0 < xl + 0.015 * (xh - xl)
+                if not (hit_pt or out_left):
+                    break
+                cx, cy = t.get_position()
+                if hit_pt:
+                    cy += (dy1 - dy0) * 1.15
+                if out_left:
+                    cx += (xl + 0.02 * (xh - xl)) - dx0
+                t.set_position((cx, cy))
 
 def _volcano_mpl(de, pval_name, fc_name, ax, annotate_top, sig_pval, sig_fc):
     """mpl volcano: 三色 + up/down 都标注 + 阈值标签。"""
@@ -64,21 +144,7 @@ def _volcano_mpl(de, pval_name, fc_name, ax, annotate_top, sig_pval, sig_fc):
             fontsize=6, color=GREY)
     for v in (sig_fc, -sig_fc):
         ax.axvline(v, color=vc['threshold'], ls='--', lw=0.5, alpha=0.3)
-    # up + down 都标注 top N
-    gene_col = 'gene' if 'gene' in de.columns else de.index.name or 'index'
-    for mask, direction in [(up, 'up'), (dn, 'down')]:
-        sub = de.loc[mask]
-        if len(sub) == 0:
-            continue
-        n = min(annotate_top, len(sub))
-        if direction == 'up':
-            top = sub.nlargest(n, fc_name)
-        else:
-            top = sub.nsmallest(n, fc_name)
-        for _, r in top.iterrows():
-            gene = r['gene'] if 'gene' in r else r.name
-            ax.annotate(gene, xy=(r[fc_name], -np.log10(max(r[pval_name], 1e-300))),
-                        **gene_annotation_kwargs())
+    _annotate_volcano_top(ax, de, up, dn, fc_name, pval_name, annotate_top)
     ax.set_xlabel(r'log$_2$(Fold Change)')
     ax.set_ylabel(r'$-$log$_{10}$(adjusted P)')
 
@@ -94,7 +160,34 @@ def _volcano_mpl(de, pval_name, fc_name, ax, annotate_top, sig_pval, sig_fc):
 
 def plot_dotplot(adata, var_names, groupby='celltype', ax=None, figsize=None,
                  save=None, standard_scale='var', show=None, **kwargs):
-    """Dotplot：ov.pl.dotplot 优先，mpl scatter 矩阵兜底（含 size legend）。"""
+    """Dotplot：sc.pl.dotplot 优先（标准色条/尺寸图例），ov.pl.dotplot 次之
+    （ov 色条在部分环境渲染错位，2026-09 视觉验收实证），mpl scatter 矩阵兜底。"""
+    try:
+        import scanpy as sc
+        sc.pl.dotplot(adata, var_names, groupby=groupby,
+                      standard_scale=standard_scale, dendrogram=False,
+                      show=False, ax=ax)
+        fig_sc = plt.gcf()
+        # 保持 scanpy 原生尺寸（强制 resize 会在顶部留大片空白，2026-09 实证）
+        for a_ in fig_sc.axes:
+            a_.tick_params(labelsize=6)   # 尺寸图例刻度小一号防粘连
+        # DotPlot 默认给 dendrogram/分类条预留头部（无 dendrogram 时主轴只占
+        # 下半幅 → 顶部大片空白）：把主点阵轴拉伸到与图例轴同高
+        main_ax = max(fig_sc.axes,
+                      key=lambda a_: a_.get_position().width *
+                      a_.get_position().height)
+        top_target = max(a_.get_position().y1 for a_ in fig_sc.axes)
+        p_main = main_ax.get_position()
+        if p_main.y1 < top_target - 0.02:
+            main_ax.set_position([p_main.x0, p_main.y0, p_main.width,
+                                  top_target - p_main.y0])
+        if save:
+            save_panel(fig_sc, save, show=show,
+                       outdir=kwargs.pop('outdir', 'panels'),
+                       fmt=kwargs.pop('fmt', 'pdf'))
+        return fig_sc, fig_sc.axes[0] if fig_sc.axes else None
+    except Exception as e:
+        print(f"[smart_plot] sc.pl.dotplot failed ({e}), try ov/mpl")
     if _check_ov():
         try:
             import omicverse as ov
@@ -106,7 +199,8 @@ def plot_dotplot(adata, var_names, groupby='celltype', ax=None, figsize=None,
             fig_ov.set_size_inches(*recipe_figsize('dotplot', n_x=n_groups, n_y=n_genes))
             ax = fig_ov.axes[0] if fig_ov.axes else ax
             if save:
-                save_panel(fig_ov, save, show=show)
+                save_panel(fig_ov, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig_ov, ax
         except Exception as e:
             print(f"[smart_plot] ov.pl.dotplot failed ({e}), mpl fallback")
@@ -118,7 +212,8 @@ def plot_dotplot(adata, var_names, groupby='celltype', ax=None, figsize=None,
     _dotplot_mpl(adata, var_names, groupby, ax, standard_scale)
     polish_axes(ax, subtle_grid=False)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -220,7 +315,8 @@ def plot_violin(adata, keys, groupby='celltype', ax=None, figsize=None,
                          **ov_kwargs, **kwargs)
             fig_ov = plt.gcf()
             if save:
-                save_panel(fig_ov, save, show=show)
+                save_panel(fig_ov, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig_ov, axes[0]
         except Exception as e:
             print(f"[smart_plot] ov.pl.violin failed ({e}), mpl fallback")
@@ -229,7 +325,8 @@ def plot_violin(adata, keys, groupby='celltype', ax=None, figsize=None,
     fig = axes[0].figure
     polish_axes(axes[-1])
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, axes if n_genes > 1 else axes[0]
 
 
@@ -316,7 +413,8 @@ def plot_heatmap(adata, var_names, groupby='celltype', ax=None, figsize=None,
     for sp in ax.spines.values():
         sp.set_visible(False)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -357,7 +455,8 @@ def plot_ridge(adata, keys, groupby='celltype', ax=None, figsize=None,
         _ridge_mpl(adata, g, groupby, groups, axes[row], overlap=overlap)
     fig = axes[0].figure
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, axes if n_genes > 1 else axes[0]
 
 
@@ -464,7 +563,8 @@ def plot_boxplot(adata, keys, groupby='celltype', ax=None, figsize=None,
                 legend.remove()         # 常量 hue 的图例无信息量
             polish_axes(ax_ov)
             if save:
-                save_panel(fig_ov, save, show=show)
+                save_panel(fig_ov, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig_ov, ax_ov
         except Exception as e:
             print(f"[smart_plot] ov.pl.boxplot failed ({e}), mpl fallback")
@@ -474,7 +574,8 @@ def plot_boxplot(adata, keys, groupby='celltype', ax=None, figsize=None,
     fig = axes[0].figure
     polish_axes(axes[-1])
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, axes if n_genes > 1 else axes[0]
 
 

@@ -42,7 +42,8 @@ def plot_umap(adata, color='celltype', basis='X_umap', ax=None, figsize=None,
     clean_umap_axes(ax)
     optical_margin(ax, 0.12)
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -100,7 +101,8 @@ def plot_spatial(adata_sp, color, ax=None, figsize=None, save=None,
         _spatial_mpl(adata_sp, color, ax, spot_alpha)
     clean_umap_axes(ax, xlabel='', ylabel='')
     if save:
-        save_panel(fig, save, show=show)
+        save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
     return fig, ax
 
 
@@ -127,7 +129,8 @@ def _spatial_mpl(adata_sp, color, ax, spot_alpha):
     sc = ax.scatter(coords[:, 0], coords[:, 1], c=expr, cmap=EXPR_CMAP,
                     vmin=0, vmax=p99, s=1.5, alpha=spot_alpha,
                     edgecolor='none', rasterized=True)
-    add_scale_bar(ax, length_um=200, px_per_um=1.0)  # adjust per platform
+    add_scale_bar(ax, length_um=200, px_per_um=1.0,
+                  color='#2E3440')  # 浅底深色；深底组织请改 color='white'
     add_elegant_colorbar(sc, ax, label=color, orientation='horizontal')
     ax.set_aspect('equal')
 
@@ -143,8 +146,10 @@ def _spatial_mpl(adata_sp, color, ax, spot_alpha):
 
 def plot_feature_matrix(adata, genes, basis='X_umap', ax=None, figsize=None,
                         save=None, ncols=3, show=None, **kwargs):
-    """Feature matrix：ov.pl.embedding 多 color 优先，mpl 多 subplot 兜底。"""
-    if _check_ov():
+    """Feature matrix：mpl 多 subplot 优先（共享 vmin/vmax=99th pct + 单一共享色条）。
+    ov.pl.embedding 的逐面板色条在多面板下与邻面板轴标签碰撞（2026-09 视觉验收
+    实证），仅 engine='ov' 时启用旧路径。"""
+    if kwargs.pop('engine', 'mpl') == 'ov' and _check_ov():
         try:
             import omicverse as ov
             axs = ov.pl.embedding(adata, basis=basis, color=genes, ncols=ncols,
@@ -157,7 +162,8 @@ def plot_feature_matrix(adata, genes, basis='X_umap', ax=None, figsize=None,
             nrows = int(np.ceil(n_genes / ncols))
             fig.set_size_inches(min(ncols * 2.0 + 0.5, 7.0), nrows * 2.0 + 0.3)
             if save:
-                save_panel(fig, save, show=show)
+                save_panel(fig, save, show=show, outdir=kwargs.pop("outdir", "panels"),
+                    fmt=kwargs.pop("fmt", "pdf"))
             return fig, list(axs)
         except Exception as e:
             print(f"[smart_plot] ov.pl.embedding failed ({e}), mpl fallback")
@@ -198,6 +204,16 @@ def _feature_matrix_mpl(adata, genes, basis, ncols, save, show):
     # hide unused
     for j in range(len(genes), len(axes)):
         axes[j].set_visible(False)
+    # 单一共享色条（全基因共享 vmin/vmax——多面板逐条色条既挤又冗余）
+    import matplotlib.cm as cm_
+    import matplotlib.colors as mcolors
+    smap = cm_.ScalarMappable(norm=mcolors.Normalize(vmin=0, vmax=vmax),
+                              cmap=EXPR_CMAP)
+    cb = fig.colorbar(smap, ax=axes.tolist(), shrink=0.55, pad=0.015,
+                      aspect=26)
+    cb.outline.set_visible(False)
+    cb.ax.tick_params(length=0, labelsize=6.5)
+    cb.set_label('expression (0 – p99)', fontsize=7)
     if save:
         save_panel(fig, save, show=show)
     return fig, list(axes)

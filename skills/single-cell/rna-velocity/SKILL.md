@@ -9,6 +9,7 @@ description: RNA velocity 全家桶。基于 OmicVerse V2 的 ov.single.Velo（�
 - Only need pseudotime / trajectory (no spliced/unspliced required) → `single-cell/omicverse-pipeline` (`ov.single.Monocle` / PAGA)
 - No S/U layers and you cannot re-run velocyto/kb_python → RNA velocity is not possible; use pseudotime instead
 - R/Seurat environment and no deep velocity tool → `single-cell/scop` (`RunSCVELO`)
+- 原生 `import scvelo` 的示例需在 **regvelo env** 跑（sc env 无 scvelo，2026-09-21 实测；ov.single.Velo 五引擎中 scvelo 系 method 同样依赖该 env）
 - Assemble a publication-grade velocity figure → finish the plot first, then `visualization/figure-production`
 
 > **Iteration reminder (Core Rule 8)**: This pipeline is run in batches. After velocity computation + fate inference, return to `research-planner` Phase R to review results with the researcher before downstream analysis. Do not auto-run end-to-end.

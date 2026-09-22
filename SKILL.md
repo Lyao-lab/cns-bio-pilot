@@ -86,8 +86,9 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (**any s
 
 | Env | Contents | Activate |
 |---|---|---|
-| `sc` | omicverse (see `compat.yaml`) + scanpy + scvelo + scvi + tangram + spatialdata + pertpy + decoupler | `conda activate sc` |
-| `st` | squidpy (older scanpy) | `conda activate st` |
+| `sc` | omicverse (see `compat.yaml`) + scanpy + scvi + spatialdata + pertpy + squidpy 1.8.2 + tangram-sc 1.0.4 | `conda activate sc` |
+| `st` | squidpy 1.8.2 + decoupler 2.2.0 | `conda activate st` |
+| `regvelo` | scvelo 0.3.4（原生 scvelo/RegVelo 引擎；sc env 无 scvelo——2026-09-21 实测） | `conda activate regvelo` |
 | `scop_env` (conda) | R 4.5.3 + scop 0.8.9 + Seurat | `~/miniforge3/envs/scop_env/bin/Rscript` |
 | `state` (uv tool) | Arc State 扰动预测 CLI（PyTorch；独立环境，GPU；版本见 compat.yaml `arc-state`） | `uv tool install arc-state` |
 

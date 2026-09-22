@@ -34,10 +34,33 @@ scop:
     "0.8.0 -> 0.8.9": "+94 Run* verbs (SCENIC/Milo/RCTD/BANKSY/SecAct/etc now wrapped); RunDimReduction->RunDimsReduction+RunDimsEstimate; CellChatPlot->SpatialCellChatPlot"
 
 squidpy:
-  verified_against: "1.2.2"
-  compatible_range: ">=1.2, <1.4"
-  last_verified: "2026-07-26"
+  verified_against: "1.8.2"
+  compatible_range: ">=1.2, <2.0"
+  last_verified: "2026-09-21"
+  breaking_changes:
+    "1.2.2 -> 1.8.2": "环境已漂移至 1.8.2（sc/st 两 env 同版）；skill 用到的 sq.pl.spatial_scatter 实测仍在；scanpy 联动 1.11.5"
+
+scvelo:
+  verified_against: "0.3.4"
+  compatible_range: ">=0.3, <0.4"
+  last_verified: "2026-09-21"
+  note: "装在 regvelo env（不在 sc——SKILL.md 环境表已更正）；ov.single.Velo 的 method='scvelo' 需在该 env 跑"
   breaking_changes: {}
+
+decoupler:
+  verified_against: "2.2.0"
+  compatible_range: ">=1.5, <3.0"
+  last_verified: "2026-09-21"
+  note: "装在 st env（不在 sc）；上游 API 2.x 已转 decoupler-py 新包名"
+  breaking_changes: {}
+
+tangram-sc:
+  verified_against: "1.0.4"
+  compatible_range: ">=1.0, <1.1"
+  last_verified: "2026-09-21"
+  note: "装在 sc env（2026-09-21 授权安装，--dry-run 确认零依赖连坐）；skill 主路径走 ov.space.Tangram/Deconvolution 封装；1.0.x 顶层 API 精简（map_cells_to_space/pp_adatas 在，project_adatas/deconvolve 挪入子模块）——直接调 tg.* 的代码注意"
+  breaking_changes:
+    "0.4.x -> 1.0.x": "顶层命名空间精简；project_adatas/deconvolve 移入子模块；map_cells_to_space 主流程不变" 
 
 scanpy:
   verified_against: "1.11.5"
@@ -65,3 +88,4 @@ arc-state:
   last_verified: "2026-09-02"
   note: "独立 CLI（uv tool install arc-state），PyTorch torch>=2.7，Python 3.11-3.12，不装进 sc env。verified_against = 对 PyPI 最新版 + 官方 README 文档核对（CLI 工具不跑 ov/pt api_check）；flags 以 state --help 实测为准。权重非商业 license，用必引 State (Cell 2026)"
   breaking_changes: {}
+adjusttext: 1.4.0   # optional: plot_volcano 基因标注联合斥力（缺失时回退 layout_labels 求解器）

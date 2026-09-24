@@ -123,7 +123,7 @@ This skill should:
 
 ---
 
-## Execution — 7 Steps (always run in order)
+## Execution — 8 Steps (always run in order; 含 Step 4.5 文献层)
 
 ### Step 1 — Infer Study Intent
 

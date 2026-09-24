@@ -1,7 +1,7 @@
 ---
 name: cns-bio-pilot
 description: 生信分析全流程技能库（空间转录组、单细胞、bulk 组学 + 发表级绘图 + 论文/PPT/网页报告产出）。当用户要做生信分析、处理单细胞/空转/空间组学数据、画发表级图表、写论文/PPT/汇报、构建生物学故事时触发；即使任务只涉及其中一个环节（只画一张图、只做一次差异分析、只写一段 Methods）也应使用本技能。
-compatibility: Requires Python 3.11+ with omicverse/scanpy/scvelo (conda env 'sc'), squidpy (env 'st'), R 4.5.3 with scop 0.8.9. See compat.yaml for version details.
+compatibility: Requires Python 3.11+ with omicverse/scanpy (conda env 'sc'), scvelo (env 'regvelo'), squidpy (env 'st'), R 4.5.3 with scop 0.8.9. See compat.yaml for version details.
 license: GPL-3.0
 metadata:
   version: "22.6"
@@ -23,32 +23,33 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (**any s
 
 > **Narrow-task floor**: any task that executes analysis/plotting code must include **[A10] ipynb 代码台账** among the pasted rules — A10 applies to every code-executing task regardless of analysis type (R included: `nb_log.py --kernel r`).
 
-`dispatch_cheatsheet.md` condenses the hard rules (A 分析严谨性 10 / B 绘图 7 / C API 4 / D 迭代 6 / E 组合体与交付 6) from 7 reference files into ~90 lines — one reference replaces hand-writing 30 rules every time. **Skipping injection = the sub-agent will violate rules it never saw.** 组合体任务另见 `references/bigfig_deck_playbook.md`（§1 流水线模板 / §4 可执行机检清单 / §5 按根因归类的踩坑清单）。
+`dispatch_cheatsheet.md` condenses the hard rules (A 分析严谨性 10 / B 绘图 9 / C API 4 / D 迭代 6 / E 组合体与交付 6) from the core rule files into ~120 lines — one reference replaces hand-writing 30 rules every time. **Skipping injection = the sub-agent will violate rules it never saw.** 组合体任务另见 `references/bigfig_deck_playbook.md`（§1 流水线模板 / §4 可执行机检清单 / §5 按根因归类的踩坑清单）。
 
 ## Quick Route（关键词→子skill 索引，borrowed from Biomni prompt-retriever）
 
-用户说短句时按关键词快速命中，无需扫全表：
+用户说短句时按关键词快速命中，无需扫全表。**三条裁决规则（关键词多行命中时按此定归属）**：① **意图优先**——分析诉求（找 DE/找亚群）优先于顺带提到的绘图词；已产出的图要"美化/拼图"时归 `figure-production`；② **专属分析词优先于泛绘图词**——"画 KM 曲线"归 `omicverse-bulk`（KM 是专属行），"画 figure"归 `figure-production`；③ **平台优先级**见表尾注（高分空转平台命中一律 multiomics）。
 
 | 关键词 | 子skill |
 |---|---|
-| umap / tsne / 聚类 / 分群 / annotate / 注释 | `single-cell/omicverse-pipeline` §2-4 |
-| 差异基因 / DE / volcano / marker / 筛选 | `omicverse-pipeline` §8.5 |
+| umap / tsne / 聚类 / 分群 / annotate / 注释 | `single-cell/omicverse-pipeline` §2-4（UMAP 仅作拼图素材时归 `figure-production`）|
+| 拟时序 / pseudotime / trajectory / monocle | `omicverse-pipeline`（§7 轨迹；fate/velocity 推断归 `rna-velocity`）|
+| 差异基因 / DE / volcano / marker / 筛选 | `omicverse-pipeline` §8.5（DE 已算好、只求发表级美化时归 `figure-production`）|
 | 细胞比例 / 组成 / Milo / 丰度 / proportion | `omicverse-pipeline` §9c |
 | 通讯 / CCC / CellChat / LR / ligand | `omicverse-pipeline` §9 |
 | 空间 / Visium / 空转 / Xenium / spot / spatial | `spatial/omicverse-spatial` |
 | 空间 domain / niche / 区域 / STAGATE / CAST | `spatial/omicverse-spatial` §domain |
-| 共定位 / colocalization / 空间邻近 / 邻域富集 / nhood | `spatial/omicverse-spatial` §统计（nhood_enrichment/co_occurrence）|
-| 空间变异基因 / SVG / spatial variable / Moran | `spatial/omicverse-spatial` §SVG（svg/spatial_autocorr/sepal）|
-| 空间统计 / Ripley / centrality / 空间分布 | `spatial/omicverse-spatial` §统计（ripley/centrality_scores）|
-| 去卷积 / cell2location / deconv / Tangram | `spatial/deconvolution` |
+| 共定位 / colocalization / 空间邻近 / 邻域富集 / nhood | `spatial/omicverse-spatial`（模板 `analysis/templates/spatial.md` 统计段：nhood_enrichment/co_occurrence）|
+| 空间变异基因 / SVG / spatial variable / Moran | `spatial/omicverse-spatial`（同上 spatial.md 统计段：svg/spatial_autocorr/sepal）|
+| 空间统计 / Ripley / centrality / 空间分布 | `spatial/omicverse-spatial`（同上 spatial.md 统计段：ripley/centrality_scores）|
+| 去卷积 / cell2location / deconv / Tangram | `spatial/deconvolution`（Python 五法 + scop R 系 SPOTlight/CARD）|
 | 高分空转 / Visium HD / Stereo-seq / MERFISH | `spatial/multiomics` |
 | 蛋白组 / CODEX / IMC / MIBI | `spatial/proteomics` |
 | 速度 / velocity / RNA velocity / fate | `single-cell/rna-velocity` |
-| 扰动 / Perturb-seq / perturbation / State / 虚拟细胞 / virtual cell / 药物响应预测 | `single-cell/perturbation` |
+| 扰动 / Perturb-seq / perturbation / State / 虚拟细胞 / virtual cell / 药物响应预测 | `single-cell/perturbation`（in silico 预测是诉求主体时本行优先，被扰动的靶点如 TF 只是对象）|
 | R / Seurat / scop | `single-cell/scop` |
 | bulk / 路径 / 通路 / enrichment / 富集 | `general-bio/omicverse-bulk` |
 | CNV / inferCNV / copykat | `omicverse-pipeline` |
-| 转录因子 / TF / regulon / SCENIC / GRN | `omicverse-pipeline` §SCENIC（ov.single.SCENIC）|
+| 转录因子 / TF / regulon / SCENIC / GRN | `omicverse-pipeline`（模板 `analysis/templates/sc_annotation.md` SCENIC 段）|
 | 生存分析 / survival / KM / Kaplan | `general-bio/omicverse-bulk`（ov.pl.kaplan_meier/survival）|
 | 画图 / 绘图 / figure / panel / 拼图 | `visualization/figure-production` |
 | 主图顺序 / fig 组织 / 第几张图 / 故事组织成图 / 图谱论文怎么排图 / figure templates | `references/figure_templates.md`（§0 路由：领域→C1-C15 卡，故事→T1-T6；506 篇 CNS 泛化） |
@@ -104,7 +105,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 1. **Fact-based; ask when unsure; never fabricate.** Every number/dataset/accession/API must have a source. Missing info → `[AUTHOR TO SPECIFY]`.
 2. **Pseudobulk for single-cell DE.** Per-cell Wilcoxon inflates false positives. Aggregate by sample×celltype → DESeq2/edgeR.
 3. **Search before implementing.** omicverse/scop wrapper → standalone package → R/Bioconductor → adapt → from-scratch (last resort). GEO → GEOparse.
-4. **Postcheck is mandatory** *(automated, per-analysis)*. After any quantitative analysis (DE/deconvolution/CCC/composition), run `python scripts/postcheck.py`. FAIL must be resolved before proceeding. **Acceptance gate**: when the main agent accepts a bioinformatics deliverable from **any executor** (a sub-agent of any name, or a result it produced itself), it must confirm the matching machine-check has run and PASSED — `postcheck.py` after DE/deconv/CCC/composition; `qa_deck.py` + `validate_presentation.py` after PPT; `api_check.py --diff` after package upgrades. If the executor did not attach machine-check output, the main agent re-runs it before accepting. For the full rule set that executors must follow, see `references/dispatch_cheatsheet.md` (condensed hard rules A1-A10 / B1-B7 / C1-C4 / D1-D6) — inject it into dispatch prompts per the ⚠️ Dispatch Injection section at the top of this file.
+4. **Postcheck is mandatory** *(automated, per-analysis)*. After any quantitative analysis (DE/deconvolution/CCC/composition), run `python scripts/postcheck.py`. FAIL must be resolved before proceeding. **Acceptance gate**: when the main agent accepts a bioinformatics deliverable from **any executor** (a sub-agent of any name, or a result it produced itself), it must confirm the matching machine-check has run and PASSED — `postcheck.py` after DE/deconv/CCC/composition; `qa_deck.py` + `validate_presentation.py` after PPT; `api_check.py --diff` after package upgrades. If the executor did not attach machine-check output, the main agent re-runs it before accepting. For the full rule set that executors must follow, see `references/dispatch_cheatsheet.md` (condensed hard rules A1-A10 / B1-B9 / C1-C4 / D1-D6 / E1-E6) — inject it into dispatch prompts per the ⚠️ Dispatch Injection section at the top of this file.
 5. **Save checkpoints.** After each major step (QC/cluster/annotation/DE), save `adata.write_h5ad('checkpoints/XX_step.h5ad')`. Upstream changes → re-run from last valid checkpoint.
 6. **Runtime API self-adaptation.** Do NOT trust hardcoded version numbers or assume API signatures. Before calling any ov.*/pt.*/sc.* function for the first time, verify with `inspect.signature(func)`. Run `python scripts/api_check.py --diff` after any package upgrade.
 7. **Step-gate + hypothesis ledger** *(agent self-check, per-step)*. Every analysis follows meta_methodology §7 (step-gate sanity checks after each step) and §8 (hypothesis ledger + provenance + conclusion grading).
@@ -134,10 +135,9 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 | `scripts/nb_log.py` | CLI 模式下把实际执行的代码/输出/图追加进任务 notebook（Core Rule 9 代码台账） |
 | `references/analysis_reference.md` | Analysis code templates (QC/DE/CCC/spatial/bulk) — the plotting_reference equivalent for analysis |
 | `references/analysis/templates/` | Executable analysis code templates (setup/sc_basic/sc_annotation/sc_downstream/spatial/bulk) — the ONLY copy-source for analysis code |
-| `references/analysis/decision_guide.md` | **Biology question → analysis method decision table** (28 questions: "which cells communicate?" → LIANA+; "spatial colocalization?" → nhood_enrichment; etc.) |
+| `references/analysis/decision_guide.md` | **Biology question → analysis method decision table** (34 questions: "which cells communicate?" → LIANA+; "spatial colocalization?" → nhood_enrichment; etc.) |
 | `references/analysis/analysis_flow.md` | **Autonomous analysis flow tree** — how to interpret each step's results to decide the next step (QC→cluster→annotation→DE/CCC/trajectory branches → cross-validation → logic closure) |
 | `references/analysis/paper_paradigms.md` | **High-impact paper analysis paradigms** — 3 analysis backbones (scRNA-led / spatial-led / structural), protagonist cell selection, 3 spatial validation modes, CCC full chain, convergence point patterns (from 13 CNS papers) |
-| `references/plotting_reference.md` | Plotting code templates (18 chart types) |
 | `scripts/api_check.py` | After installing/updating omicverse or pertpy |
 | `scripts/scop_api_check.R` | After installing/updating scop |
 | `references/meta_methodology.md` | Self-check after each analysis step (8 rules + step-gate + hypothesis ledger) |

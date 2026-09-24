@@ -66,3 +66,8 @@ cases:
     utterance: 给我讲讲这段 Python 代码的时间复杂度
     expected: NONE
     category: negative
+  - id: T15
+    utterance: 把季度销售数据做成 PPT 汇报给老板
+    expected: NONE
+    category: negative
+    note: 非科研 PPT——description 的 PPT/汇报仅限科研语境，不得误触发

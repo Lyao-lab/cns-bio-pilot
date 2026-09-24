@@ -285,6 +285,10 @@ manuscript-writing: 写作时读本文 → Results 段落顺序 = Step 5 叙事�
 
 ### 6.1 空转 Figure 标准叙事弧
 
+> 本节是 `figure_templates.md` §1 五段式骨架在**空转机制型论文**的实例化（四图主线 =
+> 五段式的压缩形态）；两处冲突时以 figure_templates.md 为准（506 篇泛化版优先）。
+> 领域专属模板卡（C1-C15）另见 figure_templates.md §3。
+
 #### 四图主线（适用于大多数机制型空转论文）
 
 | Figure | 角色 | 典型内容 | 叙事功能 |

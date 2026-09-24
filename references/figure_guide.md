@@ -36,6 +36,10 @@
 | **QC 条形卡片（样本×指标）** | §3.37 | §5.1 |
 | **样本趋势小倍数（供体验证）** | §3.38 | §5.7 |
 | **空间放大图（IF 风格 zoom+inset）** | §3.39 | §5.6 |
+| **Sankey 状态转换/命运流** | §3.41 | — |
+| **CNV 基因组热图（inferCNV 式）** | §3.42 | §5.5 |
+| **轴向/距离梯度曲线（zonation/边界带）** | §3.43 | — |
+| **克隆扩增追踪（TCR，composition/track）** | §3.44 | §5.7 |
 | **工具层（stamp/断言/防撞标签/bar 坐标）** | §3.40 | — |
 
 ---
@@ -82,6 +86,10 @@
 | **TF/regulon 活性** | TF×cluster 活性 heatmap | 定位→UMAP 着色；定量比较→violin | 二值化 regulon heatmap | §2.5 |
 | 多指标方法/整合基准对比（异量纲） | 雷达图（每辐条独立量程） | 指标>6 或系列>4 | 分面小柱图 | §3.31 |
 | 消融/组件贡献对比 | 同色相 alpha 渐变 bar（完整=实） | 需指认每个基线时 | focus_ramp 焦点+渐褪柱 | §3.32 |
+| **状态转移矩阵/命运概率流**（PAGA/CellRank/OT） | sankey 两阶段 alluvial（≥3 阶段拆面板） | 因果链叙事时换 PAGA 图 | plot_sankey | §3.41 |
+| **CNV 推断结果**（区分恶性/非恶性、克隆） | inferCNV 式基因组热图（染色体分隔+分组色条） | — | — | §3.42 |
+| **信号沿连续组织轴/距离**（zonation/病理共定位/边界带） | 梯度曲线+分位带（norm='each' 多基因比形状） | 单基因空间分布图换 feature plot | plot_axis_gradient | §3.43 |
+| **克隆构成/扩增变化**（TCR/演化） | composition 堆叠柱（大小分类）；跨时点演化用 track 折线 | — | slope（组成 movers） | §3.44 |
 
 ### 证据等级（每个生物学结论至少配一张定量图）
 
@@ -415,11 +423,11 @@ cns_style 包同时支持两层，所有图型默认 ov.pl 优先：
 - cns_style 包函数 → 见 tool_registry.md 与包内各模块 docstring（plot_* 统一入口导出见 scripts/cns_style/__init__.py；含 save_panel / assert_anndata_keys / cohort_params / plot_umap / plot_volcano / ...）
 - 流程（先定框架再迭代） → `skills/visualization/figure-production/SKILL.md`
 
-### 12.1 组合体增补（E1-E6，与 cheatsheet 同编号）
+### 12.1 组合体增补（B8-B9，已并入 dispatch_cheatsheet B 系；权威细节在 `references/bigfig_deck_playbook.md`）
 
 单图质量由 B1-B7 + finalize_figure 兜底；**组合体（大 fig / 多面板 deck）的系统性
-失败在 B 系之外**。权威细节只在 `references/bigfig_deck_playbook.md`（防重复漂移），
-绘图时额外硬约束（B8/B9）：
+失败在 B 系之外**。B8/B9 的完整条目见 `references/dispatch_cheatsheet.md`（编号以
+cheatsheet 为唯一源），绘图时额外硬约束（B8/B9）：
 
 - **[B8] 画布级文字重叠断言**：finalize_figure 只查 ax.texts；`ax.title`、刻度标签、
   图例必须在脚本里另做 pairwise bbox 断言；字号最后设定——`ax.tick_params(labelsize=...)`

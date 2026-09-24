@@ -161,3 +161,20 @@ cases:
     expected: NONE
     category: negative
     note: 完全无关请求
+  - id: R31
+    utterance: 结果都出来了，帮我组织这篇论文的主图顺序，第一张图放什么
+    expected: references/figure_templates.md
+    category: clean
+    note: 主图顺序/fig 组织 → figure_templates.md §0 路由（506 篇 CNS 泛化）
+  - id: R32
+    utterance: 画一张 TCR 克隆扩增图，按细胞类型分群看哪些群在克隆性扩增
+    expected: visualization/figure-production
+    category: clean
+    not_contains: single-cell/omicverse-pipeline
+    note: plot_clone_expansion 新图型（§3.44），纯绘图诉求
+  - id: R33
+    utterance: 空转数据画一下肝小叶 zonation 梯度曲线，横轴是中央静脉到门脉距离
+    expected: visualization/figure-production
+    category: near_miss
+    not_contains: spatial/omicverse-spatial
+    note: zonation 绘图诉求 → plot_axis_gradient（§3.43）；找 zone 差异基因的分析诉求才走 omicverse-spatial（裁决规则①意图优先）

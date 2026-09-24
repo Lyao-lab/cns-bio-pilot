@@ -1,11 +1,11 @@
 ---
 name: figure-production
-description: 生信发表级图表——逐张迭代设计（看上一张结果决定下一张画什么）→ 每张独立出图验证（png+pdf 双格式落盘，per-figure ipynb 一面板一 cell）→ deck/composite 由单图拼装。当用户要画生信图、做发表级 figure、设计主图、拼图、UMAP/volcano/heatmap/dotplot/空间图/PAGA/轨迹/细胞通讯图/云雨图/斜率图/棒棒糖图/QC 卡片/趋势小倍数/空间放大图时触发。
+description: 生信发表级图表——逐张迭代设计（看上一张结果决定下一张画什么）→ 每张独立出图验证（png+pdf 双格式落盘，per-figure ipynb 一面板一 cell）→ deck/composite 由单图拼装。当用户要画生信图、做发表级 figure、设计主图、拼图、UMAP/volcano/heatmap/dotplot/空间图/PAGA/轨迹/细胞通讯图/云雨图/斜率图/棒棒糖图/QC 卡片/趋势小倍数/空间放大图/Sankey 命运流/CNV 热图（inferCNV 可视化）/轴梯度（zonation/边界带/距离梯度）/克隆扩增（TCR 追踪）时触发。
 ---
 
 # Figure Production (Iterative Design → Per-Panel Render → Assemble)
 
-**触发词**: 画图 / 出图 / figure / UMAP / tSNE / volcano / heatmap / dotplot / violin / 云雨图 / raincloud / 斜率图 / slope / movers / 棒棒糖 / lollipop / QC 卡片 / 趋势小倍数 / 小倍数 / 空间放大 / zoom / inset / 拼图 / 主图设计 / composite / 发表级 / PAGA / 轨迹 / chord / 细胞通讯 / 空转图
+**触发词**: 画图 / 出图 / figure / UMAP / tSNE / volcano / heatmap / dotplot / violin / 云雨图 / raincloud / 斜率图 / slope / movers / 棒棒糖 / lollipop / QC 卡片 / 趋势小倍数 / 小倍数 / 空间放大 / zoom / inset / Sankey / 命运流 / 状态转换图 / CNV 热图 / inferCNV 可视化 / 轴梯度 / zonation / 距离梯度 / 克隆扩增 / TCR 追踪 / 拼图 / 主图设计 / composite / 发表级 / PAGA / 轨迹 / chord / 细胞通讯 / 空转图
 
 > **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
 
@@ -95,7 +95,7 @@ Step N: 所有 panel 验证通过 → 拼成 composite
 
 1. **顶部固定 3 行开头** → `plotting_reference.md` §1（import + set_cns_style_journal）
 2. **绘图前防御校验** → `assert_anndata_keys(adata, obs_cols=[...], obsm_keys=[...])`（新推荐，每张 panel 绘图前调，避免运行到一半 KeyError；报错会带可用选项）
-3. **选图型模板** → `plotting_reference.md` §0 速查卡选图 → §2 核心图型 / §3 新增图型（PAGA/Chord/Pseudotime/tSNE/cellproportion）看对应模板
+3. **选图型模板** → `plotting_reference.md` §0 速查卡选图 → §2 核心图型 / §3 补充图型（§3.1-§3.45，速查卡见 §0）看对应模板
 4. **大 cohort 联动调参** → `cohort_params(adata.n_obs)` 返回 (point_size, alpha, figsize)，替代只调 size（点太多/太少时用）
 5. **统一保存** → `save_panel(fig, 'A_umap')` 统一入口（强制 finalize_figure → 建目录 → savefig，不要手写 fig.savefig）
 
@@ -200,7 +200,7 @@ python skills/visualization/figure-production/scripts/main.py \
 ## 视觉规格速查
 
 画图时查：
-- **代码模板** → `references/plotting_reference.md`（§0 速查卡、§2 核心图型、§3 新增图型 PAGA/Chord/Pseudotime/tSNE/cellproportion、§4 统计标注、§5 worked example）
+- **代码模板** → `references/plotting_reference.md`（§0 速查卡、§2 核心图型、§3 补充图型（§3.1-§3.45）、§4 统计标注、§5 worked example）
 - **视觉规格/原则** → `references/figure_guide.md`（§5 各图型参数、§10 三铁律、§11 实战教训）
 - **外部参考** → `references/omicverse_skills_examples.md`
 

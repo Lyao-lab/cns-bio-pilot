@@ -4,14 +4,14 @@
 > **用途**：执行者凡未读过 skill 主文档（任何子智能体天然如此——不论叫什么名字），注入一句"开工前读本文件并遵守全部硬规则"即可传递 skill 核心纪律，避免其因看不到主会话上下文而违规。主智能体自己执行时同样适用本表（尤其 A2/A4/B1-B3）。
 > **来源**：浓缩自 SKILL.md Core Rules + meta_methodology + figure_guide + plotting_reference。
 > **每条格式**：`[编号] 规则 | 违规后果 | 机检：脚本名/自觉`
-> 只读本文件即可覆盖施工时 95% 的硬约束；需要完整决策表时再读对应 reference。（6 系 33 条：A 分析 10 / B 绘图 7 / C API 4 / D 迭代 6 / E 组合体 6——E 系每条较详，细节查 `references/bigfig_deck_playbook.md`）
+> 只读本文件即可覆盖施工时 95% 的硬约束；需要完整决策表时再读对应 reference。（6 系 35 条：A 分析 10 / B 绘图 9 / C API 4 / D 迭代 6 / E 组合体 6——E 系每条较详，细节查 `references/bigfig_deck_playbook.md`）
 
 ---
 
 ## 0. 分析代码模板位置（开工前必查）
 
 分析代码已分层：**知识层**（决策/为什么，无代码）在 `references/analysis/`，**代码模板层**（可执行，唯一拷贝源）在 `references/analysis/templates/`——写分析代码前**必须查对应模板**，不要凭记忆写（API 可能已更新）：
-- **不知道该做什么分析？** 先查 `references/analysis/decision_guide.md`（生物学问题→分析方法决策表，28 个问题映射）
+- **不知道该做什么分析？** 先查 `references/analysis/decision_guide.md`（生物学问题→分析方法决策表，34 个问题映射）
 - **自主分析不知下一步追什么？** 查 `references/analysis/analysis_flow.md`（每步结果→下一步决策树）
 - **想像高分文章一样设计分析路线？** 查 `references/analysis/paper_paradigms.md`（3 种分析主干 + 主角细胞选择 + 空间验证模式）
 
@@ -20,6 +20,7 @@
 | QC / preprocess / 降维 / 聚类 / 批次校正 | `references/analysis/templates/sc_basic.md` |
 | 注释 / DE / 富集 / 差异丰度 / SCENIC / CNV | `references/analysis/templates/sc_annotation.md` |
 | 细胞通讯 / 轨迹 / Velocity / AUCell | `references/analysis/templates/sc_downstream.md` |
+| 扰动 / Perturb-seq / in silico 状态预测 | `references/analysis/templates/sc_perturbation_state.md` |
 | 空转（domain/SVG/去卷积/统计/Visium HD） | `references/analysis/templates/spatial.md` |
 | Bulk（DE/GSEA/WGCNA/PPI） | `references/analysis/templates/bulk.md` |
 | 分析纪律红线 | `references/analysis/discipline.md` |
@@ -41,13 +42,15 @@
 
 ## B. 绘图规范（违反 = 图不达标）
 
-- **[B1] 必须 plot_xxx 统一入口**：用 cns_style 的 18 个 `plot_xxx` 函数（plot_umap/plot_volcano/...），内部自动 ov.pl 优先 + mpl 兜底；不手写 ov.pl.xxx / plt.savefig | 绕过 = 失去统一风格 + 降级保护 | 机检：自觉
+- **[B1] 必须 plot_xxx 统一入口**：用 cns_style 的 51 个 `plot_xxx` 函数（plot_umap/plot_volcano/plot_sankey/plot_cnv_heatmap/...，完整清单见 plotting_reference §0 速查卡 / tool_registry.md），内部自动 ov.pl 优先 + mpl 兜底；不手写 ov.pl.xxx / plt.savefig | 绕过 = 失去统一风格 + 降级保护 | 机检：自觉
 - **[B2] save_panel 强制收尾**：保存走 `save_panel(fig, name, fmt='pdf')`，它强制 finalize_figure + 建 panels/ + tight bbox；不用 plt.savefig 替代 | 不用 = 图未过 finalize 检查 | 机检：自觉
 - **[B3] finalize_figure 强制**：每张图 savefig 前过 `finalize_figure(fig)`：自动右移图例 + 检测文字重叠 + 栅格化警告 | 跳过 = 图例遮数据/文字重叠 | 机检：finalize_figure 内置
 - **[B4] 全局开头 3 行**：每个绘图脚本顶部 `import cns_style` + `set_cns_style_journal('nature')`（自动 Morlandi 配色/Arial/字号/DPI） | 缺 = 默认丑样式 | 机检：自觉
 - **[B5] 绘图前 assert**：`assert_anndata_keys(adata, obs_cols=[...], obsm_keys=[...])` 校验 key 存在 | 缺 = 运行到一半 KeyError | 机检：assert_anndata_keys 内置
 - **[B6] 数据→图型查决策表**：不确定选什么图时查 figure_guide.md §0.1；反模式：per-cell Wilcoxon 的 DE 禁画 volcano、无重复堆叠柱禁做条件比较、UMAP 不全场多次 | 乱选图 = 审稿拒点 | 机检：自觉
 - **[B7] 配色锁 manifest**：默认 Morlandi + CONDITION_COLORS，全论文同 cell type 同色；禁 tab20/jet | 配色乱 = 跨图不可比 | 机检：自觉
+- **[B8] 画布级文字重叠断言**：finalize_figure 只查 ax.texts；`ax.title`、刻度标签、图例必须在脚本里另做 pairwise bbox 断言（`assert_no_text_overlap`）；字号最后设定——`ax.tick_params(labelsize=...)` 会静默覆盖 `set_yticklabels(fontsize=...)` | 漏 = 渲染放大后逐层返工 | 机检：assert_no_text_overlap（raise 版验收门）
+- **[B9] 版面字面量防截断**：加构/裁剪/缩放后必须断言"全部文本 artist 在画布内"（tight bbox 会把越界文本包进 PNG，反而把图撑宽失真）；窄轴放不下 N 个刻度名时用数字刻度+键并入脚注 | 漏 = 图在组合体里被裁/变形 | 机检：edge_sweep.py（组合体）+ 自觉（单图）
 
 ## C. API 自适应（违反 = 运行时崩溃）
 

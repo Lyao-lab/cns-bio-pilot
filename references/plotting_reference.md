@@ -51,6 +51,12 @@
 | QC 条形卡片 | `plot_qc_cards(metrics, covariate=..., save=...)` | 行=样本、列=指标；GA 渐变色块；数值直标+列顶范围 |
 | 样本趋势小倍数 | `plot_trend_grid(df, x=..., y=..., by=..., save=...)` | 点径∝n_cells；标题内嵌 ρ+星；highlight 红描边 |
 | 空间放大图（IF 风格） | `plot_spatial_zoom(adata_sp, color=..., save=...)` | 自动取框+inset 红框定位；物理点径；自适应比例尺 |
+| 距离分布（空间标配） | `plot_distance_distribution(adata_sp, group_a=..., group_b=..., save=...)` | A 到 B 最近邻距离箱线+置换检验；需 obsm['spatial'] |
+| 邻域富集热图 | `plot_nhood_enrichment(adata_sp, cluster_key=..., save=...)` | cluster×cluster z-score；需先跑 spatial_neighbors |
+| 共定位散点 | `plot_colocalization(adata_sp, var_x=..., var_y=..., save=...)` | per-spot 双信号相关；>5000 点转 hexbin；标 ρ+p |
+| 富集气泡散点 | `plot_enrichment_scatter(enr_df, save=...)` | 5 维气泡（GeneRatio/FDR/Count）；条形图替代 |
+| CCC network | `plot_ccc(weight_mat, layout='network', save=...)` | 力导向；>8 节点替代 chord；边∝权重 |
+| 去卷积饼图网格 | `plot_deconv_pie(adata_sp, save=...)` | 每 spot 微型饼；>6 类聚合 Other |
 | 面板字母三件套 | `stamp_panel(fig, 'a', title, subtitle)` | 字母+版内标题+方法学灰副标题（≥8in 宽画布） |
 | 画布级重叠断言 | `assert_no_text_overlap(fig)` | raise 版验收门；补查 fig.texts/title/tick/legend |
 | 直接标签防撞 | `direct_label(ax, ys, texts, side=...)` | 端点标签像素级 stagger，gap_pt 最小行距 |
@@ -71,6 +77,7 @@ import numpy as np
 set_cns_style_journal('nature')   # 'nature'|'science'|'cell'|'generic'
 
 # 统一入口函数（自动 ov.pl 优先 + mpl 兜底）
+# 注：上一行 from cns_style import * 已含全部 51 个 plot_*；下方为最常用 14 个的显式示例
 from cns_style import (plot_umap, plot_volcano, plot_dotplot, plot_violin,
                        plot_heatmap, plot_spatial, plot_bar, plot_enrichment,
                        plot_lr_bubble, plot_feature_matrix, plot_paga,

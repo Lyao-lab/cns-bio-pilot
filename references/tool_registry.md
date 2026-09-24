@@ -182,6 +182,48 @@
 - **相关规则**: B1 B2 B3
 - **机检**: finalize_figure 内置；无数值比例列 → ValueError
 
+### plot_raincloud | category: plotting | verified ✅
+- **inputs**: data(tidy DataFrame 或 AnnData: x=分组列, y=数值列), order=None, colors=None, test='mwu'(参照组括号), ref=None, kde_min_n=5, show_n=False
+- **outputs**: PDF 云雨图（半小提琴+白底箱线+雨点；小组自动退化箱线+雨点）
+- **路由**: mpl 直绘（plots_stats；fetal_heart mHeart 外部验证回灌）；单细胞必须先聚合到样本级
+- **相关规则**: B1 B2 A2(样本级聚合)
+- **机检**: finalize_figure 内置
+
+### plot_slope | category: plotting | verified ✅
+- **inputs**: data(wide: index=实体,columns=组 | tidy+entity/group/value 三列), top_n=8, order=None, emphasize=None, label_deltas=True, gap_pt=12
+- **outputs**: PDF 斜率图（无图例，端点 direct_label 防撞+Δ；emphasize 加粗置顶）
+- **路由**: mpl 直绘（plots_stats；fetal_heart movers/trajectories 回灌）
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置；<2 组 → ValueError
+
+### plot_lollipop | category: plotting | verified ✅
+- **inputs**: data(DataFrame), label_col, value_col, value2_col=None(第二统计量空心点), pval_col=None, tag_col=None, ref_line=None, null_band=None(置换零带)
+- **outputs**: PDF 发散棒棒糖（实心=主统计量+空心=第二统计量；灰底零带+斜体注释）
+- **路由**: mpl 直绘（plots_stats；fetal_heart hdWGCNA module-trait 回灌）
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_qc_cards | category: plotting | verified ✅
+- **inputs**: metrics(DataFrame: index=样本, 列=数值指标), covariate=None(首列渐变色块如 GA), covariate_label=None, formats=None, highlight=None
+- **outputs**: PDF 样本×指标条形卡片（行=样本、数值直标+列顶范围；highlight 整行红底纹）
+- **路由**: mpl 直绘（plots_stats；fetal_heart 15 供体 QC 面板回灌）
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_trend_grid | category: plotting | verified ✅
+- **inputs**: data(tidy: by/x/y 三列 + 可选 size_col/stat_col/pval_col), ncols=4, fit='ols'|'lowess'|None, highlight=None, shared_ylim=None
+- **outputs**: PDF 样本级小倍数趋势（点径∝n_cells；标题内嵌 ρ+星；小倍数替代面条图）
+- **路由**: mpl 直绘（plots_stats；fetal_heart program×donor 趋势回灌）
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_spatial_zoom | category: plotting | verified ✅
+- **inputs**: adata_sp(AnnData), color(obs 列或数组), threshold_pct=90(高信号取框), vmax='p98', unit_per_um=None, spot_units=None, coords_key='spatial'
+- **outputs**: PDF IF 风格空间放大图（自动取框+inset 红框定位；窗外浅灰 context；比例尺自适应）
+- **路由**: mpl 直绘（plots_spatial；fetal_heart VIC zoom/maps 回灌）
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
 ### plot_radar | category: plotting | verified ✅
 - **inputs**: values((n_series × n_axes) array/DataFrame), axis_labels(list), series_names=None, axis_ranges=None({轴名:(lo,hi)}，异量纲轴必须显式传；缺省按各轴数据 min/max), colors=None
 - **outputs**: PDF 多尺度雷达图（每辐条按自身量程归一化 → 异量纲多指标方法/整合基准对比一图比完）
@@ -247,7 +289,7 @@
 - **相关规则**: 演示文稿交付前校验
 - **机检**: 内置 PresentationValidator.validate()
 
-## 渲染/组装（3 个）
+## 渲染/组装（4 个）
 
 ### build_deck.py | category: rendering | unverified ⚠️
 - **inputs**: outline(.json 大纲), -o/--output, --preset {cns-bio-light, ...}
@@ -301,6 +343,13 @@
 - **相关规则**: 对标 ov-skills 防御校验模式
 - **机检**: 纯校验，无图
 
+### stamp_panel / assert_no_text_overlap / direct_label / layout_labels | category: helper | verified ✅（工具层四件套，plots_reference §3.40）
+- **inputs**: stamp_panel(fig, letter, title, subtitle)；assert_no_text_overlap(fig)（raise 版验收门）；direct_label(ax, ys, texts, side, gap_pt)；layout_labels(fig, ax, texts)（bbox 斥力）
+- **outputs**: 面板字母+版内标题 / 画布级重叠断言 / 端点标签像素级 stagger / on-plot 标签防撞
+- **路由**: mpl 直绘（_layout/_save；fetal_heart 62+ 脚本固定开头+收尾组合回灌）
+- **相关规则**: B8(assert_no_text_overlap) B2
+- **机检**: assert_no_text_overlap 自身即机检（raise）
+
 ### set_cns_style_journal | category: helper | verified ✅
 - **inputs**: journal='generic'('nature'/'nature_double'/'science'/'cell'/'generic'), palette='morlandi'('okabe_ito')
 - **outputs**: 就地设置 rcParams（CNS 美学 + journal 尺寸/字体）
@@ -352,7 +401,7 @@
 
 ---
 
-## 批次 2：omicverse API 对齐补充（15 个，编号 20.25-20.39）
+## 批次 2：omicverse API 对齐补充（15 个）
 
 ### plot_ridge | category: plotting | verified ✅
 - **inputs**: adata(AnnData), keys(gene/list), groupby='celltype'

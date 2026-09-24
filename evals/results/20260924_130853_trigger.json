@@ -1,0 +1,139 @@
+{
+  "suite": "trigger",
+  "time": "2026-09-24T13:08:53",
+  "total": 15,
+  "passed": 15,
+  "pass_rate": 1.0,
+  "failed_ids": [],
+  "rows": [
+    {
+      "id": "T01",
+      "utterance": "帮我分析这批单细胞测序数据",
+      "expected": "cns-bio-pilot",
+      "category": "clean",
+      "output": "cns-bio-pilot",
+      "pass": true
+    },
+    {
+      "id": "T02",
+      "utterance": "空转样本想找空间高变基因",
+      "expected": "cns-bio-pilot",
+      "category": "clean",
+      "output": "cns-bio-pilot",
+      "pass": true
+    },
+    {
+      "id": "T03",
+      "utterance": "画一张投稿级别的 UMAP 图",
+      "expected": "cns-bio-pilot",
+      "category": "clean",
+      "note": "description 含\"发表级图表\"",
+      "output": "cns-bio-pilot",
+      "pass": true
+    },
+    {
+      "id": "T04",
+      "utterance": "把结果整理成组会汇报 PPT",
+      "expected": "cns-bio-pilot",
+      "category": "near_miss",
+      "note": "presentations:pptx 在场竞争，但科研汇报应归 cns-bio-pilot",
+      "output": "cns-bio-pilot",
+      "pass": true
+    },
+    {
+      "id": "T05",
+      "utterance": "帮我把数据分析写进论文 Methods 和图注",
+      "expected": "cns-bio-pilot",
+      "category": "clean",
+      "output": "cns-bio-pilot",
+      "pass": true
+    },
+    {
+      "id": "T06",
+      "utterance": "bulk 转录组的通路富集分析",
+      "expected": "cns-bio-pilot",
+      "category": "clean",
+      "output": "cns-bio-pilot",
+      "pass": true
+    },
+    {
+      "id": "T07",
+      "utterance": "帮我理一下这个故事线：哪些细胞驱动了表型",
+      "expected": "cns-bio-pilot",
+      "category": "clean",
+      "note": "description 含\"构建生物学故事\"",
+      "output": "cns-bio-pilot",
+      "pass": true
+    },
+    {
+      "id": "T08",
+      "utterance": "帮我把 Word 合同里的甲方信息提取出来",
+      "expected": "NONE",
+      "category": "negative",
+      "note": "documents:docx 的活",
+      "output": "NONE",
+      "pass": true
+    },
+    {
+      "id": "T09",
+      "utterance": "打开浏览器帮我查一下今天的新闻",
+      "expected": "NONE",
+      "category": "negative",
+      "note": "browser-use 的活",
+      "output": "NONE",
+      "pass": true
+    },
+    {
+      "id": "T10",
+      "utterance": "把这个 Excel 表的两列合并成一列",
+      "expected": "NONE",
+      "category": "negative",
+      "note": "xlsx 的活",
+      "output": "NONE",
+      "pass": true
+    },
+    {
+      "id": "T11",
+      "utterance": "帮我看看这段 JavaScript 为什么报错",
+      "expected": "NONE",
+      "category": "negative",
+      "output": "NONE",
+      "pass": true
+    },
+    {
+      "id": "T12",
+      "utterance": "服务器磁盘满了，帮我找找大文件",
+      "expected": "NONE",
+      "category": "negative",
+      "note": "运维类，虽在生信服务器上但非生信任务",
+      "output": "NONE",
+      "pass": true
+    },
+    {
+      "id": "T13",
+      "utterance": "把这份 PDF 拆成单页文件",
+      "expected": "NONE",
+      "category": "negative",
+      "note": "pdf 的活",
+      "output": "NONE",
+      "pass": true
+    },
+    {
+      "id": "T14",
+      "utterance": "给我讲讲这段 Python 代码的时间复杂度",
+      "expected": "NONE",
+      "category": "negative",
+      "output": "NONE",
+      "pass": true
+    },
+    {
+      "id": "T15",
+      "utterance": "把季度销售数据做成 PPT 汇报给老板",
+      "expected": "NONE",
+      "category": "negative",
+      "note": "非科研 PPT——description 的 PPT/汇报仅限科研语境，不得误触发",
+      "output": "NONE",
+      "pass": true
+    }
+  ]
+}

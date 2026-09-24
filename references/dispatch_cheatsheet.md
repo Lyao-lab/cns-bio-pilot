@@ -13,7 +13,7 @@
 分析代码已分层：**知识层**（决策/为什么，无代码）在 `references/analysis/`，**代码模板层**（可执行，唯一拷贝源）在 `references/analysis/templates/`——写分析代码前**必须查对应模板**，不要凭记忆写（API 可能已更新）：
 - **不知道该做什么分析？** 先查 `references/analysis/decision_guide.md`（生物学问题→分析方法决策表，34 个问题映射）
 - **自主分析不知下一步追什么？** 查 `references/analysis/analysis_flow.md`（每步结果→下一步决策树）
-- **想像高分文章一样设计分析路线？** 查 `references/analysis/paper_paradigms.md`（3 种分析主干 + 主角细胞选择 + 空间验证模式）
+- **想像高分文章一样设计分析路线？** 查 `references/analysis/paper_paradigms.md`（5 种分析主干 A-E + 主角细胞选择 + 4 种空间验证模式 + 7 方向专属要素）
 
 | 分析任务 | 查这个文件 |
 |---|---|

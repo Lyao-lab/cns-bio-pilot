@@ -12,7 +12,6 @@
 | [analysis/decision_guide.md](analysis/decision_guide.md) | **⭐ 生物学问题→方法决策表：34 个问题→方法映射 + 反模式黑名单** |
 | [analysis/analysis_flow.md](analysis/analysis_flow.md) | **⭐ 自主分析决策树：每步结果解读→下一步追什么→交叉验证→逻辑闭环** |
 | [analysis/paper_paradigms.md](analysis/paper_paradigms.md) | **⭐ 分析主干：链 A-E / 主角细胞选择 / 空间验证模式 / CCC 完整链 / 收敛点规律** |
-| [analysis/paper_directions.md](analysis/paper_directions.md) | **⭐ 方向指南：7 方向独有要素 + 新主干 D-E + 验证模式 D + 方向专属工具** |
 | [analysis/discipline.md](analysis/discipline.md) | 红线：Pseudobulk DE / counts 保留 / 不做 per-cell 统计等 |
 
 ## 模板层（可执行代码，唯一拷贝源）

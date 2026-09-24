@@ -2,7 +2,8 @@
 
 > **证据基础**：2024-2026 年 15 个医学生物学领域 **506 篇** CNS 及大子刊单细胞/空转论文
 > （其中 **203 篇**提取到完整 Fig1-FigN 原文结构，即 §3 各卡"Y 结构"之和；另约 12 篇
-> 完整结构论文未单列成卡）。原始调研档案：`D:\workspace\lit_survey\01-15_*.md`（每篇含期刊/年份/PMID/平台/figure 标题，未获取处如实标注，无编造）。
+> 完整结构论文未单列成卡）。原始调研档案：`D:\workspace\lit_survey\01-15_*.md`（每篇含期刊/年份/PMID/平台/figure 标题，未获取处如实标注，无编造；机器特定路径，失效可重新生成）。
+> **逐篇实例**：45 篇代表作（15 领域×3）的主图序列速查 → `references/domain_exemplars.md`（本文件是"该学什么"模板层，它是"谁这么发过"实例层）。
 > **谁读**：story_builder Step 4（因果链→Figure 映射）、figure-production Step 1（大框架 panel 列表）、research-planner（设计预读——故事需要几组数据、什么验证）。
 > **怎么用**：§0 两步路由（领域→领域卡，故事类型→研究型模板）→ 叠加 §1 通用骨架 → §4 期刊格式裁剪。**模板是起点的默认值，不是铁律**——数据强度永远优先（story_builder 核心原则）。
 
@@ -214,5 +215,6 @@ fishplot/克隆树（R fishplot/cloneevolve、 grapetree）、oncoprint（R Comp
 - **story_builder.md Step 4**：五步法的 Figure 映射步骤改为"先查本文件路由 → 回 story_builder 检查逻辑链完整"
 - **figure_guide.md §0.1**：数据→图型决策（单 panel 层）；本文件=**图组层**（整篇 fig 顺序）。两层互补：先本文件定序列，再 §0.1 定每张图型
 - **plotting_reference.md §3.41-3.45**：新增 4 图型代码 + 低频图型指引
-- **paper_paradigms.md / paper_directions.md**：分析路径层（链 A-E）；本文件=呈现层。分析链决定"有什么可画"，本文件决定"按什么顺序画"
+- **domain_exemplars.md**：45 篇领域代表作逐篇主图序列（本文件的**实例层**——组稿/写作时查"谁这么发过"；本文件是"该学什么"的模板层）
+- **paper_paradigms.md**（已并入原 paper_directions）：分析路径层（链 A-E + 7 方向要素）；本文件=呈现层。分析链决定"有什么可画"，本文件决定"按什么顺序画"
 - 原始调研档案 `D:\workspace\lit_survey\01-15_*.md`（506 篇逐篇条目；换机器后可重新生成）

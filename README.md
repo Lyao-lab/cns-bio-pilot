@@ -27,6 +27,7 @@ SKILL.md (router)
 ├── references/
 │   ├── figure_guide.md (visual specs + three iron rules + real-world lessons)
 │   ├── figure_templates.md (主图顺序模板库：领域卡 C1-C15 × 研究型 T1-T6，506 篇 CNS 泛化)
+│   ├── domain_exemplars.md (45 篇领域代表作逐篇主图序列——模板的实例层)
 │   ├── plotting_reference.md (runnable code templates for every chart type)
 │   ├── dispatch_cheatsheet.md (A1-A10/B1-B9/C1-C4/D1-D6/E1-E6 硬规则——派发子任务必注入)
 │   ├── tool_registry.md (cns_style 51 个 plot_* + 校验脚本统一索引)
@@ -37,7 +38,7 @@ SKILL.md (router)
 │   ├── analysis_reference.md (analysis code templates index)
 │   ├── story_builder.md (results → biological narrative)
 │   ├── discovery_miner.md (analysis → candidate discoveries)
-│   └── analysis/         # 知识层（decision_guide/analysis_flow/paper_paradigms/paper_directions/discipline/stats_convention）
+│   └── analysis/         # 知识层（decision_guide/analysis_flow/paper_paradigms 含 5 链 A-E+7 方向要素/discipline/stats_convention）
 │       └── templates/    # 模板层（可执行分析代码：setup/sc_basic/sc_annotation/sc_downstream/sc_perturbation_state/spatial/bulk）
 ├── scripts/
 │   ├── cns_style/ 包 (one-shot aesthetics + smart_plot plot_* 统一入口，51 个)

@@ -1,0 +1,317 @@
+{
+  "suite": "route",
+  "time": "2026-09-24T12:27:11",
+  "total": 33,
+  "passed": 33,
+  "pass_rate": 1.0,
+  "failed_ids": [],
+  "rows": [
+    {
+      "id": "R01",
+      "utterance": "帮我做这批 scRNA-seq 数据的质控、聚类和细胞类型注释",
+      "expected": "single-cell/omicverse-pipeline",
+      "category": "clean",
+      "note": "单细胞主流程",
+      "output": "single-cell/omicverse-pipeline",
+      "pass": true
+    },
+    {
+      "id": "R02",
+      "utterance": "这两个分群之间找一下差异基因，画个火山图看看",
+      "expected": "single-cell/omicverse-pipeline",
+      "category": "near_miss",
+      "not_contains": "visualization/figure-production",
+      "note": "含\"画图\"但诉求是 DE 分析，应走分析线（§8.5）",
+      "output": "single-cell/omicverse-pipeline",
+      "pass": true
+    },
+    {
+      "id": "R03",
+      "utterance": "用 Milo 比较处理组和对照组的细胞丰度差异",
+      "expected": "single-cell/omicverse-pipeline",
+      "category": "near_miss",
+      "not_contains": "single-cell/scop",
+      "note": "未点名 R/scop 时默认 omicverse 线（§9c）",
+      "output": "single-cell/omicverse-pipeline",
+      "pass": true
+    },
+    {
+      "id": "R04",
+      "utterance": "帮我看肿瘤细胞的 CNV，用 inferCNV",
+      "expected": "single-cell/omicverse-pipeline",
+      "category": "near_miss",
+      "not_contains": "single-cell/scop",
+      "note": "inferCNV 默认走 omicverse-pipeline",
+      "output": "single-cell/omicverse-pipeline",
+      "pass": true
+    },
+    {
+      "id": "R05",
+      "utterance": "做 SCENIC 分析找关键 regulon",
+      "expected": "single-cell/omicverse-pipeline",
+      "category": "clean",
+      "note": "TF/regulon",
+      "output": "single-cell/omicverse-pipeline",
+      "pass": true
+    },
+    {
+      "id": "R06",
+      "utterance": "拟时序分析，用 monocle3 看分化轨迹",
+      "expected": "single-cell/omicverse-pipeline",
+      "category": "near_miss",
+      "not_contains": "single-cell/rna-velocity",
+      "note": "trajectory≠velocity，monocle 属于 pipeline 轨迹分支",
+      "output": "single-cell/omicverse-pipeline",
+      "pass": true
+    },
+    {
+      "id": "R07",
+      "utterance": "细胞通讯分析，看上皮细胞和成纤维细胞之间的配体受体",
+      "expected": "single-cell/omicverse-pipeline",
+      "category": "clean",
+      "note": "CCC §9",
+      "output": "single-cell/omicverse-pipeline",
+      "pass": true
+    },
+    {
+      "id": "R08",
+      "utterance": "我们课题组一直用 Seurat，这批数据用 R 全流程跑一遍",
+      "expected": "single-cell/scop",
+      "category": "clean",
+      "not_contains": "single-cell/omicverse-pipeline",
+      "note": "显式 R/Seurat → scop",
+      "output": "single-cell/scop",
+      "pass": true
+    },
+    {
+      "id": "R09",
+      "utterance": "用 scop 的 RunMilo 做一下差异丰度分析",
+      "expected": "single-cell/scop",
+      "category": "near_miss",
+      "not_contains": "single-cell/omicverse-pipeline",
+      "note": "显式点名 scop 工具时走 scop（与 R03 成对）",
+      "output": "single-cell/scop",
+      "pass": true
+    },
+    {
+      "id": "R10",
+      "utterance": "RNA velocity 推断一下这些细胞往哪分化",
+      "expected": "single-cell/rna-velocity",
+      "category": "near_miss",
+      "not_contains": "single-cell/omicverse-pipeline",
+      "note": "velocity 专属线（与 R06 成对）",
+      "output": "single-cell/rna-velocity",
+      "pass": true
+    },
+    {
+      "id": "R11",
+      "utterance": "Perturb-seq 数据，评估敲除这个基因后的转录组响应",
+      "expected": "single-cell/perturbation",
+      "category": "clean",
+      "output": "single-cell/perturbation",
+      "pass": true
+    },
+    {
+      "id": "R12",
+      "utterance": "先不做实验，用虚拟细胞预测一下过表达这个转录因子的影响",
+      "expected": "single-cell/perturbation",
+      "category": "clean",
+      "note": "in silico 扰动预测",
+      "output": "single-cell/perturbation",
+      "pass": true
+    },
+    {
+      "id": "R13",
+      "utterance": "新课题开题，想研究某转录因子在腺体发育中的作用，帮我设计单细胞加空转的实验和分析方案",
+      "expected": "single-cell/research-planner",
+      "category": "clean",
+      "output": "single-cell/research-planner",
+      "pass": true
+    },
+    {
+      "id": "R14",
+      "utterance": "Visium 数据，做空间 domain 识别和空间变异基因分析",
+      "expected": "spatial/omicverse-spatial",
+      "category": "near_miss",
+      "not_contains": "spatial/multiomics",
+      "note": "常规 Visium → omicverse-spatial",
+      "output": "spatial/omicverse-spatial",
+      "pass": true
+    },
+    {
+      "id": "R15",
+      "utterance": "看看这两种细胞类型在空间上有没有共定位，做个邻域富集分析",
+      "expected": "spatial/omicverse-spatial",
+      "category": "near_miss",
+      "not_contains": "spatial/deconvolution",
+      "note": "共定位/邻域富集是空间统计，不是去卷积",
+      "output": "spatial/omicverse-spatial",
+      "pass": true
+    },
+    {
+      "id": "R16",
+      "utterance": "用 cell2location 把单细胞注释结果映射到空间切片上",
+      "expected": "spatial/deconvolution",
+      "category": "clean",
+      "not_contains": "spatial/omicverse-spatial",
+      "output": "spatial/deconvolution",
+      "pass": true
+    },
+    {
+      "id": "R17",
+      "utterance": "Visium HD 数据，binning 和细胞分割应该怎么做",
+      "expected": "spatial/multiomics",
+      "category": "near_miss",
+      "not_contains": "spatial/omicverse-spatial",
+      "note": "高分辨率 → multiomics",
+      "output": "spatial/multiomics",
+      "pass": true
+    },
+    {
+      "id": "R18",
+      "utterance": "Stereo-seq 数据做空间聚类和 domain 分析",
+      "expected": "spatial/multiomics",
+      "category": "near_miss",
+      "not_contains": "spatial/omicverse-spatial",
+      "note": "Quick Route 明确 Stereo-seq → multiomics",
+      "output": "spatial/multiomics",
+      "pass": true
+    },
+    {
+      "id": "R19",
+      "utterance": "CODEX 多重蛋白成像数据的细胞分型和空间分析",
+      "expected": "spatial/proteomics",
+      "category": "clean",
+      "output": "spatial/proteomics",
+      "pass": true
+    },
+    {
+      "id": "R20",
+      "utterance": "bulk RNA-seq 的差异分析和 GSEA 通路富集",
+      "expected": "general-bio/omicverse-bulk",
+      "category": "clean",
+      "output": "general-bio/omicverse-bulk",
+      "pass": true
+    },
+    {
+      "id": "R21",
+      "utterance": "画一下两组患者的 KM 生存曲线",
+      "expected": "general-bio/omicverse-bulk",
+      "category": "near_miss",
+      "not_contains": "visualization/figure-production",
+      "note": "生存分析属 bulk 分析线（ov.pl.kaplan_meier），不是纯绘图",
+      "output": "general-bio/omicverse-bulk",
+      "pass": true
+    },
+    {
+      "id": "R22",
+      "utterance": "DE 表格已经算好了，把火山图美化到投稿水平",
+      "expected": "visualization/figure-production",
+      "category": "near_miss",
+      "not_contains": "single-cell/omicverse-pipeline",
+      "note": "纯绘图迭代诉求（与 R02 成对）",
+      "output": "visualization/figure-production",
+      "pass": true
+    },
+    {
+      "id": "R23",
+      "utterance": "把 UMAP、小提琴图和热图拼成 Figure 1 的组合大图",
+      "expected": "visualization/figure-production",
+      "category": "clean",
+      "output": "visualization/figure-production",
+      "pass": true
+    },
+    {
+      "id": "R24",
+      "utterance": "画一张机制示意图：某通路调控某细胞亚群的图形摘要",
+      "expected": "visualization/scientific-schematics",
+      "category": "near_miss",
+      "not_contains": "visualization/figure-production",
+      "note": "schematic/机制图 ≠ 数据图",
+      "output": "visualization/scientific-schematics",
+      "pass": true
+    },
+    {
+      "id": "R25",
+      "utterance": "帮我把这些分析结果写成论文的 Methods 部分",
+      "expected": "presentation/manuscript-writing",
+      "category": "clean",
+      "output": "presentation/manuscript-writing",
+      "pass": true
+    },
+    {
+      "id": "R26",
+      "utterance": "下周组会汇报，帮我把结果做成 PPT",
+      "expected": "presentation/scientific-slides",
+      "category": "near_miss",
+      "not_contains": "visualization/figure-production",
+      "note": "PPT 产出 ≠ 单图绘制",
+      "output": "presentation/scientific-slides",
+      "pass": true
+    },
+    {
+      "id": "R27",
+      "utterance": "给外地合作者做一个可以在线看的网页版结果报告",
+      "expected": "presentation/web-report",
+      "category": "clean",
+      "output": "presentation/web-report",
+      "pass": true
+    },
+    {
+      "id": "R28",
+      "utterance": "空转数据做一下 Ripley 空间统计和 centrality 分析",
+      "expected": "spatial/omicverse-spatial",
+      "category": "clean",
+      "note": "空间统计 §统计",
+      "output": "spatial/omicverse-spatial",
+      "pass": true
+    },
+    {
+      "id": "R29",
+      "utterance": "帮我写个爬虫抓取文献网站的标题",
+      "expected": "NONE",
+      "category": "negative",
+      "note": "通用编程任务，不应路由到任何子 skill",
+      "output": "NONE",
+      "pass": true
+    },
+    {
+      "id": "R30",
+      "utterance": "教我怎么调一杯莫吉托",
+      "expected": "NONE",
+      "category": "negative",
+      "note": "完全无关请求",
+      "output": "NONE",
+      "pass": true
+    },
+    {
+      "id": "R31",
+      "utterance": "结果都出来了，帮我组织这篇论文的主图顺序，第一张图放什么",
+      "expected": "references/figure_templates.md",
+      "category": "clean",
+      "note": "主图顺序/fig 组织 → figure_templates.md §0 路由（506 篇 CNS 泛化）",
+      "output": "references/figure_templates.md",
+      "pass": true
+    },
+    {
+      "id": "R32",
+      "utterance": "画一张 TCR 克隆扩增图，按细胞类型分群看哪些群在克隆性扩增",
+      "expected": "visualization/figure-production",
+      "category": "clean",
+      "not_contains": "single-cell/omicverse-pipeline",
+      "note": "plot_clone_expansion 新图型（§3.44），纯绘图诉求",
+      "output": "visualization/figure-production",
+      "pass": true
+    },
+    {
+      "id": "R33",
+      "utterance": "空转数据画一下肝小叶 zonation 梯度曲线，横轴是中央静脉到门脉距离",
+      "expected": "visualization/figure-production",
+      "category": "near_miss",
+      "not_contains": "spatial/omicverse-spatial",
+      "note": "zonation 绘图诉求 → plot_axis_gradient（§3.43）；找 zone 差异基因的分析诉求才走 omicverse-spatial（裁决规则①意图优先）",
+      "output": "visualization/figure-production",
+      "pass": true
+    }
+  ]
+}

@@ -25,3 +25,4 @@ from .plots_expression import *
 from .plots_stats import *
 from .plots_ccc import *
 from .plots_spatial import *
+from .plots_domain import *

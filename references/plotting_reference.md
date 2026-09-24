@@ -56,6 +56,10 @@
 | 直接标签防撞 | `direct_label(ax, ys, texts, side=...)` | 端点标签像素级 stagger，gap_pt 最小行距 |
 | 标签斥力求解 | `layout_labels(fig, ax, texts)` | on-plot 标签 bbox 实测推开（UMAP 标签救星） |
 | bar 风坐标 | `polish_axes(ax, variant='bar', grid_axis='x')` | 只留灰底脊+值轴浅网格（barh 用 'x'，竖条 'y'） |
+| Sankey 状态转换 | `plot_sankey(flows, save=...)` | 转移矩阵→节点+贝塞尔 ribbon；min_flow 去毛刺 |
+| CNV 基因组热图 | `plot_cnv_heatmap(cnv, chrom=..., groups=..., save=...)` | inferCNV 式；染色体分隔线+分组色条；DIVERGING 0=白 |
+| 轴向/距离梯度曲线 | `plot_axis_gradient(data, x, y, hue, save=...)` | zonation/边界带/病理共定位；LOWESS+分位带；norm='each' 每信号归一 |
+| 克隆扩增追踪 | `plot_clone_expansion(clone_df, clone_col, group_col, save=...)` | composition=大小分类堆叠柱；track=top 克隆跨组折线 |
 
 ## 1. 全局开头（每个脚本第一行）
 
@@ -788,6 +792,77 @@ layout_labels(fig, ax, ax.texts)                 # on-plot 标签 bbox 斥力排
 assert_no_text_overlap(fig)                      # 保存前机械验收门（raise）
 # stamp/assert 是 fetal_heart 62+ 脚本的固定开头+收尾组合（2026-09 回灌）
 ```
+
+### 3.41 Sankey 状态转换（命运流/转变矩阵 alluvial）
+
+**统一入口**（mpl 直绘）：转移矩阵 → 左右节点 + 贝塞尔 ribbon。适用：PAGA/CellRank 转移概率、最优传输转变矩阵、治疗前→后 alluvial、命运概率流。源自 15 领域调研中频图型（肾/心/衰老/发育 ~15-25% 论文）。深度 ≥3 阶段拆多个两阶段面板（CNS 惯例）。
+
+```python
+from cns_style import plot_sankey
+flows = pd.DataFrame({          # 转移矩阵：index=source, columns=target
+    'Quiescent': {'Quiescent': 5, 'Activated': 30, 'Matrix': 3},
+    'Cycling':   {'Quiescent': 1, 'Activated': 12, 'Matrix': 6},
+}).T
+plot_sankey(flows, min_flow=0.01, save='AI_sankey')
+# min_flow：低于该比例的 ribbon 不画（去毛刺）；节点默认按流量降序，
+# order_top/order_bottom 可覆盖；ribbon 按 source 着色（MORLANDI_EXTENDED）
+```
+
+### 3.42 CNV 基因组热图（inferCNV 式）
+
+**统一入口**（mpl 直绘）：行=细胞（先按分组排序再传入），列=基因组位置序基因；染色体白线分隔+顶注染色体号；左侧可选分组色条。DIVERGING_CMAP（0=白，红=扩增，蓝=缺失，与 inferCNV 惯例一致）。肿瘤领域 ~40% 论文、血液克隆演化标配。
+
+```python
+from cns_style import plot_cnv_heatmap
+# cnv: DataFrame(index=细胞, columns=基因, 值=inferCNV/copyKAT expr 或 log-ratio)
+# chrom: 与 columns 对齐的染色体标签（如 adata.var['chrom']）
+# groups: 与 index 对齐的分组（恶性/非恶性、克隆、样本）→ 左侧色条
+plot_cnv_heatmap(cnv_df, chrom=adata.var['chrom'], groups=cell_groups,
+                 vmin=-1.5, vmax=1.5, save='AJ_cnv_heatmap')
+```
+
+### 3.43 轴向/距离梯度曲线（连续组织轴通用图型）
+
+**统一入口**（mpl 直绘）：信号沿连续轴（µm 距离/zone 位置/皮层深度/伪时间）的梯度曲线——肝 zonation、皮质-髓质肾轴、病理-分子距离梯度（Aβ/pTau）、肿瘤边界带、母胎界面距离分箱的**跨领域通用形态**。每信号：散点（超 4000 点自动降密度）+ LOWESS 曲线（statsmodels 优先，滑窗中位兜底）+ p25-p75 带；x=0 画解剖标志虚线。
+
+```python
+from cns_style import plot_axis_gradient
+# data: tidy DataFrame；x=轴坐标，y=信号值，hue=信号名
+plot_axis_gradient(zonation_df, x='cv_distance_um', y='expr', hue='gene',
+                   norm='each',               # 'each'=每信号 min-max（多基因比形状）
+                   xlabel='Distance from central vein (µm)',
+                   landmark_label='central vein', save='AK_axis_gradient')
+```
+
+### 3.44 克隆扩增追踪（TCR/BCR/肿瘤克隆）
+
+**统一入口**（mpl 直绘）：免疫/血液/感染的"克隆-表型-空间"三连图之一。`mode='composition'`：分组堆叠柱（每组细胞按克隆大小分类 singleton/small/medium/large，bins 可调）——展示"哪群在克隆性扩增"；`mode='track'`：top_n 大克隆跨组折线（时间点/组织演化，端点 direct_label 防撞直标）。
+
+```python
+from cns_style import plot_clone_expansion
+# clone_df: 每行=克隆×分组记录（clone_col/group_col/size）；传每细胞一行也可（自动计数）
+plot_clone_expansion(tcr_df, clone_col='clone_id', group_col='celltype',
+                     mode='composition', save='AL_clone_comp')   # 大小分类堆叠
+plot_clone_expansion(tcr_df, clone_col='clone_id', group_col='timepoint',
+                     mode='track', top_n=6, save='AM_clone_track')  # top 克隆演化
+```
+
+### 3.45 低频领域特色图型指引（降优先度——不建代码模板）
+
+> 源自 15 领域调研：<10% 论文出现的特色图型。**仅当领域卡（figure_templates.md §3）明确列出且用户点名时才做**；默认用中高频图型替代（克隆树→plot_sankey；oncoprint→plot_heatmap+注释条）。
+
+| 低频图型 | 外部工具/替代 |
+|---|---|
+| fishplot / 克隆演化树 | R `fishplot` / `cloneevolve`；简化用 plot_sankey |
+| oncoprint | R ComplexHeatmap `oncoPrint()`；简化用 plot_heatmap+分组注释条 |
+| 克隆 Voronoi 空间图 | scipy `Voronoi` + ax.add_patch（肿瘤/肠克隆空间） |
+| 3D 器官/胚胎重建 | napari / BioIO / 3D viewer；静态图导出 |
+| 4D mapping / 最优传输 | moscot（发育时空对齐） |
+| 空间衰老时钟 | 自研回归+GNN 扰动（SpatialSmooth 思路） |
+| scWGS 突变签名 | SigProfiler / Signatures；与表达偶联画散点 |
+| FICTURE 像素级空间图 | ficture CLI（原厂 pipeline 出图） |
+| 宿主-病原共检测 | 平台原厂 pipeline；物种-面积曲线用 plot_regplot |
+| dMRI-空转配准 | ANTs 配准 + 空间散点 |
 
 ## 4. 统计标注（add_significance_bracket）
 

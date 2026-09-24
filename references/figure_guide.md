@@ -7,7 +7,7 @@
 
 ## 0. 速查指引（画图前先看）
 
-先定框架（哪种图、几张、怎么拼）再动笔；每张图 savefig 前必须过 `finalize_figure(fig)`。下表 = 要画什么 → 代码模板 → 视觉规格章节。
+先定框架（哪种图、几张、怎么拼）再动笔；每张图 savefig 前必须过 `finalize_figure(fig)`。**整篇 fig 顺序（第几张 fig 讲什么）先查 `references/figure_templates.md` §0 自动路由表**（领域→领域卡，最强发现→研究型模板；506 篇 CNS 论文泛化）；本文件管**单张 panel 的图型选择**——下表 = 要画什么 → 代码模板 → 视觉规格章节。
 
 | 要画什么 | 代码模板 | 关键规格（本文件章节）|
 |---|---|---|
@@ -271,7 +271,7 @@ cns_style 包同时支持两层，所有图型默认 ov.pl 优先：
 
 ## 7. 报告级
 
-- Figure 1 = atlas (2-3 panels) → 中间 = mechanism (4-6) → 最后 = validation (2-3)
+- 整篇顺序：查 `references/figure_templates.md`（五段式骨架：定场→展开→空间转折→机制→收尾 + 期刊格式裁剪）；Fig1 = atlas (2-3 panels) → 中间 = mechanism (4-6) → 最后 = validation (2-3)
 - 全论文锁 `manifest.yaml`（cell_type_colors / condition_colors / cmap）
 - 同一 cell type 全论文同色；同一 gene 全论文同 colorbar range
 

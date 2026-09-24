@@ -189,6 +189,34 @@
 - **相关规则**: B1 B2
 - **机检**: finalize_figure 内置（save_panel 收尾）；values 非二维/axis_labels 数量不符 → ValueError
 
+### plot_sankey | category: plotting | verified ✅
+- **inputs**: flows(DataFrame 转移矩阵: index=source, columns=target, 值=流量——PAGA/CellRank 转移概率、OT 转变矩阵、治疗前后计数), order_top/order_bottom=None, min_flow=0.0(占总流量比，去毛刺)
+- **outputs**: PDF 两阶段 alluvial（节点+贝塞尔 ribbon，ribbon 按 source 着色）
+- **路由**: mpl Path/CURVE4 手绘（plots_domain.py；15 领域调研中频图型：肾/心/衰老/发育命运流）；≥3 阶段拆多个两阶段面板
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置；流量全 0 → ValueError
+
+### plot_cnv_heatmap | category: plotting | verified ✅
+- **inputs**: cnv(DataFrame 细胞×基因, 值=inferCNV/copyKAT expr), chrom=None(与 columns 对齐的染色体标签), groups=None(与 index 对齐的分组→左侧色条), vmin/vmax=-1.5/1.5
+- **outputs**: PDF inferCNV 式热图（染色体白线分隔+顶注+分组色条；DIVERGING 0=白红=扩增蓝=缺失）
+- **路由**: mpl imshow（plots_domain.py；肿瘤 ~40% 论文/血液克隆演化标配）
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置；分组色条走 to_rgba 数组
+
+### plot_axis_gradient | category: plotting | verified ✅
+- **inputs**: data(tidy DataFrame), x(轴坐标: 距离µm/zone 位置/皮层深度), y(信号), hue(信号名), norm='each'|'global'|None(每信号 min-max 归一是 zonation 标准形态), window=0.1, landmark=True(x=0 解剖标志虚线)
+- **outputs**: PDF 梯度曲线+分位带（LOWESS 优先 statsmodels，滑窗中位兜底；>4000 点自动降密度）
+- **路由**: mpl（plots_domain.py；跨领域通用：肝 zonation/肾皮质-髓质轴/病理共定位距离/肿瘤边界带/母胎界面分箱）
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_clone_expansion | category: plotting | verified ✅
+- **inputs**: clone_df(每行=克隆×分组记录含 size；或每细胞一行自动计数), clone_col, group_col, mode='composition'(大小分类堆叠柱: singleton/small/medium/large, bins 可调)|'track'(top_n 大克隆跨组折线), by='cells'|'clones'
+- **outputs**: PDF 克隆扩增图（免疫 TCR 三连图之一；track 端点 direct_label 防撞）
+- **路由**: mpl（plots_domain.py；免疫/血液/感染克隆演化）
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置；mode 非法 → ValueError
+
 ## 校验脚本（4 个）
 
 ### postcheck.py | category: validation | verified ✅

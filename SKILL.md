@@ -51,6 +51,11 @@ When you delegate any analysis/plotting/API-calling work to a sub-agent (**any s
 | 转录因子 / TF / regulon / SCENIC / GRN | `omicverse-pipeline` §SCENIC（ov.single.SCENIC）|
 | 生存分析 / survival / KM / Kaplan | `general-bio/omicverse-bulk`（ov.pl.kaplan_meier/survival）|
 | 画图 / 绘图 / figure / panel / 拼图 | `visualization/figure-production` |
+| 主图顺序 / fig 组织 / 第几张图 / 故事组织成图 / 图谱论文怎么排图 / figure templates | `references/figure_templates.md`（§0 路由：领域→C1-C15 卡，故事→T1-T6；506 篇 CNS 泛化） |
+| Sankey / 命运流 / 状态转换图 | `visualization/figure-production`（plot_sankey，plotting_reference §3.41） |
+| CNV 热图 / inferCNV / copykat 可视化 | `visualization/figure-production`（plot_cnv_heatmap，§3.42） |
+| 轴梯度 / zonation / 距离梯度 / 边界带梯度 | `visualization/figure-production`（plot_axis_gradient，§3.43） |
+| 克隆扩增 / TCR 追踪 / 克隆演化图 | `visualization/figure-production`（plot_clone_expansion，§3.44） |
 | 雷达 / radar / 多指标对比 / 整合基准对比 | `visualization/figure-production`（plot_radar，每辐条独立量程归一）|
 | 机制图 / 流程图 / schematic / 图形摘要 | `visualization/scientific-schematics` |
 | PPT / 汇报 / 幻灯片 / slides / 答辩 | `presentation/scientific-slides` |
@@ -119,6 +124,7 @@ Package versions: **`compat.yaml`** (single source of truth). After any upgrade:
 |---|---|
 | `compat.yaml` | Version questions; after any package upgrade |
 | `references/figure_guide.md` | Before ANY plotting — visual specs, three iron rules, real-world lessons (no code) |
+| `references/figure_templates.md` | **Before organizing figures/paper story** — 领域×故事类型主图顺序模板库（§0 路由：15 领域卡 C1-C15 + 研究型 T1-T6 + 期刊格式 + 图型频率优先度；506 篇 2024-2026 CNS 论文泛化）；新增中频图型 sankey/CNV 热图/轴梯度/克隆扩增见 `plotting_reference.md` §3.41-3.45 |
 | `references/plotting_reference.md` | When writing plotting code — runnable templates for every chart type (§0 quick card → §2/§3 templates) |
 | `references/omicverse_skills_examples.md` | External reference — curated patterns from omicverse-skills repo (marked "absorbed" vs "reference") |
 | `references/story_builder.md` | **After analysis, before drawing/writing** — how to turn results into a biological story (5-step method: findings → causal chain → main message → figure mapping → story arc) |

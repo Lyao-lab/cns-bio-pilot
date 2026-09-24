@@ -25,6 +25,9 @@ Do not claim clinical readiness without at least one orthogonal or external vali
 Figures should mirror the study logic.
 
 ### Typical Figure Sequence
+
+Detailed, domain-specific figure ordering: see `references/figure_templates.md` (skill root) — §0 auto-routing (domain card C1-C15 + story type T1-T6), §1 five-stage backbone (opening atlas → lineage expansion → spatial turn → mechanism → ending), §4 journal format rules (Nature: 4-6 main + Extended Data; Cell Press: 6-8 main, no ED). The generic logic below still applies:
+
 1. Study overview, cohort / dataset logic, and workflow
 2. QC, clustering, and annotation overview
 3. Main biological signal (composition / DEG / state score / key cell)

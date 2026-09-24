@@ -72,13 +72,14 @@ def plot_sankey(flows, order_top=None, order_bottom=None, min_flow=0.0,
     palette = MORLANDI_EXTENDED
     src_color = {s: palette[i % len(palette)] for i, s in enumerate(srcs)}
     x0, x1 = 0.0, 1.0
+    # 流带自源节点顶边向下堆叠（inverted y 轴：+y = 屏幕向下），与目标侧对称
     off_l = off_r = 0.0
     for i, s in enumerate(srcs):
         for j, t in enumerate(tgts):
             f = mat.loc[s, t] / total
             if f < min_flow or f <= 0:
                 continue
-            y0t, y0b = sy[i] - off_l, sy[i] - off_l - f
+            y0t, y0b = sy[i] + off_l, sy[i] + off_l + f
             y1t, y1b = ty[j] + off_r, ty[j] + off_r + f
             cx = 0.5
             verts = [(x0 + node_w, y0t), (cx, y0t), (cx, y1t), (x1 - node_w, y1t),
@@ -91,10 +92,9 @@ def plot_sankey(flows, order_top=None, order_bottom=None, min_flow=0.0,
                                    edgecolor='none', alpha=alpha, zorder=2))
             off_l += f
         off_l = 0.0
-    # 节点矩形（source 收流量自上而下、target 展开自上而下，语义一致）
-    off = np.zeros(n_t)
+    # 节点矩形与流带共享同一纵向区间 [sy[i], sy[i]+sh[i]]（矩形不得再偏移 gap）
     for i, s in enumerate(srcs):
-        ax.add_patch(plt.Rectangle((x0, sy[i + 1] - sh[i]), node_w, sh[i],
+        ax.add_patch(plt.Rectangle((x0, sy[i]), node_w, sh[i],
                                    facecolor=src_color[s], edgecolor='white',
                                    lw=0.4, zorder=3))
     for j, t in enumerate(tgts):
@@ -103,10 +103,10 @@ def plot_sankey(flows, order_top=None, order_bottom=None, min_flow=0.0,
                                    lw=0.4, zorder=3))
     if label_nodes:
         for i, s in enumerate(srcs):
-            ax.text(x0 - 0.02, (sy[i] + sy[i + 1]) / 2, f'{s}',
+            ax.text(x0 - 0.02, sy[i] + sh[i] / 2, f'{s}',
                     ha='right', va='center', fontsize=7.5, color=NEAR_BLACK)
         for j, t in enumerate(tgts):
-            ax.text(x1 + 0.02, (ty[j] + ty[j + 1]) / 2, f'{t}',
+            ax.text(x1 + 0.02, ty[j] + th[j] / 2, f'{t}',
                     ha='left', va='center', fontsize=7.5, color=NEAR_BLACK)
     ax.set_xlim(-0.42, 1.42)
     ax.set_ylim(1.0 + 2 * gap, -2 * gap)
@@ -160,15 +160,28 @@ def plot_cnv_heatmap(cnv, chrom=None, groups=None, cmap=None,
     im = ax.imshow(df.values, aspect='auto', interpolation='nearest',
                    cmap=cmap, vmin=vmin, vmax=vmax, rasterized=True)
     if chrom is not None:
-        ch = chrom.reindex(df.columns).to_numpy()
+        # 对齐：chrom 的 index 与 df.columns 可对上则 reindex；对不上（如 RangeIndex
+        # vs 'G0..G799'）退回位置对齐（anndata var 与 var_names 天然位置对齐的惯例）。
+        # ⚠️ 曾因 reindex 全 NaN → 每列被判为染色体边界 → 白线网格洗白热图（2026-09-24 视觉门揪出）
+        if isinstance(chrom, pd.Series) and chrom.index.isin(df.columns).any():
+            ch = chrom.reindex(df.columns).to_numpy()
+        else:
+            ch = np.asarray(chrom, dtype=object)
+            if len(ch) != n_g:
+                raise ValueError(f"plot_cnv_heatmap: chrom 长度 {len(ch)} != 基因数 {n_g}")
+        if pd.isna(ch).all():
+            raise ValueError("plot_cnv_heatmap: chrom 对齐后全 NaN——检查其 index 与 cnv.columns")
         bounds = np.flatnonzero(np.r_[True, ch[1:] != ch[:-1]])
         for b in bounds[1:]:
             ax.axvline(b - 0.5, color='white', lw=0.8)
-        labels = [ch[b] for b in bounds]
+        labels = [str(ch[b]) for b in bounds]
         mids = [(bounds[k] + (bounds[k + 1] if k + 1 < len(bounds) else n_g)) / 2
                 for k in range(len(bounds))]
+        # inferCNV 惯例：染色体号标在热图顶部
+        ax.xaxis.tick_top()
         ax.set_xticks(mids)
         ax.set_xticklabels(labels, fontsize=6.5)
+        ax.tick_params(top=False, labeltop=True)
     else:
         ax.set_xticks([])
     ax.set_yticks([])

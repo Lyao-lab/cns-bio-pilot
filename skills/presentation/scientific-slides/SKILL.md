@@ -208,44 +208,8 @@ python scripts/validate_presentation.py presentation.pptx
 | `bullets` | 纯文字 | ≤4 行，每行 ≤6 词，18pt | 总结 / 过渡 |
 | **`split-compare`** | 左右分屏对比 | 左半 50%（含标题+图+文）vs 右半 50%（标题+图+文）；中间分隔线 0.5pt | 两种方法对比 / 两个数据集对比 |
 
-### 防重叠规则（代码强制，不是建议）
-
-```python
-# build_deck.py 中每个布局函数都调用的安全检查：
-SAFE_GAP = Inches(0.3)  # 图片与文字之间的最小安全间距
-
-def _safe_zones(width_in=13.333, height_in=7.5):
-    """返回安全区域字典——每个元素只能在自己的区域内"""
-    title_zone = (0.5, 0.3, 12.3, 1.0)      # 标题区: top 0.3-1.0
-    content_zone = (0.5, 1.2, 12.3, 5.3)     # 内容区: top 1.2-6.5
-    caption_zone = (0.5, 6.7, 12.3, 0.6)     # 图注区: top 6.7-7.2
-    # 图片放 content_zone 内，文字也放 content_zone 内，但两者在水平/垂直方向上不重叠
-    return {"title": title_zone, "content": content_zone, "caption": caption_zone}
-```
-
-**规则**：
-1. **标题区（0.3-1.0inch）**不放图、不放正文——只放标题
-2. **图注区（6.7-7.2inch）**不放图、不放正文——只放 caption
-3. **内容区（1.2-6.5inch）**内图片和文字**水平分离**：图片在左半区，文字在右半区，中间 ≥0.3inch 空白
-4. **全宽图片**（figure-hero）：图片占满内容区宽度，文字移到图注区或下一张幻灯片
-5. **上下布局**（figure-top-text）：文字在上 1/3，图在下 2/3，中间 0.3inch
-
-### 图形式多样化原则
-
-不要每张都用"图左+文右"（image-sidebar）。根据内容选布局：
-
-| 内容类型 | 推荐布局 | 理由 |
-|---|---|---|
-| UMAP / 空间切片全景 | `figure-hero` | 全宽冲击力 |
-| 火山图 + top genes 列表 | `figure-sidebar` | 图+文互补 |
-| Normal vs Disease 对比 | `figure-dual` | 直接对比 |
-| "先说结论再给证据" | `figure-top-text` | 叙事驱动 |
-| 4 种分析结果概览 | `figure-grid` | 信息密度 |
-| 两种方法/数据集对比 | `split-compare` | 方法学对比 |
-
-**同一套 PPT 里至少用 3 种不同布局**——全是 figure-sidebar = 视觉单调。
-
-> **scientific-figure key** (核心生信场景)：在 Python 里 `bbox_inches='tight'` 导出后，用 PIL `ImageOps.crop` 去白边再嵌入，否则幻灯片会有丑陋的白色边框。
+> **防重叠实现级规则**（_safe_zones 代码 + 5 条分区规则 + 内容类型→布局推荐表）→ **`references/slide_variants.md`**——改 build_deck.py 布局代码时必读；同一套 PPT 至少用 3 种不同布局。
+> **scientific-figure key**：Python 导出后用 PIL `ImageOps.crop` 去白边再嵌入（bbox_inches='tight' 仍有白框残留）。
 
 ## Preset: cns-bio-light (bioinformatics-specific)
 
@@ -289,6 +253,8 @@ xelatex beamer_template_conference.tex   # Chinese-safe compile
 | Content/Design/Timing pitfalls + 10 principles | `references/pitfalls.md` |
 | Full LaTeX Beamer document | `references/beamer_guide.md` |
 | **Lab meeting mode** (group meeting / progress / PI update — 9 steps + A-I output + Hard Rules + 7 rule modules) | `references/lab_meeting/lab_meeting_workflow.md` + `references/lab_meeting/lab_meeting_rules.md` |
+| **完整 outline.json 示例**（断言式标题/arc_role/图型多样化对照模板） | `references/outline_example.md` |
+| **布局实现级规则**（_safe_zones 代码 + 分区规则 + 内容→布局推荐） | `references/slide_variants.md` |
 | Figure aesthetics (color / font / non-overlap) | top-level `references/figure_guide.md` |
 | Multi-panel composition (layout / shared legend / panel labels) | top-level `references/figure_guide.md` |
 
@@ -325,16 +291,7 @@ xelatex beamer_template_conference.tex   # Chinese-safe compile
 
 ## Mode: Lab Meeting (group meeting / progress report / PI update)
 
-> Merged from the original `presentation/lab-meeting-slides` skill (merged 2026-07 (historical)).
-> Use this mode when the task is an **internal group meeting / lab meeting / project review / weekly-monthly report / PI update**. It differs from the default formal-talk mode in: **discussion-driven + data-honesty boundary + no inflating progress**.
-
-### When to enter lab-meeting mode
-
-The user says "make a group-meeting PPT", "organize a lab meeting", "weekly/monthly deck", "project review", "give the PI a progress update", etc.
-
-### Workflow
-
-The full 9-step workflow + mandatory output structure (A-I) + Hard Rules live in **`references/lab_meeting/lab_meeting_workflow.md`**. Rule modules load on demand from `references/lab_meeting/lab_meeting_rules.md` (sections: Clarification First / Meeting Goal Selection / Slide Priority / Data Honesty Boundary / Next Step Structuring / Logic Reporting / Hard Rules).
+**进入条件**：用户说"组会 PPT / lab meeting / 周报月报 / project review / 给 PI 汇报进度"。与正式 talk 的差异 = **讨论驱动 + 数据诚实边界 + 不虚报进度**。完整 9 步工作流 + A-I 输出结构 + Hard Rules → **`references/lab_meeting/lab_meeting_workflow.md`**（规则模块按需载入 `lab_meeting_rules.md`）。
 
 ### outline.json differences vs the formal-talk mode
 
@@ -345,14 +302,7 @@ The full 9-step workflow + mandatory output structure (A-I) + Hard Rules live in
 | Incomplete results | packaged as conclusions | **honestly marked "exploratory/unresolved"** |
 | Next steps | outlook | **explicit proposals, open for discussion** |
 
-### Key discipline (do not violate)
-
-1. **Never fabricate** progress / figures / results — only organize what the user has supplied
-2. When the meeting goal + project status are unclear, **ask first**; do not emit a full structure
-3. **Do not mask** blocked progress with decorative background slides
-4. **Do not present** open next-step ideas as finalized commitments
-
-> Once you have the lab-meeting structure, still render the .pptx via the main `build_deck.py` — only the outline.json content follows the lab-meeting proportions (less background, more open-problem, more next-step).
+**Key discipline**：绝不编造进度/图/结果；会议目标+项目状态不清时**先问再做**；不用装饰性背景页掩盖 blocked 进度；未定的 next-step 不当既成承诺。结构定好后仍走主 `build_deck.py` 渲染（仅 outline.json 按上表比例）。
 
 ## Key pitfalls (common LLM slide mistakes)
 
@@ -367,61 +317,6 @@ The full 9-step workflow + mandatory output structure (A-I) + Hard Rules live in
 
 ---
 
-## Worked Example：完整 PPT outline.json（从 hook 到 takehome）
+## Worked Example
 
-> 以下是真实心脏瓣膜项目的 10-slide PPT，标题全部为**断言式**（结论句），arc_role 完整覆盖 hook→takehome。
-
-```json
-{
-  "title": "Valve Interstitial Cell Activation Drives Fibrotic Niche Formation",
-  "subtitle": "Single-cell + spatial transcriptomics of cardiac valve development",
-  "preset": "cns-bio-light",
-  "slides": [
-    {"variant": "title", "arc_role": "hook",
-     "title": "What drives valve fibrosis? The spatial architecture is unknown"},
-    {"variant": "methods-flow", "arc_role": "design",
-     "title": "Multi-modal: scRNA (3 timepoints) + Visium (10 sections)",
-     "steps": ["QC","Cluster","Annotate","DE","Niche","CCC"]},
-    {"variant": "figure-hero", "arc_role": "atlas",
-     "title": "8 cell types; VIC dominant (35-52%)",
-     "image": "panels/umap_atlas.png",
-     "caption": "Fig 1. UMAP across 13w/24w/36w (N=15,000)",
-     "notes": "VIC 是最大群，三时点组成变化显著。UMAP 分群清晰，无明显批次。"},
-    {"variant": "figure-dual", "arc_role": "finding",
-     "title": "VIC expand 17pp and shift Quiescent→Activated",
-     "image": "panels/vic_13w.png", "caption_left": "13w",
-     "image2": "panels/vic_36w.png", "caption_right": "36w",
-     "notes": "VIC 从 35%→52%。Quiescent 亚群减少，Activated 增多。轨迹分析确认方向。"},
-    {"variant": "figure-hero", "arc_role": "finding",
-     "title": "Activated VIC upregulate COL1A1/COL3A1/POSTN (ECM remodeling)",
-     "image": "panels/de_scatter.png",
-     "caption": "Fig 3. Grouped scatter: log2FC per timepoint",
-     "notes": "三时点 DE 分组散点图。ECM 基因在 36w 显著上调。GSEA 确认 ECM 通路 NES=2.1。"},
-    {"variant": "figure-hero", "arc_role": "mechanism",
-     "title": "BANKSY identifies 'fibrotic front' niche (8/10 sections)",
-     "image": "panels/spatial_domains.png",
-     "caption": "Fig 4. Spatial domain map + H&E",
-     "notes": "纤维化前沿在 8/10 个样本中出现（>20% 阈值）。Domain marker 富集 ECM 基因。"},
-    {"variant": "figure-dual", "arc_role": "spatial",
-     "title": "CXCL12+VIC co-localize with CD68+Macrophage (<50μm)",
-     "image": "panels/spatial_cxcl12.png", "caption_left": "CXCL12",
-     "image2": "panels/spatial_cd68.png", "caption_right": "CD68 Macrophage",
-     "notes": "空间共定位确认。距离定量曲线显示 <50μm 的富集（p<0.01）。"},
-    {"variant": "figure-hero", "arc_role": "sowhat",
-     "title": "CXCL12 axis: druggable target (validated in heart failure, PMID:39443792)",
-     "image": "panels/model.png",
-     "caption": "Proposed model: VIC-Mac positive feedback loop",
-     "notes": "CXCL12 阻断在心衰模型中已有验证。瓣膜纤维化的潜在干预靶点。"},
-    {"variant": "bullets", "arc_role": "takehome",
-     "title": "3 key findings",
-     "bullets": ["VIC activation forms spatial niche", "CXCL12 connects fibrosis-immunity", "Niche is druggable target"]}
-  ]
-}
-```
-
-**这个示例示范了**：
-1. 每页标题是**结论句**（不是 "Results" / "Analysis"）
-2. arc_role 完整覆盖 hook→design→atlas→finding×2→mechanism→spatial→sowhat→takehome
-3. 图型多样化：UMAP / dual-compare / grouped scatter / spatial overlay / model diagram / bullets
-4. notes 全中文写解读（take-home + 关键数字 + 讲解提示）
-5. 页面文字全英文（图用英文），备注全中文
+完整 10-slide outline.json（真实心脏瓣膜项目，断言式标题、arc_role 全覆盖、图型多样化、notes 中文）→ **`references/outline_example.md`**。写 outline.json 前对照校验。

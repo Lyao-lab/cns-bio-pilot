@@ -45,7 +45,7 @@ It must always distinguish between:
 
 ## Reference Module Integration
 
-The `references/` directory is not optional background material. It defines the operational rules that must be actively used while running this skill. It is organized as **3 consolidated files, each containing multiple sections**: `study_design.md` (design-phase rules), `workflow_rules.md` (execution-phase rules), and `validation_and_figures.md` (validation + figure rules).
+The `references/` directory is not optional background material. It defines the operational rules that must be actively used while running this skill. It is organized as **5 files**: `study_design.md` (design-phase rules), `workflow_rules.md` (execution-phase rules), `validation_and_figures.md` (validation + figure rules), `phase_r.md`（Phase R 完整规程：R1-R4 细则 + 汇报格式示例 + 收敛条件）, and `output_template.md`（Mandatory Output Structure A-M 逐节定义）.
 
 Use the reference modules as follows:
 - `references/study_design.md` §Study Patterns → use when selecting the dominant single-cell study pattern in **Section B**.
@@ -57,6 +57,8 @@ Use the reference modules as follows:
 - `references/validation_and_figures.md` §Figure and Deliverable Plan → use when defining figure logic and output package expectations in **Section J**.
 - `references/study_design.md` §Literature Retrieval and Citation → use when a literature-support layer is requested or when formal references are provided in **Section K**.
 - `references/workflow_rules.md` §Workflow Step Template → use to keep the workflow sequence consistent and to enforce the mandatory Dataset Disclaimer in **Section H**.
+- `references/phase_r.md` → use at every Phase R checkpoint（R1-R4 逐条细则 + R3 汇报格式 + 循环收敛条件）.
+- `references/output_template.md` → use when generating the final A-M output structure（逐节定义与硬性要求）.
 
 If any output section is generated without using its corresponding reference module, the output should be treated as incomplete.
 
@@ -226,158 +228,15 @@ This ledger is Section M of the Mandatory Output Structure below.
 
 ---
 
-> **This is the most important phase.** Steps 1-7 produce an *initial* plan — but biology is evidence-driven, not spec-driven. The real research happens in the loop: run a batch → look at results → discuss with the researcher → revise → run the next batch. This is NOT optional (Core Rule 8). Do not treat the initial plan as a fixed spec to execute linearly.
-
-### When to enter Phase R
-
-After completing each analysis batch (e.g., after QC+clustering+annotation; after first DE round; after CCC; after spatial mapping). The pipeline skills (`omicverse-pipeline`, `omicverse-spatial`, etc.) hand control back here after each batch — this skill is the **hub** the researcher returns to between batches.
-
-### Phase R has four sub-steps — run them every time
-
-#### R1. Result Interpretation (what does the data say?)
-
-Read top-level `references/discovery_miner.md` and scan the batch's outputs:
-- For each hypothesis in the ledger (meta §8a): is it now `supported` / `refuted` / `inconclusive`? Update its status.
-- What **unexpected** signals appeared? (a cell state not in the plan, a pathway that shouldn't be there, a spatial pattern) — log these as candidate discoveries per discovery_miner §1.
-- Run the false-positive checklist (discovery_miner §3) on any new finding before believing it.
-
-#### R2. Extract Decision Points (what needs human judgment?)
-
-Identify decisions that **cannot** be made from data alone and require the researcher's biological knowledge / project goals. Typical decision points:
-
-| Decision type | Example | Why human must decide |
-|---|---|---|
-| **Cell-type naming** | "Cluster 3 expresses CD3D+IL7R- — is this an unconventional T subset, or a doublet?" | Naming anchors all downstream narrative; wrong name = wrong story |
-| **Direction selection** | "DE shows both fibrosis AND immune signals — which is the main thread?" | Resource-limited; can't chase both. Depends on the researcher's question |
-| **Signal pursuit** | "An unexpected neuronal marker appeared in gut data — artifact or real?" | Pursuing serendipity costs time; only the researcher knows if it's worth it |
-| **Threshold calibration** | "The knee in mt% is ambiguous between 12% and 18%" | Tissue biology determines this, not the algorithm |
-| **Negative result handling** | "The hypothesized cell state doesn't separate — is the hypothesis wrong, or is the data underpowered?" | Determines whether to pivot, reprocess, or report negative |
-
-#### R3. Discussion Checkpoint (PAUSE — wait for researcher)
-
-> **This is a hard gate.** Do NOT proceed to R4 or the next analysis batch until the researcher responds.
-
-Present to the researcher, concisely:
-1. **What the results show** (key findings, with figures/tables already generated)
-2. **Updated hypothesis ledger** (which hypotheses moved to supported/refuted/inconclusive)
-3. **Decision points needing their input** (from R2) — each as a clear question with your recommended option + rationale, but their call
-4. **What you would do next for each plausible direction** (so they can choose informed)
-
-Format example:
-```
-## Batch 1 Review (QC + clustering + annotation)
-
-### Results
-- 12 clusters recovered; major lineages (T/B/Mye/Fibro/EC) annotated with marker confidence
-- Unexpected: cluster 7 co-expresses CD3D and CD79A (low) — flagged as potential doublet or rare transitional
-- Hypothesis ledger: H1 (VIC transition) → inconclusive (need DE); H2 (immune shift) → supported (M2 expanded +16pp)
-
-### Decision points — need your input
-1. Cluster 7 (CD3D+/CD79A+): remove as doublet, or keep and investigate? 
-   → Recommend: check doublet score first; if borderline, keep + run Step 2b sanity (meta §7)
-2. Main thread: H1 (fibrosis) or H2 (immune)? Both have signal.
-   → Recommend: pursue H1 as main (stronger tissue-specificity), keep H2 as supporting
-
-### If you choose...
-- Chase H1 → next batch: subcluster Fibro, DE, trajectory
-- Chase H2 → next batch: subcluster Mye, CCC (CellChat Fibro→Mac), spatial co-localization
-- Investigate cluster 7 → next batch: doublet re-score, if real → SCRATCH / CITable
-
-Your call?
-```
-
-#### R4. Re-plan (revise based on discussion)
-
-After the researcher responds:
-1. Update the hypothesis ledger with their decisions
-2. Revise the analysis plan — which modules to run next, in what order
-3. If the direction changed significantly, re-select the study pattern (Step 2) or workload (Step 3)
-4. Record what changed and why in `analysis_log.md` (meta §8b)
-5. Hand off to the next analysis batch (pipeline skill)
-
-### When does the loop end?
-
-The iteration continues until:
-- ✅ The hypothesis ledger has at least one `supported` hypothesis with a coherent causal chain (story_builder §2)
-- ✅ That chain passes the gap scan (story_builder Step 2b)
-- ✅ The researcher agrees the story is complete enough to produce figures / slides / manuscript
-
-Then proceed to `story_builder` → `figure-production` → `scientific-slides`. **Do not jump to outputs prematurely** — a story built on unresolved hypotheses is fabrication.
+> **Phase R（Review & Re-plan，最重要的阶段）**：Steps 1-8 产出的是*初始*计划——生物学是证据驱动，真实研究发生在"跑一批 → 看结果 → 与研究者讨论 → 修订 → 下一批"的循环里（Core Rule 8，非可选）。每个分析批次结束后，pipeline skill 把控制权交回本 skill（hub），过四个子步骤：**R1 结果解读**（discovery_miner 扫描 + 假设台账状态更新）→ **R2 决策点提取**（细胞命名/主线选择/信号追击/阈值校准/阴性结果处理——必须人来判）→ **R3 讨论检查点**（硬门：呈现结果+台账+决策点，等研究者回应才继续）→ **R4 再规划**（更新台账、修订计划、记 analysis_log）。
+> **完整规程**（进入时机、R1-R4 逐条细则、R3 汇报格式示例、循环收敛条件）→ **`references/phase_r.md`**。
 
 ---
 
 ## Mandatory Output Structure
 
-Always use the following sections in order.
-
-### A. Study Intent Summary
-A concise restatement of:
-- disease / phenotype / tissue
-- biological question
-- single-cell value-add
-- scope assumptions
-
-### B. Best-Fit Study Pattern
-Name the dominant pattern and, if needed, one secondary supporting pattern.
-
-### C. Four Workload Configurations
-Output **Lite / Standard / Advanced / Publication+** in a comparison table.
-
-### D. Recommended Primary Plan
-Pick one primary route and explain why it is the best fit.
-
-### E. Data Strategy and Example Dataset Directions
-Specify:
-- required data type(s)
-- preferred sample grouping logic
-- key metadata requirements
-- example dataset directions / repositories / dataset types
-- dataset risks and access assumptions
-
-This section may name **example datasets or repositories**, but they must be presented as **reference candidates only**, not as guaranteed usable resources.
-
-### F. Core Analysis Modules and Method Choices
-Use a table to specify:
-- analysis module
-- purpose
-- when it is necessary / recommended / optional
-- preferred methods or tools
-- important method constraints
-
-### G. Validation and Extension Layers
-Specify what counts as:
-- within-dataset validation
-- cross-dataset validation
-- orthogonal validation
-- translational extension
-- experimental follow-up
-
-### H. Step-by-Step Workflow
-Provide the ordered workflow.
-
-**If datasets or public resources are mentioned, place the Dataset Disclaimer immediately before the workflow.**
-
-### I. Validation Evidence Hierarchy
-State what evidence level the proposed plan can actually support.
-
-### J. Figure and Deliverable Plan
-State the likely figure set and output package.
-
-### K. Verified Reference Layer or Search Strategy
-If verified references are available, list them.
-If not, provide a structured literature search strategy and clearly state that formal references are not yet verified.
-
-### L. Self-Critical Risk Review
-Include:
-- strongest part
-- most assumption-dependent part
-- most likely false-positive source
-- easiest-to-overinterpret result
-- likely reviewer criticisms
-- fallback plan
-
-### M. Hypothesis Ledger
-The pre-registered hypothesis list from Step 8 (each H with confidence/basis/falsification criterion/status=pending). This is the living document that Phase R updates each iteration.
+Always output sections **A-M in order**：A 意图摘要 / B 最适配 study pattern / C 四档配置表（Lite/Standard/Advanced/Publication+）/ D 主推方案 / E 数据策略与示例数据方向（仅 reference candidates）/ F 核心模块与方法表 / G 验证与扩展层 / H 工作流（前置 Dataset Disclaimer）/ I 证据等级 / J figure 与交付 / K 已验证文献或检索策略 / L 自批判风险审查 / M 假设台账（Step 8 产物，Phase R 的活文档）。
+逐节完整定义 → **`references/output_template.md`**。
 
 ---
 

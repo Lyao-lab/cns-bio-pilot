@@ -16,6 +16,15 @@ description: 论文写作（Methods / Results / Figure Legends 三种模式）�
 
 > **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
 
+## 何时不用（When NOT to use）
+
+- **写 PPT/幻灯片文案或讲稿** → `presentation/scientific-slides`（多页交付物，非论文文体）
+- **做在线 HTML 报告** → `presentation/web-report`
+- **写研究/实验设计方案**（开题、analysis plan）→ `single-cell/research-planner`
+- **图表本身的制作**（本 skill 只写图注文字，不画图）→ `visualization/figure-production`
+- 定量数字入文前的核验（caption-from-table）→ 遵守 `references/deep_review_protocol.md` §2，数字只从依据表读
+- **caption/图注格式规范**（统计句式/P 写法/n 三要素/缩写定义）→ `references/presentation_conventions.md`
+
 ## 通用规则（三种模式共享，不重复）
 
 1. **不编造**：数据集/accession/PMID/样本量/API 参数——缺信息用 `[AUTHOR TO SPECIFY: ...]`

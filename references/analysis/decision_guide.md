@@ -53,6 +53,10 @@
 | 哪个区域的基因表达梯度变化？ | 空间梯度 | `GASTON(IsoDepth)` / `var_by_distance` | [spatial.md](templates/spatial.md) | GASTON 需 obsm['xy_loc'] + obs['Region'] |
 | 细胞在组织中的分布是随机的吗？ | 空间点统计 | `ripley(mode='F/L/K')` → 聚集/均匀/随机判定 | [spatial.md](templates/spatial.md) | 需先 spatial_neighbors + cluster_key |
 | Visium HD 的 bin→单细胞？ | bin2cell | `bin2cell(labels_key='labels_joint')` | [spatial.md](templates/spatial.md) | 需先 cellpose 分割 + salvage_secondary_labels |
+| 连续切片怎么 3D 重建/整合？ | 3D 重建 | `ov.space.pySTAligner`（近似对位）→ INR/流匹配（SINTER3D/STITCH，未装） | [spatial.md](templates/spatial.md) + `spatial_frontiers_2026.md` §4 | **连续切片 ≥8-10 张才适用**；离散时点各 1 张禁硬上 3D（如实报 n） |
+| 多个供体/条件间的空间差异怎么检验？ | 多样本空间统计 | 手搓：供体级标签置换 null（≥1000）+ BH + 空间块 bootstrap CI（`spatial_frontiers_2026.md` §3）；正式法 VIMA/TESSERA（未装） | `spatial_frontiers_2026.md` §3 | **n 切片与 n 供体分开报**；供体是统计单位；n<5 供体标"探索性" |
+| 组织微生态位（microniche）怎么定义？ | niche 识别 ≠ 域分割 | 细胞类型组合 + 邻域统计（nhood_enrichment/co_occurrence）+ 核心谱系加权；域工具做 niche 必须验证边界恢复 | [spatial.md](templates/spatial.md) + `spatial_frontiers_2026.md` §1 | 2026 CosMx 基准：多数域分割默认配置恢复不了 niche 边界 |
+| 空间域结论怎么取信？ | 共识聚类 | 同数据 ≥2 域方法（如 STAGATE+BANKSY）+ ARI 一致性 + 分歧处人工裁决（SACCELERATOR 2026 共识） | [spatial.md](templates/spatial.md) | **单方法定稿不合规**；报告参数敏感性；人工 GT 不当金标准 |
 
 ## 6. 调控网络与机制
 
@@ -98,3 +102,7 @@
 | domain 只有着色图没有定量 | "在哪里"没有"差多少"支撑 | domain 着色 + 组成/密度定量面板成对出现 |
 | 只有 UMAP 没有 dotplot/heatmap | UMAP 是"地图"不是注释证据 | dotplot/heatmap 做注释证据 [A9] |
 | FM 扰动预测不对比 linear baseline | 5 个 FM 曾全输 simple linear（Ahlmann-Eltze, Nat Methods 2025） | 同批数据跑 linear baseline，在留出的实测扰动上验证后才采信 |
+| 单一域识别方法直接定稿 | SACCELERATOR（Nat Methods 2026，22 法×170 样本）：参数变异可超方法变异，人工 GT 不可靠 | ≥2 方法共识 + ARI + 专家在环（2026 起的合规线） |
+| CellPhoneDB/CellChat 类非空间先验跑成像平台（Xenium/CosMx/MERFISH） | GB 2026 基准：系统风险，方法间一致性 <0.42 | 测序平台 COMMOT+LIANA 双报；成像平台用空间专属法（SpaCCI/SpatialDM） |
+| 单样本 SVG p 值当"空间差异表达"报告 | 无生物学重复的推断（TESSERA/VIMA 2026 已形式化多样本空间 DE） | 置换 null + 供体级重复；n=1 时降级为描述性（"spatial pattern"，禁称 DE） |
+| 稀有细胞类型的去卷积比例直接解读 | 2026 三基准合并：稀有类型是所有方法死穴 | 报告丰度下限/置信区间；结论措辞带 caveat |

@@ -7,7 +7,7 @@
 
 ## 0. 速查指引（画图前先看）
 
-先定框架（哪种图、几张、怎么拼）再动笔；每张图 savefig 前必须过 `finalize_figure(fig)`。**整篇 fig 顺序（第几张 fig 讲什么）先查 `references/figure_templates.md` §0 自动路由表**（领域→领域卡，最强发现→研究型模板；506 篇 CNS 论文泛化）；本文件管**单张 panel 的图型选择**——下表 = 要画什么 → 代码模板 → 视觉规格章节。
+先定框架（哪种图、几张、怎么拼）再动笔——图型三层路由：**§0.2 数据形态→图型**（底座，按数据结构选最美形态）→ **§0.1 分析输出→图型**（分析语境）→ **图型域偏好**（域约束）；每张图 savefig 前必须过 `finalize_figure(fig)`。**整篇 fig 顺序（第几张 fig 讲什么）先查 `references/figure_templates.md` §0 自动路由表**（领域→领域卡，最强发现→研究型模板；506 篇 CNS 论文泛化）；本文件管**单张 panel 的图型选择**——下表 = 要画什么 → 代码模板 → 视觉规格章节。
 
 | 要画什么 | 代码模板 | 关键规格（本文件章节）|
 |---|---|---|
@@ -32,7 +32,8 @@
 | **通讯热图/PCA方差比/HVG散点** | §3.28-§3.30 | §5.5/§5.1 |
 | **雷达图（多指标方法对比）** | §3.31 | §5.13 |
 | **斜率图（组成 movers）** | §3.35 | §5.7 |
-| **发散棒棒糖（模块/TF-性状相关）** | §3.36 | §5.2 |
+| **统计量 dotplot（多实体单统计量·首选）** | §3.46 | §5.3 |
+| **发散棒棒糖（⚕默认降级→§3.46）** | §3.36 | §5.2 |
 | **QC 条形卡片（样本×指标）** | §3.37 | §5.1 |
 | **样本趋势小倍数（供体验证）** | §3.38 | §5.7 |
 | **空间放大图（IF 风格 zoom+inset）** | §3.39 | §5.6 |
@@ -69,7 +70,7 @@
 | **轨迹基因动态证据** | gene-along-pseudotime 曲线（带 CI/平滑） | 轨迹论文的"证据图"永远是这个，不是 UMAP | 分 bin heatmap | §3.3 |
 | **CCC 强度+显著性** | bubble/dot plot（LR对×细胞类型对） | 信息密度最高的标准形式 | LR heatmap | §2.9 |
 | **组成变化 top movers（3-4 时点×类型）** | 斜率图（端点直接标签带 Δ） | 类型>8 或时点>4 时换 heatmap（celltype×time） | 堆叠面积（全量背景）；heatmap | §3.35 |
-| **模块/TF-性状相关（多实体单统计量）** | 发散棒棒糖（实心主统计+空心第二统计） | 需置信区间时换 forest；跨物种保守性配 null 置换零带 | forest；成对条形 | §3.36 |
+| **模块/TF-性状相关（多实体单统计量）** | **统计量 dotplot**（色=ρ、径=\|ρ\|或 -log10p、行按值排序；§3.46） | 实体×分组二维（如 module×TF）→ 2D 点矩阵形态（同入口 group_col）；实体>25 → heatmap；双统计量+置换零带必须同面板时才用棒棒糖 | 发散棒棒糖（仅点名/零带场景）；forest ⚕临床 meta 专用 | §3.46 |
 | **样本 QC 总览（n≤25 供体）** | QC 条形卡片（行=样本、列=指标+GA 色块） | 样本>25 换分位数概览表 | barh 每指标一张 | §3.37 |
 | **供体级程序/基因得分验证** | 趋势小倍数（点径∝n、标题内嵌 ρ） | 实体>16 时换 module×donor heatmap | regplot 单面板 | §3.38 |
 | **空间局部信号/区域放大** | IF 风格放大图（自动取框+inset 定位） | 多类型×多时点网格时循环调用共享 vmax | plot_spatial 全片 | §3.39 |
@@ -90,6 +91,64 @@
 | **CNV 推断结果**（区分恶性/非恶性、克隆） | inferCNV 式基因组热图（染色体分隔+分组色条） | — | — | §3.42 |
 | **信号沿连续组织轴/距离**（zonation/病理共定位/边界带） | 梯度曲线+分位带（norm='each' 多基因比形状） | 单基因空间分布图换 feature plot | plot_axis_gradient | §3.43 |
 | **克隆构成/扩增变化**（TCR/演化） | composition 堆叠柱（大小分类）；跨时点演化用 track 折线 | — | slope（组成 movers） | §3.44 |
+| **RNA velocity 流向** | velocity embedding 箭头（scvelo 原生；n<3 万 cell-level，更大用 grid/stream 平均流） | 只看谱系方向 → PAGA+velocity 叠加 | streamplot | scvelo/pl.velocity_embedding |
+| **Ripley/空间点过程**（K/L/F 函数） | K/L/F 曲线 + **理论 CSR 参考带（envelope）**——绝对值无意义，偏离带才有 | 多组比较 → 曲线分面；单统计量（如 L at r=50µm）→ 带 CI 横条 | 组内 randomization envelope | squidpy gr.ripley 直绘 |
+| **in silico 扰动预测**（Arc State/CPA 输出） | 预测 vs 对照 **Δ 发散 heatmap（RdBu_r）+ 预测 DE volcano（caption 标 predicted）** | 多扰动并排 → 扰动×基因 diverging 矩阵；**必配 linear baseline 对比**（FM 铁律） | 与实测扰动散点（有 validation 时） | plot_heatmap/plot_volcano |
+| **细胞周期评分/相位** | S vs G2M 散点按 phase 着色（象限图，标各象限 %） | 沿轨迹的相位动态 → phase 占比堆叠面积；per-cluster → 箱线 | — | plot_regplot(no-fit)/plot_stackarea |
+
+### 0.2 数据形态 → 图型（底座层：§0.1 未命中或要在备选间挑时，按数据本身的结构选）
+
+> §0.1 按"分析输出"路由；本表按**数据形态**（几个定性维 × 几个连续维 × 有无序/空间/配对结构）路由——同一数据往往有多条合法路径，本表给**最美观**的那条（美学依据 = 感知精度排序，见表后元规则 1）。全部条目映射到 cns_style 现有入口。
+
+| 数据形态 | 最美观首选 | 何时换 | 入口 |
+|---|---|---|---|
+| 1 定性（2-5 组）× 1 连续 | violin+内箱线+供体点（分布形状与统计量同屏） | 大 n 拥挤→box+抖动点 | `plot_violin` / `plot_boxplot`+`plot_stripplot` |
+| 1 定性（6-15 组）× 1 连续 | 紧凑 violin 矩阵 | 组间需精确比中位→box+点 | `plot_violin` |
+| 1 定性（>15 组）× 1 连续 | 按值排序 Cleveland 点图（长条不如点阵可辨） | 需展示全分布→ridge | `plot_bardotplot` |
+| **配对**（同供体两条件）× 连续 | paired slope（配对结构最能显差） | 对多→bump/ heatmap | `plot_slope` |
+| 定性 × 连续 + 重复 | bar+供体点（**纯 bar 无点不合规**——重复是证据） | — | `plot_bar`/`plot_bardotplot` |
+| 连续 × 连续（n<2000） | 散点+拟合+CI 带 | — | `plot_regplot` |
+| 连续 × 连续（n 大，点海） | 密度（KDE/hex）——重叠散点不美观也不可读 | 需看离群点→对数轴+抽稀 | `plot_kde` |
+| 连续 × 连续 + 分组（≤6） | 色分组散点（同屏比分面强） | >6 组→分面小倍数 | `plot_regplot`(hue) |
+| 连续 × 连续 + 连续（第三维） | 散点+径编码（**径可辨 ≤3 档**，更多换分面） | 第三维是时间→动画/小倍数 | scatter(手写)/`plot_lr_bubble` |
+| 矩阵（行×列，值可 z-score） | heatmap（行 z、白-色映射、按需聚类+dendro） | 列=基因行=类型看 marker→dotplot | `plot_heatmap` |
+| 矩阵（类型 × 基因 marker） | dotplot（色=均值 径=%——两通道比热图单通道信息多） | 基因>40→top-N 分块 | `plot_dotplot` |
+| 矩阵（值跨零，相关/Δ） | 发散色 heatmap 或 2D 统计量 dotplot | — | `plot_stats_dotplot`(group_col) |
+| 构成 × 单时点（≤5 类） | 100% 堆叠柱 | 🚫 饼图>5 类（CNS 弃用） | `plot_cellproportion` |
+| 构成 × 时间/阶段（连续） | 堆叠面积（流动感最强） | 离散时点→堆叠柱 | `plot_stackarea` |
+| 构成 movers（首 vs 末） | slope（端点直标 Δ） | 类型>8→heatmap | `plot_slope` |
+| 1 连续分布 × 单组 | KDE+rug（比直方平滑无 bin 争议） | 需计数→直方 | `plot_kde` / `plot_histplot` |
+| 1 连续分布 × 多组（≤8） | ridge 山脊（并排密度最美） | >8→violin 矩阵 | `plot_ridge` / `plot_violin` |
+| 多实体 × 1-2 统计量（排名/相关） | 统计量 dotplot（色=值 径=幅值；行按值排序） | 见 §0.1 行 72 | `plot_stats_dotplot` |
+| 富集结果（通路 × 基因数/ratio） | 横条+gene-ratio 点（GO/KEGG 专属形态） | — | `plot_enrichment` |
+| 有向关系 ≤8 类型 | chord（谁给谁收一图可读） | >8→network | `plot_chord` / `plot_ccc_network` |
+| LR 对 × 细胞对/通路 | bubble（径=-log10p 色=强度） | — | `plot_lr_bubble` |
+| 状态转移 ≥3 阶段 | sankey alluvial | 因果叙事→PAGA | `plot_sankey` / `plot_paga` |
+| 空间坐标 × 定性 | categorical spatial（低饱和 20 色、白底） | — | `plot_spatial` |
+| 空间坐标 × 连续 | spatial+colorbar（per-type 色标 p98） | 局部结构→zoom | `plot_spatial` / `plot_spatial_zoom` |
+| 沿组织轴/距离 × 信号 | 梯度曲线+分位带（多基因各归一比形状） | 单基因→feature plot | `plot_axis_gradient` |
+| 有序（伪时间/GA）× 连续 | 曲线+CI 带；多实体→小倍数 | 多时点多条件→heatmap | `plot_pseudotime` / `plot_trend_grid` |
+| 集合交集 2-4 组 | Venn | >4 组→UpSet（Venn 不可读） | `plot_venn` / `plot_upset` |
+
+**美观五元规则**（本表的"为什么"）：
+1. **感知精度排序**（Cleveland & McGill）：共同尺度上的位置 > 长度 > 角度 > 面积 > 颜色——同一信息永远用更高精度通道：dot>bar>pie、slope>双柱、点径编码≤3 档。
+2. **定性色 ≤26 类**（MORLANDI_EXTENDED 上限）；再多必须分面——图例超过一列就是失败的图例。
+3. **小倍数优于图例过载**：>6 组同屏不如按组拆面（`plot_trend_grid` 范式）。
+4. **数据墨水比**：删网格（或极浅灰）、删无信息刻度、图例无框、轴不加粗——留白是信息。
+5. **一图一主张**：一张图讲一件事；第二个主张开新面板，不往同一 axes 里塞第二套编码。
+
+### 图型域偏好（2026-10 空转顶刊频率校准——跨表通用约束）
+
+> 依据：2026-04~10 顶刊 ST 13 篇逐篇 panel 盘点（原始档案 `/home/longyao/data/lit_surveys/202610_st_applications.md`）+ 506 篇库频率列。**决策表命中图型后，再过本层域检查**——域错配的图型再"好看"也换。
+
+| 域 | 高频（首选池） | 禁/限用（域专属，不进空转机制页） |
+|---|---|---|
+| 空转/发育/机制叙事 | 空间散点图（类型/基因/模块/丰度）·UMAP↔空间双视图 ·H&E 并排+zoom inset ·dotplot（marker/LR/通路/**统计量 dotplot §3.46**）·heatmap（模块×条件/组成/regulon）·轴/距离梯度曲线+分位带 ·箱线/小提琴+供体点（case-control+CI）·邻域/共定位矩阵 ·LR bubble ·拟时序投影回空间 ·时空矩阵（样本×阶段）·schematic 模型图 | **棒棒糖**（0/13，仅用户点名/双统计量+零带场景）·**森林图**（0/13，临床 meta 专用）·雷达图（方法对比专用）·云雨图（可读性差于箱线+抖动点，降级） |
+| 临床/转化叙事（C1/C2 域、临床队列收尾） | KM/ROC/森林图（效应量+CI）·oncoprint ·fishplot | —（本域内 forest 合法且标准） |
+| 方法学/基准叙事 | 雷达 ·消融渐变 bar ·基准散点+null 带 | — |
+
+**路由铁律**：`figure-production` 出图时若命中"多实体单统计量"→ 一律 `plot_stats_dotplot`（§3.46）；棒棒糖/森林图需要**显式理由**（域匹配或用户点名）才可画，否则视为路由错误。
+（域铁律属护栏——图型域错配（临床形态进空转机制页）是审稿级错误；在此之外，决策表是指南非剧本：命中即采、不中就推理，偏离写理由即可——见 `guards_vs_guides.md` §3。）
 
 ### 证据等级（每个生物学结论至少配一张定量图）
 
@@ -136,7 +195,13 @@ cns_style 包同时支持两层，所有图型默认 ov.pl 优先：
 
 ---
 
-## 2. 配色
+## 2. 配色（含 2026-10 CNS 原图实测 colormap 约定）
+
+**Colormap 约定**（常量在 `cns_style._constants`，实测来源=2026 年 11 张 Nature/Cell 主图）：
+- Sequential 表达量/伪时间：首选 `viridis`（`SEQ_PRIMARY`）；dotplot 表达量用深红渐变（`DOT_SEQ`）；绿系（dark-green→yellow）为备选
+- Diverging（相关/logFC/GSEA）：`RdBu_r` 对称 `vcenter=0`；🚫 jet/rainbow 零出现
+- 定性色：中低饱和策展色；**簇数>12 自动降饱和**（MORLANDI→MORLANDI_EXTENDED）；单 panel ≤26 类
+- **灰 = 语义色**（`GREY_NS`）：unassigned/纤维化/非显著——MA/volcano 非显著点一律压浅灰、显著点彩色（灰+高亮二分是 CNS 标配）
 
 **Morlandi Nord**（离散/categorical）：8 色（冰蓝 #88C0D0 起，含珊瑚红/草绿/陶土/紫/金黄/北欧蓝/灰蓝），见 cns_style 包（_constants.py）的 `MORLANDI` / `MORLANDI_EXTENDED`。
 **连续表达**（heatmap/feature）：`EXPR_CMAP`（蓝→麦→暗红）；**Diverging**（log2FC）：`DIVERGING_CMAP`（蓝→白→红，0=白）
@@ -217,9 +282,10 @@ cns_style 包同时支持两层，所有图型默认 ov.pl 优先：
 - 列注释条（condition/celltype/batch）：高 0.1 inch/条，色来自 manifest；注释条与热图间留 0.5pt 白缝
 - → 代码模板见 plotting_reference.md §2.5
 
-### 5.6 Spatial — omicverse 风格
-- **优先用 `ov.pl.plot_spatial()`**（自动处理 tissue + spots + colorbar）；手动时 Tissue `alpha_img=1.0`（不透明！不是 0.4），spots `alpha=0.85`, s=1.5 (Visium) / s=0.3 (high-res)
-- **Scale bar 必须有**（缺它审稿人立刻扣分）；长度取 100/200/500µm 中最接近图宽 1/5 者，坐标→µm 换算需平台元数据
+### 5.6 Spatial — omicverse 风格（2026-10 CNS 原图校准）
+- **优先用 `ov.pl.plot_spatial()`**（自动处理 tissue + spots + colorbar）；手动时 Tissue `alpha_img=1.0`（不透明！不是 0.4），spots `alpha=0.85`（CNS 实测近不透明、单图层可 1.0），**点径=图幅短边 0.8-1.2%**（Visium SD）/ 0.3-0.5%（HD）/ bin 级呈连续 painted 面；**`edgecolors='none'`（实测零描边）**
+- **Scale bar 必须有**（缺它审稿人立刻扣分）；长度取 100/200/500µm 中最接近图宽 1/5 者；`add_scale_bar(color=None)` **默认按背景自适应**（白底图=黑条黑字〔胎心 Fig2 实测〕，组织/H&E 深底=白条〔胚胎 Fig1〕）；横条+外侧数值文字，右下/左下角
+- **背景白底**（2026 实测全部 Nature 空间主图白底；黑底仅限真实 IF/H&E 影像）；无坐标轴、无 A/P 罗盘（解剖方位用 6pt 小字贴组织旁）
 - Colorbar 横置于图下方（`orientation='horizontal', fraction=0.046, pad=0.08`）；一基因一 panel；shared vmin/vmax (99th percentile clip)
 - omicverse spatial 默认：`frameon='small'`, `colorbar_loc='right'`
 - → 代码模板见 plotting_reference.md §2.6

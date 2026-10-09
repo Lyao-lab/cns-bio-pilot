@@ -13,6 +13,8 @@ description: 空间转录组全流程（IO→空间邻域→QC→空间域→SVG
 
 # OmicVerse Spatial Transcriptomics Pipeline
 
+> **2026-10 前沿层**：空转选型/多样本统计/3D/FM 先读 `references/spatial_frontiers_2026.md`（§0 第一律：先查 2026 基准再选工具；§1 全管线裁决；§3 VIMA/TESSERA 统计教义）。本文件仍是常规平台执行体。
+
 ## 📋 Analysis Code Templates
 
 All spatial analysis code templates live in `references/analysis/templates/spatial.md` (35+ ov.space API covered):
@@ -95,7 +97,7 @@ ov.plot_set()
 
 Decision: default STAGATE (wrapped); isoform-aware or continuous-depth domains → GASTON (wrapped); sharp boundaries → BANKSY (standalone); large samples → GraphST (standalone); cell-type-aware speed → MENDER (standalone); multi-omics → SpatialGlue (standalone).
 
-> **2025 benchmark consensus** (Genome Biol / iMeta, 26 methods / 63 sections): no single SOTA; results vary by tissue/platform. **Run at least 2 methods for key domain conclusions**; commit only when directions agree.
+> **2026 基准更新（SACCELERATOR, Nat Methods 2026-08, 22 法 × 15 数据集 × 170+ 样本）**：单方法定稿已不合规——①参数敏感性可超过方法间差异；②人工 GT 注释不适合做金标准；③扩展性：仅 5/22 能处理 46 万细胞级、仅 CellCharter 能吃 Visium HD 2μm。**新标准 = ≥2 方法共识聚类 + ARI 一致性 + 专家在环**（与 2025 基准"跑至少 2 方法"结论同向升级）。另：**域分割工具 ≠ niche 识别工具**（CosMx 基准 2026：多数默认配置恢复不了 niche 边界，需核心谱系加权）——niche 分析走"类型组合+邻域统计"路线，详见 `references/spatial_frontiers_2026.md` §1。
 
 ## 5. Spatially variable genes (SVG)
 
@@ -109,7 +111,7 @@ Decision: default STAGATE (wrapped); isoform-aware or continuous-depth domains �
 
 > 代码模板：references/analysis/templates/spatial.md「空间通讯」。
 
-> **Spatial CCC ranking (2024-2026)**: **COMMOT** (OT-based) and **LIANA+ spatial mode** (Mol Syst Biol 2024, 251+ citations, unified framework that internally runs multiple methods) are the SOTA for spatially-aware communication. **CellChat spatial / CellPhoneDB v5 are NOT spatial-native** — they were built for dissociated scRNA-seq; using them on spatial data is fallback only. **DeepTalk** (Nat Commun 2024, 93+ citations) is a newer option for single-cell-resolution spatial CCC. The first systematic spatial-CCC benchmark (bioRxiv 2026.05.19.724475) confirmed no single winner — run ≥2 methods and report consensus.
+> **Spatial CCC ranking (2026 Genome Biology benchmark, 9 methods: CellPhoneDB v3/CellChat v2/SpaTalk/SpatialDM/COMMOT/SCOTIA/NicheDE/SpaCCI/CellNEST)**: ①方法间一致性低（多数指标 <0.42）——≥2 方法共识仍是底线；②**性能依赖数据分辨率：非空间先验工具（CellPhoneDB/CellChat 类）在成像平台（Xenium/CosMx/MERFISH）有系统风险**；③SpaCCI 综合最稳健；④COMMOT/SpatialDM 类空间专属方法在配体-受体共定位上更可靠。**选型规则：测序平台（Visium/Stereo-seq）→ COMMOT+LIANA 双报；成像平台 → 加 SpaCCI/SpatialDM（未装，装前见 `references/spatial_frontiers_2026.md` §7）**。较早的 bioRxiv 2026.05.19 SpatialCCCbench 结论同向（按场景选工具，无通用最优）。
 
 ## 7. Visualization (see visualization/figure-production)
 

@@ -354,6 +354,84 @@ def check_compositional(code_text, report):
         report.add("C1", "PASS", f"细胞比例分析 ({hits_prop})，未检测到卡方/Fisher（合规）")
 
 
+# ----------------------------- new rule checks (A11/E7/domain) -----------------------------
+
+
+def check_caliber_declaration(code_text, report):
+    """A11: 统计口径声明（启发式）——统计量是否写清 X×Y×单元×聚合。
+
+    若代码计算相关/比例/倍数等统计量，但同一脚本没有给统计量命名口径
+    （如 'donor-pseudobulk'、'per-cell'、'bin-level'、'window mean' 等聚合声明），
+    提示口径可能错位——项目实战经验：per-cell 校正表达 vs donor-pb 可反向。
+    """
+    stat_signals = ["spearmanr", "pearsonr", "np.corrcoef", "scipy.stats",
+                    "logFC", "log2fc", "fold_change", "rho", "correlation",
+                    "fraction", "proportion", "percentage", "ratio"]
+    caliber_signals = ["donor", "pseudobulk", "pb", "per_cell", "per-cell",
+                       "bin", "spot", "window", "aggregate", "mean_by",
+                       "nuclei", "cell_level", "section", "tp", "timepoint"]
+    hits_stat = [s for s in stat_signals if s in code_text]
+    hits_cal = [c for c in caliber_signals if c in code_text]
+    if hits_stat and not hits_cal:
+        report.add("A11", "WARN",
+                   f"检测到统计量计算 ({hits_stat[:3]}) 但未在代码中见到口径声明词 "
+                   f"(donor/pseudobulk/per-cell/bin/aggregate 等)——"
+                   "⚠️ 每个统计量写清 X×Y×单元×聚合（A11）：per-cell 校正表达与 donor-pb "
+                   "可给反向趋势（NPPA 实例）；组成性结论默认 donor-pseudobulk。")
+    elif hits_stat:
+        report.add("A11", "PASS",
+                   f"统计量计算 ({hits_stat[:2]}) 伴口径词 ({hits_cal[:3]})——声明已见")
+
+
+def check_figure_domain(code_text, report):
+    """图型域校准（启发式）——临床系图型（lollipop/forest）误用于空转机制页。
+
+    2026-04~10 顶刊 ST 13 篇实测：lollipop 0 例、forest 0 例。若脚本画
+    lollipop/forest 但没写 plot_stats_dotplot 的替代说明或域匹配理由，提示换图。
+    """
+    lollipop_sig = ["plot_lollipop", "lollipop", "棒棒糖"]
+    forest_sig = ["plot_forest", "forest", "森林图", "meta-analysis", "meta_analysis"]
+    alt_sig = ["plot_stats_dotplot", "stats_dotplot"]
+    hits_l = [s for s in lollipop_sig if s in code_text]
+    hits_f = [s for s in forest_sig if s in code_text]
+    hits_alt = [s for s in alt_sig if s in code_text]
+    if (hits_l or hits_f) and not hits_alt:
+        which = (hits_l + hits_f)[0]
+        report.add("DOM", "WARN",
+                   f"检测到 {which}（临床/meta 系图型）但未用 plot_stats_dotplot——"
+                   "⚠️ 图型域校准（2026 顶刊 ST 13 篇 0 例）：多实体单统计量（模块-性状/"
+                   "TF-模块/态-通路）首选 plot_stats_dotplot；lollipop/forest 仅用户点名或"
+                   "双统计量+置换零带/临床 meta 时用。若确属域匹配请在脚本注释写明理由。")
+    elif hits_alt:
+        report.add("DOM", "PASS", "plot_stats_dotplot 已用（图型域合规）")
+
+
+def check_number_gate_heuristic(code_text, report):
+    """E7: 数字门启发式——定量数字不应硬编码进 caption/title 字符串。
+
+    若代码里出现 figtitle/fig.text/ax.set_title/slide caption 类字符串内含
+    阿拉伯数字（如 'rho=0.80'、'12.5x'、'+48%'），提示该数字应来自唯一依据表
+    （caption-from-table），禁止手写进文本——改动数字=重跑 runner 而非改文本。
+    """
+    caption_sig = ["set_title", "fig.suptitle", "fig.text", "ax.text", "add_textbox",
+                   "add_paragraph", "caption", "slide.shapes", "text_frame"]
+    hits_cap = [s for s in caption_sig if s in code_text]
+    if hits_cap:
+        # 找字符串里直接写死的数字模式（rho=0.xx / Nx / +/-NN% / p=x）
+        hard_num = re.findall(r"['\"][^'\"]*?(rho\s*=\s*[\d.]+|\d+\.?\d*x\b|[+\-]\d+\.?\d*%|p\s*=\s*[\deE.-]+)[^'\"]*?['\"]",
+                              code_text)
+        # 过滤变量插值（f-string 的 {} 或 format）视为合规
+        fstring = re.findall(r"f['\"][^'\"]*?(rho\s*=\s*\{|\{[^}]*rho|\{[^}]*%|\{[^}]*x\b)[^'\"]*?['\"]",
+                             code_text)
+        if hard_num and len(hard_num) > len(fstring):
+            report.add("E7", "WARN",
+                       f"标题/注释字符串中疑似硬编码定量数字（如 {hard_num[0][:30]}…）——"
+                       "⚠️ 数字门（E7）：定量数字只从唯一依据表读出（caption-from-table），"
+                       "禁止手写进 caption/title；改动数字=重跑 runner 更新表而非改文本。")
+        else:
+            report.add("E7", "PASS", "定量字符串均经变量插值（未硬编码）")
+
+
 # ----------------------------- main -----------------------------
 
 def main():
@@ -413,6 +491,9 @@ def main():
         check_pseudobulk(code_text, report)
         check_ccc_hypothesis(code_text, report)
         check_compositional(code_text, report)
+        check_caliber_declaration(code_text, report)
+        check_figure_domain(code_text, report)
+        check_number_gate_heuristic(code_text, report)
         check_language(code_text, report)
         check_fabrication(code_text, report)
 

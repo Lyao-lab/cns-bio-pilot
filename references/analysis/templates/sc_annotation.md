@@ -32,6 +32,19 @@ pd.crosstab(adata.obs['celltypist'], adata.obs['anno_singleR'])
 # Clusters with low agreement → label 'Unknown' or resolve with manual markers
 ```
 
+### Ensemble 注释裁决（2026-10 新增；CellAgent 模式——多注释器 + 聚合 + 分歧人审）
+```python
+# ① ≥3 个独立注释器（覆盖不同原理：数据库投票 CellTypist / 参照映射 SingleR / LLM）
+#    ov.single.Annotation 已含多法；LLM 聚合可用 gpt4celltype
+# ② 逐 cluster 一致率：三个注释器逐细胞 unique 标签数（1=全一致）
+cols = ['celltypist', 'anno_singleR', 'gpt4celltype_prediction']
+u = adata.obs[cols].nunique(axis=1)
+agree = u.groupby(adata.obs['leiden']).mean()   # ==1 全一致；==3 全分歧
+# ③ 裁决规则：三法一致（_u==1）→ 采纳；两法一致 → 采纳 + marker 抽查；全分歧 → 'Unknown' + 强制人审（Rule 8 人门）
+# ④ 一致率 <0.7 的 batch 整体重审（可能是 QC/批次问题而非注释问题）
+# ⚠️ 注释器间共享数据库时不计为独立证据（CellTypist+SCSA 同源部分降权）
+```
+
 ### Pseudobulk DE（Core Rule 2 必须）
 ```python
 # ⭐ 快速探索：ov 封装的条件间 per-cell DE（wilcoxon / memento-de）

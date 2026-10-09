@@ -121,10 +121,14 @@ def main(argv=None):
                     help="把 --code 内容作为 markdown cell 追加（默认为 code cell；此时 -o/-f 被忽略）")
     ap.add_argument("--kernel", choices=sorted(KERNELS), default="python3",
                     help="新建 notebook 用的内核（仅 notebook 不存在时生效；R 代码用 r，已存在的 notebook 不受影响）")
+    ap.add_argument("--obs", metavar="JSON",
+                    help="结构化观测记录（JSON 字符串：question/tool/method/conclusion/grade），"
+                         "追加写入 notebook 同目录 observation_log.jsonl（SpatialAgent 式机器可读台账，"
+                         "deck 生成与 deep_review claim 验证可直接消费）")
     args = ap.parse_args(argv)
 
-    if not (args.title or args.code):
-        ap.error("至少提供 -t/--title 或 -c/--code 之一，否则没有内容可追加")
+    if not (args.title or args.code or args.obs):
+        ap.error("至少提供 -t/--title 或 -c/--code 或 --obs 之一")
 
     nb_path = Path(args.notebook)
     nb = load_notebook(nb_path, args.kernel)
@@ -150,6 +154,16 @@ def main(argv=None):
     nb_path.parent.mkdir(parents=True, exist_ok=True)
     nb_path.write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"[nb_log] OK {nb_path} 现有 {len(nb['cells'])} cells")
+
+    if args.obs:
+        import datetime
+        rec = json.loads(args.obs)
+        rec.setdefault("time", datetime.datetime.now().isoformat(timespec="seconds"))
+        rec.setdefault("step", args.title or "")
+        obs_path = nb_path.parent / "observation_log.jsonl"
+        with open(obs_path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        print(f"[nb_log] obs → {obs_path}")
 
 
 if __name__ == "__main__":

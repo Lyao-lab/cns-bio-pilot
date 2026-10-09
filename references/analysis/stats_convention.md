@@ -5,6 +5,10 @@
 > 其他 reference（cheatsheet A 系、meta_methodology §1、各子 skill）只许
 > **指到本页**，不得各自复述。数字来自唯一计算源表（一次 runner 产出，
 > 全链引用），禁止手写进文本。
+> **实现层**（CI 怎么 block bootstrap、null 怎么置换、校正族怎么建）→
+> `analysis/robustness_recipes.md` R1-R6；**语义审查**（数字是否真被表支撑）→
+> `../deep_review_protocol.md`；**呈现格式**（P/ρ/CI/n 怎么写进 caption、误差棒语义、panel 组织）→
+> `../presentation_conventions.md`。
 
 ## 1. 三层口径（任何结论先分它落在哪一层）
 

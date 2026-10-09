@@ -1,6 +1,7 @@
 # 领域代表作案例索引（15 领域 × 2-3 篇）
+> as_of: 2026-10-09 | review_by: 2027-10-09 | cadence: 年度（代表作实例）（过期由 evals/freshness_check.py 报 ERROR；调研 runbook 见 pitfall_inbox/evals）
 
-> 精选自 2024-2026 年 15 领域 506 篇 CNS 调研（完整档案曾存 D:\workspace\lit_survey\，机器特定）。
+> 精选自 2024-2026 年 15 领域 506 篇 CNS 调研（完整档案曾存旧机 `D:\workspace\lit_survey\`，**机器特定路径已失效，新档案统一归档至 `/home/longyao/data/lit_surveys/`**）。
 > 用途：写论文/组稿时查"某领域代表作的主图序列实例"；图组模板（该学什么）查 figure_templates.md，本文件是"谁这么发过"。
 > 选取标准：正刊优先 + Figure 结构完整 + 覆盖研究类型（图谱/机制/临床）+ 空转或 scRNA+空转联合优先。所有条目照抄调研文件记录，无编造。
 

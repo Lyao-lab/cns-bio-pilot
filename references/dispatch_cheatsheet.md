@@ -4,7 +4,8 @@
 > **用途**：执行者凡未读过 skill 主文档（任何子智能体天然如此——不论叫什么名字），注入一句"开工前读本文件并遵守全部硬规则"即可传递 skill 核心纪律，避免其因看不到主会话上下文而违规。主智能体自己执行时同样适用本表（尤其 A2/A4/B1-B3）。
 > **来源**：浓缩自 SKILL.md Core Rules + meta_methodology + figure_guide + plotting_reference。
 > **每条格式**：`[编号] 规则 | 违规后果 | 机检：脚本名/自觉`
-> 只读本文件即可覆盖施工时 95% 的硬约束；需要完整决策表时再读对应 reference。（6 系 35 条：A 分析 10 / B 绘图 9 / C API 4 / D 迭代 6 / E 组合体 6——E 系每条较详，细节查 `references/bigfig_deck_playbook.md`）
+> 只读本文件即可覆盖施工时 95% 的硬约束；需要完整决策表时再读对应 reference。（5 系：A1-A12 分析 / B1-B9 绘图 / C1-C4 API / D1-D7 迭代 / E1-E7 组合体——**条数以实际编号为准，机检 C5 自动对账**。本文件内全部条目均为硬规则；其中科学正确性子集即 `guards_vs_guides.md` 的护栏 G 系）
+> **路径约定**：本文件内所有相对路径相对 skill 根目录（如 `references/...`、`scripts/...`、`skills/<域>/<名>/SKILL.md`）。
 
 ---
 
@@ -36,13 +37,15 @@
 - **[A5] 每步存 checkpoint**：每个 major step 存 `checkpoints/XX_step.h5ad`；上游变化 → 从该步全部重算，禁复用旧 h5ad/DE/图 | 无 checkpoint = 无法回溯重算 | 机检：自觉
 - **[A6] step-gate 每步自查**：QC 后查 mt%/doublet/每样本细胞数；聚类后查 marker 分布；DEG 后查 housekeeping 不得 top；富集后查非"整基因列表"；CCC 后查 L-R 方向 | 跳过自查 = 错误传到下游 | 机检：自觉（部分 postcheck D3/D4/C1 覆盖）
 - **[A7] 组成数据禁 chi-square/Fisher**：比例和为 1 的 compositional 约束 → 必须 Milo/scCODA/propeller | 卡方检验比例 = 统计错误 | 机检：postcheck C1
-- **[A8] 措辞纪律**：CCC 只能"associated with / enriched for"，禁"regulates/activates/drives"（无功能证据）；pseudotime 是排序不是时间；结论必须分级（已验证/数据支持/推测）| 过度因果措辞 = 审稿拒点 | 机检：postcheck L1/L2
+- **[A8] 措辞纪律**：CCC 只能"associated with / enriched for"类关联措辞，禁"regulates/activates/drives"（无功能证据）；pseudotime 是排序不是时间；**结论分级一律按 `references/meta_methodology.md` §8c 四级**（Verified / Data-supported / Speculative / Literature-only；标签 [实测+文献]/[实测]/[推断]/[文献]）——措辞词汇表以 `references/analysis/stats_convention.md` 为唯一出处 | 过度因果措辞 = 审稿拒点 | 机检：postcheck L1/L2
 - **[A9] 注释是假说非 ground truth**：层级注释（先 lineage 后 subtype）；auto-annotation 后必须 marker 人工验证；无 marker 的 cluster 标 Unknown 不硬凑 | 硬凑注释 = 错误结论 | 机检：自觉
 - **[A10] 代码必须落 ipynb 台账**：每任务一个 `notebooks/NN_task.ipynb` 开工即建；有 Jupyter 内核 → 直接在 notebook 分 cell 执行；无内核（CLI 执行，子智能体默认）→ 每步执行成功后立刻 `python scripts/nb_log.py <nb> -t "步骤名" -c step.py -o step.log` 把实际执行代码 + stdout 追加进 notebook（关键图加 `-f panels/X.png` 嵌入 cell 输出）| 代码不落账 = 分析不可复现（等同没跑），验收不通过 | 机检：验收时查 notebook 存在且含各步 code cell
+- **[A11] 口径声明 + 版本切换纪律**：每个统计量写清 X×Y×单元×聚合（同题多口径分别报，冲突即方法学发现；per-cell 校正表达与 donor-pb 可反向——组成性结论默认 donor-pb）；注释/分群列变更后，grep 旧标签枚举全部依赖面板与统计，**重算非重标**（旧簇专属实体名可能不在新参照，旧值不可移植），预期结论翻转并如实入台账。全流程见 `references/deep_review_protocol.md` §3/§4 | 口径错位/陈旧标签 = P0 级语义错误（像素门查不出） | 机检：deep_review §1 溯源抽检
+- **[A12] ML 类任务三隔离**（训练分类器/扰动预测/基础模型微调时）：①训练/测试隔离（样本级划分，同供体不得跨集）；②优先外部验证集（非随机切分）；③交付前泄漏排查（检查特征里是否混入标签衍生量/批次标识/下游变量）| 泄漏 = 过拟合当发现（护栏 G10） | 机检：自觉 + 交付报告附划分方案
 
 ## B. 绘图规范（违反 = 图不达标）
 
-- **[B1] 必须 plot_xxx 统一入口**：用 cns_style 的 51 个 `plot_xxx` 函数（plot_umap/plot_volcano/plot_sankey/plot_cnv_heatmap/...，完整清单见 plotting_reference §0 速查卡 / tool_registry.md），内部自动 ov.pl 优先 + mpl 兜底；不手写 ov.pl.xxx / plt.savefig | 绕过 = 失去统一风格 + 降级保护 | 机检：自觉
+- **[B1] 必须 plot_xxx 统一入口**：用 cns_style 的 `plot_xxx` 函数（plot_umap/plot_volcano/plot_stats_dotplot/plot_sankey/plot_cnv_heatmap/...，完整清单见 plotting_reference §0 速查卡 / tool_registry.md），内部自动 ov.pl 优先 + mpl 兜底；不手写 ov.pl.xxx / plt.savefig | 绕过 = 失去统一风格 + 降级保护 | 机检：自觉（函数数随新增增长，以 tool_registry 为准不写死）
 - **[B2] save_panel 强制收尾**：保存走 `save_panel(fig, name, fmt='pdf')`，它强制 finalize_figure + 建 panels/ + tight bbox；不用 plt.savefig 替代 | 不用 = 图未过 finalize 检查 | 机检：自觉
 - **[B3] finalize_figure 强制**：每张图 savefig 前过 `finalize_figure(fig)`：自动右移图例 + 检测文字重叠 + 栅格化警告 | 跳过 = 图例遮数据/文字重叠 | 机检：finalize_figure 内置
 - **[B4] 全局开头 3 行**：每个绘图脚本顶部 `import cns_style` + `set_cns_style_journal('nature')`（自动 Morlandi 配色/Arial/字号/DPI） | 缺 = 默认丑样式 | 机检：自觉
@@ -54,19 +57,22 @@
 
 ## C. API 自适应（违反 = 运行时崩溃）
 
-- **[C1] inspect.signature 验证**：调用任何 ov.*/pt.*/sc.* 函数前 `inspect.signature(func)` 验证参数名；不匹配则读实际签名适配，不硬编码假设 | 硬编码 = 参数改名即崩 | 机检：自觉（LLM 包幻觉率 9-20%）
+- **[C1] inspect.signature 验证（收窄到易变层）**：调用 **ov.\*/pt.\*/ov.space/ov.single 包装器及各冷门第三方包**前 `inspect.signature(func)` 验证参数名；稳定核心 API（scanpy 读写/标准 PP）不必前置验证，靠运行时报错兜底 | 硬编码 = 参数改名即崩 | 机检：自觉（LLM 包幻觉率 9-20%）
 - **[C2] api_check --diff**：pip upgrade / 环境变更后跑 `python scripts/api_check.py --diff` | 不跑 = 文档 API 可能已失效 | 机检：api_check.py
 - **[C3] compat.yaml 唯一版本源**：版本以 compat.yaml 为准，文档不硬编码版本号 | 硬编码 = 版本漂移 | 机检：api_check.py --diff 检测旧版本引用
-- **[C4] 已知坑位避让**：`ov.pp.qc` 无 mt_thresh（用 `tresh={'mito_perc':...}`）；`ov.single.batch_correction` 参数是 methods(复数)；scVI 后邻居用 `use_rep='X_scVI'` | 踩坑 = 静默错误 | 机检：自觉（omicverse-pipeline/SKILL.md 有完整坑位表）
+- **[C4] 已知坑位避让**：`ov.pp.qc` 无 mt_thresh（用 `tresh={'mito_perc':...}`）；`ov.single.batch_correction` 参数是 methods(复数)；scVI 后邻居用 `use_rep='X_scVI'` | 踩坑 = 静默错误 | 机检：自觉（完整坑位表见 `skills/single-cell/omicverse-pipeline/SKILL.md`）
 
 ## D. 结果驱动迭代（违反 = 故事断裂）
 
-- **[D1] Phase R 触发节点**：每个分析 batch 结束（QC+cluster+annotation / 第一轮 DE / CCC / spatial mapping）后、下一个 batch 前，必须回 research-planner Phase R，禁端到端自动跑 | 跳过 = 带着漏洞往下走 | 机检：自觉（R3 是人工硬门）
-- **[D2] Phase R 四步全跑**：R1 结果解读（更新台账 supported/refuted/inconclusive + unexpected 排雷）→ R2 提取决策点 → R3 讨论 checkpoint（硬门，暂停等 researcher）→ R4 重规划 | 漏步 = 决策无依据 | 机检：自觉
-- **[D3] 假设台账创建时机**：research-planner 进入 → Step 8 建台账；data-first 直进管线 → §0 Init 立即建迷你台账（至少 H1 + status:pending + unexpected slot） | 无台账 = Phase R 无物可消费 | 机检：自觉
-- **[D4] 台账更新规则**：结论不在台账中 = post-hoc/exploratory 必须标注；unexpected findings 以 `basis: post-hoc` 入台账；循环终止 = ≥1 supported 假设 + 因果链过 gap scan + researcher 同意 | 不更新 = post-hoc 当预设结论 | 机检：自觉
-- **[D5] provenance 强制**：§0 Init 建 `analysis_log.md`，每 major step 追加参数/阈值/方法/seed/数据 md5/版本 | 缺 = 不可复现 | 机检：自觉
-- **[D6] autopilot 例外**：仅当用户明确授权"跑完别停"时连续跑，但交付前必须做一次完整 Phase R（R1+R2），授权记录进 analysis_log | 未授权却自动跑 = 跳过人工门 | 机检：自觉
+> **D 系受众分层（D1/D2/D6 是主 agent 回路规则）**：Phase R 完整规程在 `skills/single-cell/research-planner/references/phase_r.md`，其 R3"暂停等 researcher"只有与用户交互的主 agent 能执行。**子 agent（executor）读到 D1/D2/D6 时的替代动作**：不自行跨 batch 决策——把"本 batch 结果解读 + 下一步决策点候选"列入交付报告返回主 agent，由主 agent 走 Phase R/人门。
+
+- **[D1] Phase R 触发节点**（主 agent）：每个分析 batch 结束（QC+cluster+annotation / 第一轮 DE / CCC / spatial mapping）后、下一个 batch 前，必须回 research-planner Phase R（`skills/single-cell/research-planner/references/phase_r.md`），禁端到端自动跑；子 agent 见上方受众分层 | 跳过 = 带着漏洞往下走 | 机检：自觉（R3 是人工硬门）
+- **[D2] Phase R 四步全跑**（主 agent）：R1 结果解读（更新台账 supported/refuted/inconclusive + unexpected 排雷）→ R2 提取决策点 → R3 讨论 checkpoint（硬门，暂停等 researcher）→ R4 重规划 | 漏步 = 决策无依据 | 机检：自觉
+- **[D3] 假设台账创建时机**：任务开工时立即建迷你台账（至少 H1 + status:pending + unexpected slot；主 agent 走 research-planner 时在 Step 8 建全量版），落项目目录 `hypothesis_ledger.md` | 无台账 = Phase R 无物可消费 | 机检：自觉
+- **[D4] 台账更新规则**：结论不在台账中 = post-hoc/exploratory 必须标注；unexpected findings 以 `basis: post-hoc` 入台账；循环终止 = ≥1 supported 假设 + 因果链过 gap scan（`references/story_builder.md` Step 2b）+ researcher 同意 | 不更新 = post-hoc 当预设结论 | 机检：自觉
+- **[D5] provenance 强制**：任务开工时建/追加项目 `analysis_log.md`，每 major step 追加参数/阈值/方法/seed/数据 md5/版本 | 缺 = 不可复现 | 机检：自觉
+- **[D6] autopilot 例外**（主 agent）：仅当用户明确授权"跑完别停"时连续跑，但交付前必须做一次完整 Phase R（R1+R2），授权记录进 analysis_log。**子 agent 一律按未授权处理**（无法验证授权状态时保守执行；派发方若已获授权应在 spec 的 [上下文] 槽位显式注明）| 未授权却自动跑 = 跳过人工门 | 机检：自觉
+- **[D7] 坑捕捉一行回流**：任务中踩到新坑 / 发现新方法 / 发现 skill 漂移（API 改名、文档死链、规则过时）→ **立刻一行 append 到 `references/pitfall_inbox.md`**（日期｜症状一句话｜根因｜建议归属｜状态；成本限定一行，不写修复方案——方案季度 triage 批量蒸馏进正式 reference）。归属映射见该文件头部 | 坑只在项目记忆里 = 同坑重复踩；回流 inbox = skill 自我进化的最小环 | 机检：季度 triage 时查 inbox 是否已清空已蒸馏行
 
 ## E. 组合体与交付（大 fig / 多面板 deck；违反 = 渲染放大后才暴露的系统性返工）
 
@@ -76,21 +82,31 @@
 - **[E4] 内容寻址缓存**：派生文件名含 内容hash+max_px（`{stem}_{px}_{md5[:12]}.png`）；按输出路径直接复用的缓存（裁剪/合成图）必须校验源 mtime/hash | 旧版本静默进交付物 | 机检：嵌入 md5 == 派生链末文件 md5（逐页）
 - **[E5] 像素级验收门**：每页底/右/顶缘深色像素占比扫描（>1% = 文字出界；caption 截断类字级检查测不出）+ 视觉门只读渲染后 PNG、每页一行 JSON、必须给可定位证据（幻觉不接） | 缺 = 截断/重叠进最终交付 | 机检：自觉（playbook §4 清单）
 - **[E6] 组合叙事一致**：大 fig 先行、deck 按分区拆页、caption 与大 fig 分区标题一致 | 两处叙事漂移 = 答辩翻车点 | 机检：自觉
+- **[E7] 数字门（语义验收）**：caption/notes 定量数字**只从依据表读出**（禁从对话/prompt/旧 deck 转抄；表与指引冲突以表为准）；定稿/外发前跑 `references/deep_review_protocol.md` 五步审查（溯源/统计审计/文献红队/治理/跨产物 grep）+ 抽检每 deck ≥3 关键数字对表 | 像素门全 pass 仍可能有 P0 语义错误（实战：47/47 pass 的 deck 内挖出错标口径与不可复现数值） | 机检：python-pptx 全文提取 + stale_numbers.csv 比对
 
 ---
 
 ## 注入模板（给看不到 skill 主文档的执行者；主智能体自用则跳过注入、直接照表执行）
 
-**通用生信/绘图任务**：
+**通用分析任务（作用域：元规则 + §A + §C）**：
 ```
-[规则] 开工前读 <skill根目录>/references/dispatch_cheatsheet.md 并遵守 A-E 全部硬规则。
-特别注意：[列出本任务最相关的 2-3 条编号，如 A2 pseudobulk + A5 checkpoint + B1 plot_xxx]。
+[规则] 读 <skill根目录>/references/dispatch_cheatsheet.md，执行【文首元规则 + §A + §C】
+（§B/§D/§E 与本任务无关）；涉注释加 A9、重算旧标签加 A11、ML 加 A12。
+特别注意：[2-3 条编号]。
+[元规则] ①机检义务：交付前自跑本任务对应机检（见文末速查），FAIL 必须修复，输出附进交付；
+②冲突升级：规则间或规则与任务指令冲突 → 停下、把冲突写进交付报告返回主 agent，不静默二选一。
 ```
 
-**大 fig / 多面板 deck / PPT 组合体任务**：
+**绘图任务（作用域：元规则 + §B + A1/A8/A10 + §C）**：
 ```
-[规则] 开工前读 <skill根目录>/references/bigfig_deck_playbook.md 并遵守 E1-E6 全部硬规则。
-特别注意：[E2 行宽扣间隙 + E4 内容寻址缓存 + E5 像素级验收门]。
+[规则] 读 <skill根目录>/references/dispatch_cheatsheet.md，执行【文首元规则 + §B + 核心九条中的 A1/A8/A10 + §C】。
+特别注意：[如 B1 统一入口 + B8 画布断言 + A10 台账]。
+```
+
+**大 fig / 多面板 deck / PPT 组合体（作用域：E 系 + A10 + B1-B3）**：
+```
+[规则] 开工前读 <skill根目录>/references/bigfig_deck_playbook.md 并遵守 E1-E7 全部硬规则
+（E4 内容寻址缓存 + E5 像素级验收门 + E7 数字门必过）；cheatsheet 只取 A10 + §B 的 B1-B3。
 ```
 组合体任务下限：注入清单必须含 [A10]（ipynb 台账）+ [E4]（缓存纪律）。
 
@@ -109,9 +125,9 @@
 ## 机检脚本速查（验收时跑）
 | 产物类型 | 脚本 | 覆盖规则 |
 |---|---|---|
-| DE/deconv/CCC/composition | `scripts/postcheck.py <产物> --type <类型>` | A1-A8（D3/D4/L1/L2/C1/F1） |
+| DE/deconv/CCC/composition | `scripts/postcheck.py <产物> --type <类型>` | A1-A8 + A11 口径/DOM 图型域/E7 数字门启发式（code 型目标）；A9-A12 其余靠自觉+验收抽检 |
 | ipynb 代码台账 | 验收时查 `notebooks/*.ipynb` 存在且含各步 code cell | A10 |
-| PPT | `qa_deck.py` + `validate_presentation.py` | A1（占位符）+ 字号/几何 |
+| PPT | `skills/presentation/scientific-slides/scripts/qa_deck.py` + 同目录 `validate_presentation.py` | A1（占位符）+ 字号/几何 |
 | 包升级/环境变更 | `scripts/api_check.py --diff` | C2/C3 |
 | 绘图 | （finalize_figure 内置） | B3 |
 | 组合体像素门 | `scripts/edge_sweep.py <render_dir>`（逐页底/右/顶缘扫描，exit≠0 = 截断） | E5 |

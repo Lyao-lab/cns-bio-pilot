@@ -71,6 +71,8 @@ sq.gr.spatial_autocorr(adata, mode='moran', genes=adata.var_names[:500])
 
 ### Segmentation quality assessment (mandatory after segmenting)
 
+0. **2026 增量**：分割质量本身可用深度模型评估与自动修正（bioRxiv 2026.03.08.710395，利用亚细胞 RNA 空间分布模式）；Stereo-seq 大盘可考虑 CellBin 通用框架（2025-10 预印本，含 chip 伪影 track-line 校正）。选型综述：NAR 2026 (gkag782)。均未预装——见 `references/spatial_frontiers_2026.md` §1/§7。多切片对齐/3D 重建适用边界见同文件 §4（连续切片 ≥8-10 张才考虑）。
+
 1. **Cell count sanity**: too few cells (e.g. 500 from 6mm²) = under-segmentation; too many (e.g. 2M) = debris/over-segmentation. Compare to H&E morphology.
 2. **Visual check**: `ov.pl.plot_spatial(adata, color='n_genes_by_counts')` — segmentation should follow tissue architecture.
 3. **Border-cell handling**: cells at tissue edge may be truncated. Flag low-gene-count edge cells (`n_genes_by_counts < 50`), don't silently keep.

@@ -87,6 +87,13 @@ def main() -> int:
     if not sec:
         sys.exit("未找到 Quick Route 段落，SKILL.md 结构可能已变化")
     sections = sec.group(1).strip()
+    # 2026-10-10：router 瘦身后知识查询型 ref: 行外置于 route_index.md——评测 prompt 并入该全表，
+    # 保证知识查询型路由（R31/R34-R38 类用例）在评测中仍可判
+    ri = SKILL.parent / "references" / "route_index.md"
+    if ri.exists():
+        sections += "\n\n## 知识查询型路由全表（references/route_index.md）\n\n" + \
+            "\n".join(l for l in ri.read_text(encoding="utf-8").split("\n")
+                      if l.startswith("|"))
 
     missing = [s for s in SUB_SKILLS if s not in text]
     if missing:

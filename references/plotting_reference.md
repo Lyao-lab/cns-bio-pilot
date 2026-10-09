@@ -38,7 +38,7 @@
 | 堆叠火山 | `plot_stacking_vol(data_dict, save=...)` | 多条件DE并排（ov优先/mpl兜底）；data_dict={条件:DE} |
 | UpSet 图 | `plot_upset(sets, top_n=30, save=...)` | >3组交集；sets={名称:set} |
 | Venn 图 | `plot_venn(sets, save=...)` | ≤4组交集；sets={名称:set} |
-| 森林图 | `plot_forest(data, estimate=..., lower=..., upper=..., save=...)` | 无效线 auto（OR→1.0，log→0）；null_value 可覆盖 |
+| 森林图 ⚕临床域 | `plot_forest(data, estimate=..., lower=..., upper=..., save=...)` | 无效线 auto（OR→1.0，log→0）；null_value 可覆盖。**仅限 meta-analysis/临床多队列效应量**——空转/机制/发育叙事页禁用（2026 顶刊 ST 13 篇 0 例） |
 | 回归散点 | `plot_regplot(data, x=..., y=..., fit='linear', save=...)` | 相关性分析；95% CI 带；fit='lowess'可选 |
 | 通讯热图 | `plot_ccc_heatmap(adata, plot_type='heatmap', save=...)` | 需liana预计算（缺失时明确报错）；plot_type='dot'/'tile' |
 | PCA方差比 | `plot_pca_variance(adata, n_pcs=30, save=...)` | QC标配；方差比柱+累计线双轴 |
@@ -47,7 +47,8 @@
 | 消融/组件对比 barh | `alpha_ramp(hex, n)` + `ax.barh(...)` | 首项最实=完整模型；数值标签在条外用 NEAR_BLACK |
 | 曲线事件标注 | `mark_events(ax, x, y, events)` | label 加 '*' 抬高防撞 |
 | 斜率图（组成 movers） | `plot_slope(wide_df, save=...)` | 端点直接标签带 Δ；top_n 选变化最大；emphasize 强调加粗 |
-| 发散棒棒糖 | `plot_lollipop(df, label_col=..., value_col=..., save=...)` | 实心=主统计量+空心=第二统计量；null_band 置换零带；ref_line |
+| 统计量 dotplot（多实体单统计量首选） | `plot_stats_dotplot(df, entity_col=..., value_col=..., save=...)` | 色=ρ/统计量、径=\|ρ\|或 -log10p、行序按值排；`group_col` 进 2D 点矩阵形态。**模块-性状/TF-模块/态-通路相关的空转顶刊标准形态**（§3.46，已冒烟验证） |
+| 发散棒棒糖 ⚕降级 | `plot_lollipop(df, label_col=..., value_col=..., save=...)` | 实心=主统计量+空心=第二统计量；null_band 置换零带；ref_line。**默认不用**：临床/宏分析风格，2026 ST 顶刊 0/13——同数据一律先 `plot_stats_dotplot`（§3.46）；仅用户点名或双统计量+零带同时展示时保留 |
 | QC 条形卡片 | `plot_qc_cards(metrics, covariate=..., save=...)` | 行=样本、列=指标；GA 渐变色块；数值直标+列顶范围 |
 | 样本趋势小倍数 | `plot_trend_grid(df, x=..., y=..., by=..., save=...)` | 点径∝n_cells；标题内嵌 ρ+星；highlight 红描边 |
 | 空间放大图（IF 风格） | `plot_spatial_zoom(adata_sp, color=..., save=...)` | 自动取框+inset 红框定位；物理点径；自适应比例尺 |
@@ -77,7 +78,7 @@ import numpy as np
 set_cns_style_journal('nature')   # 'nature'|'science'|'cell'|'generic'
 
 # 统一入口函数（自动 ov.pl 优先 + mpl 兜底）
-# 注：上一行 from cns_style import * 已含全部 51 个 plot_*；下方为最常用 14 个的显式示例
+# 注：上一行 from cns_style import * 已含全部 plot_*（含新增 plot_stats_dotplot；数量随新增增长，不写死）；下方为最常用 14 个的显式示例
 from cns_style import (plot_umap, plot_volcano, plot_dotplot, plot_violin,
                        plot_heatmap, plot_spatial, plot_bar, plot_enrichment,
                        plot_lr_bubble, plot_feature_matrix, plot_paga,
@@ -563,7 +564,9 @@ plot_venn({'Cluster1': set(markers_1), 'Cluster2': set(markers_2)}, save='AH_ven
 # set_labels 缺省取 key；交叠数字为两集合交集大小
 ```
 
-### 3.26 Forest plot（森林图——meta-analysis）
+### 3.26 Forest plot（森林图——meta-analysis）⚕临床域专用
+
+> **域限定（2026-10 频率校准）**：效应量+CI 横排是 meta-analysis/临床多队列的形态；空间转录组与机制/发育叙事的"多实体统计量"**不用 forest**（2026-04~10 顶刊 ST 13 篇 0 例），首选 `plot_stats_dotplot`（§3.45）。本模板仅在合并临床队列效应量（HR/OR/RR）时使用。
 
 **统一入口**（mpl，ov 无对应函数）：meta-analysis 标配——效应量 + 95% CI 横排。
 
@@ -724,7 +727,9 @@ plot_slope(wide, top_n=8, order=['13w', '19w', '24w'],
 # 源自 fetal_heart draw_fig1d2_movers / draw_fig2k1_trajectories 实战
 ```
 
-### 3.36 Diverging lollipop（发散棒棒糖——模块/TF-性状相关 + 置换零带）
+### 3.36 Diverging lollipop（发散棒棒糖）⚕默认降级 → 同数据首选 §3.46 统计量 dotplot
+
+> **域校准（2026-10，ST 顶刊频率 0/13）**：棒棒糖是临床/宏分析系图型；模块-性状、TF-模块、态-通路相关等空转高频数据一律先走 §3.46 统计量 dotplot（色=ρ、径=|ρ|）。本入口仅在**双统计量（Pearson+Spearman）与置换零带必须同面板呈现**、或用户点名时使用；引用时勿作机制页首选。
 
 **统一入口**（mpl 直绘）：每实体一行，stem 从 0 到 r（正红负蓝），实心大点=主统计量、空心小点=第二统计量（Pearson 实心 + Spearman 空心是 WGCNA/pyscenic 系标准形态）。
 
@@ -870,6 +875,32 @@ plot_clone_expansion(tcr_df, clone_col='clone_id', group_col='timepoint',
 | FICTURE 像素级空间图 | ficture CLI（原厂 pipeline 出图） |
 | 宿主-病原共检测 | 平台原厂 pipeline；物种-面积曲线用 plot_regplot |
 | dMRI-空转配准 | ANTs 配准 + 空间散点 |
+
+### 3.46 统计量 dotplot（多实体单统计量——空转/机制页首选，棒棒糖的替代形态）
+
+> **为什么（2026-10 频率校准）**：2026-04~10 顶刊 ST 13 篇中，模块-性状/TF-模块/态-通路相关一律以 dot/bubble 系呈现（色=统计量、径=幅值或显著性），棒棒糖/森林图 0 例（后者属临床/meta 域）。本入口已冒烟验证（1D/2D/NaN 行/双统计量环/星号/色标齐）。
+
+**统一入口** `plot_stats_dotplot`：1D（每实体一行、按值排序）直接替换棒棒糖场景；`group_col` 进 2D 点矩阵（实体×分组，如 module×TF）。
+
+```python
+from cns_style import plot_stats_dotplot
+# ① 1D：模块-性状相关（原棒棒糖场景）——色=Pearson，径=|r|，空心环=Spearman，星=p
+plot_stats_dotplot(trait_corr, entity_col='module', value_col='pearson',
+                   value2_col='spearman', star_col='p', show_values=True,
+                   colorbar_label='Pearson r', save='E1_stats_dot')
+# size_col 可换径编码（如 -log10p 列：径∝显著性而非|r|）
+# NaN 行自动画灰短横占位（不漏行）；实体>25 转 heatmap（§2.5）
+
+# ② 2D：module × TF 点矩阵——色=ρ、径=|ρ|、星=FDR
+plot_stats_dotplot(link_df, entity_col='module', group_col='tf',
+                   value_col='rho', star_col='fdr',
+                   colorbar_label='module–TF r', save='L1_module_tf_dot')
+
+# ③ 态×通路力学相关（fig 级常见）：entity_col='state', group_col='pathway',
+#    value_col='rho'（三时点同号者 star_col='sign_consistent_p' 标星）
+```
+视觉规格：发散色标默认以 0 为心（RdBu_r）；点白描边隔行；右侧竖 colorbar（label 7.5pt）；双统计量时右下图例（finalize 可能自动外移右侧）。源流：fetal_heart fig2e1（原棒棒糖场景）按 2026 顶刊频率校准重设计。
+
 
 ## 4. 统计标注（add_significance_bracket）
 

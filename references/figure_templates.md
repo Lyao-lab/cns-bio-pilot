@@ -1,8 +1,9 @@
 # Figure Templates — 单细胞/空转主图组织顺序模板库（领域×故事类型自动路由）
+> as_of: 2026-10-09 | review_by: 2027-04-09 | cadence: 年度（图型时尚衰减 1-2 年；H2 增量 2026-10-09）（过期由 evals/freshness_check.py 报 ERROR；调研 runbook 见 pitfall_inbox/evals）
 
 > **证据基础**：2024-2026 年 15 个医学生物学领域 **506 篇** CNS 及大子刊单细胞/空转论文
 > （其中 **203 篇**提取到完整 Fig1-FigN 原文结构，即 §3 各卡"Y 结构"之和；另约 12 篇
-> 完整结构论文未单列成卡）。原始调研档案：`D:\workspace\lit_survey\01-15_*.md`（每篇含期刊/年份/PMID/平台/figure 标题，未获取处如实标注，无编造；机器特定路径，失效可重新生成）。
+> 完整结构论文未单列成卡）。原始调研档案曾存旧机 `D:\workspace\lit_survey\01-15_*.md`（每篇含期刊/年份/PMID/平台/figure 标题，未获取处如实标注，无编造；**机器特定路径已失效，新档案统一归档至 `/home/longyao/data/lit_surveys/`**，506 篇 2024-2026 泛化档案如需复现请按 figure_templates.md §0 重新调研归档至该目录）。
 > **逐篇实例**：45 篇代表作（15 领域×3）的主图序列速查 → `references/domain_exemplars.md`（本文件是"该学什么"模板层，它是"谁这么发过"实例层）。
 > **谁读**：story_builder Step 4（因果链→Figure 映射）、figure-production Step 1（大框架 panel 列表）、research-planner（设计预读——故事需要几组数据、什么验证）。
 > **怎么用**：§0 两步路由（领域→领域卡，故事类型→研究型模板）→ 叠加 §1 通用骨架 → §4 期刊格式裁剪。**模板是起点的默认值，不是铁律**——数据强度永远优先（story_builder 核心原则）。
@@ -33,6 +34,8 @@
 
 **第二步：故事类型（最强发现是什么）→ §2 研究型模板**
 
+> **2026-H2 增量（2026-10-09 调研，13 篇 4-10 月顶刊逐篇核实）**：主图顺序大骨架不变，六条新惯例已成型——①多平台组合成标配（单平台论文近乎绝迹；Xenium↑机制/niche、Stereo-seq↑大视野图谱、MERFISH↑FFPE 队列）；②图谱页标配"UMAP↔空间双视图 + H&E 并排 + niche zoom-in + 跨平台交叉验证小 panel + 数据门户链接"；③机制页 CCC ≥2 工具并用 + 拟时序投影回空间 + 邻域统计；④统计叙事进入显式 case-control 时代（n 切片/n 供体分开报 + 置换 null + 经验 FDR + 效应量 CI + LMM 随机效应；VIMA 范式；"Wilcoxon 无空间零模型"过不了顶刊审稿）；⑤验证链四级（RNAscope→第二平台正交→谱系/干预/类器官→跨物种+临床队列）；⑥发育类开篇"时空矩阵"、肿瘤类开篇"演进设计图"。逐篇实例与出处：`/home/longyao/data/lit_surveys/202610_st_applications.md`；裁决摘要 `references/spatial_frontiers_2026.md` §6。
+
 | 最强发现 | 模板 | 
 |---|---|
 | 前所未有的图谱/资源 | T1 图谱资源型 |
@@ -54,7 +57,7 @@
 | **② 展开** | Fig2-N（中段） | 分谱系/compartment **逐图推进**（T/NK→B→髓系→内皮；CM/EC/FB/MP；PT/TAL/CD……每图一个谱系）；或聚焦明星亚群 | 15/15 | `plot_dotplot` / `plot_heatmap` / `plot_violin` / `plot_ridge` |
 | **③ 空间转折** | Fig3-6 | 空转固定做"第二幕转折"：scRNA 发现 → 空间定位/共定位/梯度验证。**通信图惯例放 Fig5-7 而非开头** | 13/15 | `plot_spatial` / `plot_spatial_zoom` / `plot_nhood_enrichment` / `plot_colocalization` / `plot_distance_distribution` / `plot_ccc` / `plot_lr_bubble` / `plot_axis_gradient`（新增） |
 | **④ 机制** | 中后段 | 轨迹/调控（SCENIC/velocity）、状态转换、扰动 | ~80% | `plot_paga` / `plot_pseudotime` / `plot_sankey`（新增）/ `plot_de_scatter` / `plot_volcano` |
-| **⑤ 收尾** | 末 1-2 图（三选一或组合） | **a)** 临床转化（KM/ROC/预后评分）→ `plot_forest` / ov.pl.kaplan_meier；**b)** 机制模型 schematic/graphical abstract → `scientific-schematics`；**c)** 湿实验功能验证（KO/药物/拯救/类器官）→ 实验图，无 cns_style 入口 | 15/15 | 领域偏好见 §3 各卡"收尾惯例" |
+| **⑤ 收尾** | 末 1-2 图（三选一或组合） | **a)** 临床转化（**限临床域/临床队列**：KM/ROC/预后评分）→ `plot_forest`（⚕meta/效应量专用，空转机制页禁用） / ov.pl.kaplan_meier；**b)** 机制模型 schematic/graphical abstract → `scientific-schematics`；**c)** 湿实验功能验证（KO/药物/拯救/类器官）→ 实验图，无 cns_style 入口 | 15/15 | 领域偏好见 §3 各卡"收尾惯例"；图型域校准见 `figure_guide.md` §0.1「图型域偏好」 |
 
 **三条排序铁律**（203 篇中违反者罕见）：
 1. **先"谁在哪"再"谁跟谁说话"**：空间定位图在通信图之前。
@@ -217,4 +220,4 @@ fishplot/克隆树（R fishplot/cloneevolve、 grapetree）、oncoprint（R Comp
 - **plotting_reference.md §3.41-3.45**：新增 4 图型代码 + 低频图型指引
 - **domain_exemplars.md**：45 篇领域代表作逐篇主图序列（本文件的**实例层**——组稿/写作时查"谁这么发过"；本文件是"该学什么"的模板层）
 - **paper_paradigms.md**（已并入原 paper_directions）：分析路径层（链 A-E + 7 方向要素）；本文件=呈现层。分析链决定"有什么可画"，本文件决定"按什么顺序画"
-- 原始调研档案 `D:\workspace\lit_survey\01-15_*.md`（506 篇逐篇条目；换机器后可重新生成）
+- 原始调研档案曾存旧机 `D:\workspace\lit_survey\01-15_*.md`（506 篇逐篇条目；**机器特定路径已失效，新档案统一归档至 `/home/longyao/data/lit_surveys/`**；如需复现请按 §0 重新调研归档）

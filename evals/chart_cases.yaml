@@ -1,0 +1,92 @@
+# 图型选择回归测试集（2026-10-10）：数据/场景 → 期望图型（plot_* 入口或形态关键词）
+# 覆盖三层路由：§0.2 数据形态（底座）→ §0.1 分析输出 → 图型域偏好；含历史踩坑回归
+# scoring：expected 字符串出现在输出中即 pass（大小写不敏感）
+cases:
+  - id: C01
+    utterance: hdWGCNA 模块和性状的相关性，12 个模块两个相关系数怎么画
+    expected: plot_stats_dotplot
+    note: 历史踩坑回归——曾误路由棒棒糖（2026 域校准后首选统计量 dotplot）
+  - id: C02
+    utterance: 同一批供体处理前后两个条件，每个供体两个点，怎么展示差异最美
+    expected: slope
+    note: 配对结构 → paired slope（§0.2 配对行）
+  - id: C03
+    utterance: 22 个细胞类型在三个发育阶段的 marker 基因表达矩阵
+    expected: dotplot
+    note: 类型×基因矩阵 → dotplot（色=均值 径=%）
+  - id: C04
+    utterance: 状态和通路的相关矩阵，值有正有负，8 个态 4 个通路
+    expected: plot_stats_dotplot
+    note: 矩阵值跨零 → 2D 统计量 dotplot（group_col）或发散 heatmap
+  - id: C05
+    utterance: 30 万细胞的两个连续变量相关性，散点画出来全是黑团
+    expected: kde
+    note: 大 n 连续×连续 → 密度图（hex/KDE）
+  - id: C06
+    utterance: 六个发育时间点的细胞类型比例变化，看组成怎么变
+    expected: stackarea
+    note: 构成×连续时间 → 堆叠面积
+  - id: C07
+    utterance: 首末两个时间点组成变化最大的细胞类型对比
+    expected: slope
+    note: movers → slope 端点标 Δ
+  - id: C08
+    utterance: 7 个细胞亚群的基因表达分布对比，想看分布形状差异
+    expected: ridge
+    note: 分布×≤8 组 → 山脊图
+  - id: C09
+    utterance: 空转切片上细胞类型的分布图
+    expected: plot_spatial
+    note: 坐标×定性 → categorical spatial（+必配定量面板）
+  - id: C10
+    utterance: 基因表达沿中央静脉到门脉距离的变化，多基因比形状
+    expected: axis_gradient
+    note: 沿轴梯度 → 梯度曲线+分位带
+  - id: C11
+    utterance: 转录因子和模块的相关性热图，值是相关系数有正负
+    expected: RdBu
+    note: diverging 约定 → RdBu_r 对称 0
+  - id: C12
+    utterance: 6 个数据集整合方法的 5 个指标对比，指标量纲不同
+    expected: radar
+    note: 方法对比×异量纲 → 雷达（域：方法/基准专用）
+  - id: C13
+    utterance: 5 个临床研究的风险比合并分析，带置信区间
+    expected: forest
+    note: 临床 meta 效应量+CI → forest（合法域，非空转页）
+  - id: C14
+    utterance: 5 组细胞类型的基因表达比较，每组 3 个供体
+    expected: violin
+    note: 2-5 组×连续+重复 → violin+内箱+供体点
+  - id: C15
+    utterance: UMAP 上 26 个细胞类型怎么标注最美
+    expected: on-cluster
+    note: 超过 26 簇退图例，≤26 簇色加粗 on-cluster 标签
+  - id: C16
+    utterance: 空转 domain 的结果除了着色图还要画什么
+    expected: 定量
+    note: 域偏好铁律——空间着色图必配定量伴随面板（组成/密度/箱线）
+  - id: C17
+    utterance: 细胞类型两两在空间上是否邻近，16 种类型
+    expected: nhood
+    note: 邻域富集 → nhood_enrichment/共定位矩阵（>8 不用 chord）
+  - id: C18
+    utterance: 配受体对在细胞类型对之间的通讯强度和显著性
+    expected: lr_bubble
+    note: LR 对×类型对 → bubble（径=-log10p 色=强度）
+  - id: C19
+    utterance: RNA velocity 的流向怎么可视化，12 万个核
+    expected: velocity embedding
+    note: 大 n → grid/stream 平均流；n<3 万才 cell-level 箭头
+  - id: C20
+    utterance: Ripley L 函数的结果怎么画才有意义
+    expected: CSR
+    note: K/L/F 曲线必须配理论 CSR 参考带/envelope——绝对值无意义
+  - id: C21
+    utterance: 预测的扰动效应怎么展示
+    expected: diverging
+    note: 预测 vs 对照 Δ 发散热图 + predicted volcano + linear baseline 对比
+  - id: C22
+    utterance: 细胞周期评分的相位结果怎么画
+    expected: G2M
+    note: S vs G2M 象限散点（标 %）；轨迹动态→phase 堆叠面积

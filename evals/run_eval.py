@@ -25,7 +25,7 @@ from pathlib import Path
 import yaml
 
 HERE = Path(__file__).resolve().parent
-SUITES = {"route": "route_cases.yaml", "trigger": "trigger_cases.yaml"}
+SUITES = {"route": "route_cases.yaml", "trigger": "trigger_cases.yaml", "chart": "chart_cases.yaml"}
 
 
 def load_suite(suite: str):
@@ -106,7 +106,7 @@ def print_report(result: dict, out_json: Path) -> None:
     print(f"通过 {result['passed']}/{result['total']}  (pass rate {result['pass_rate']:.0%})")
     for r in result["rows"]:
         mark = "✅" if r["pass"] else "❌"
-        line = f"{mark} {r['id']} [{r['category']}] 期望={r['expected']}  实际={r['output'][:60]!r}"
+        line = f"{mark} {r['id']} [{r.get('category','-')}] 期望={r['expected']}  实际={r['output'][:60]!r}"
         print(line if r["pass"] else f"{line}   ← {r['utterance'][:30]}")
     print(f"明细已写入 {out_json}")
 

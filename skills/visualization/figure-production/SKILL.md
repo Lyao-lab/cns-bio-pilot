@@ -9,6 +9,16 @@ description: 生信发表级图表——逐张迭代设计（看上一张结果�
 
 > **派发子任务自守**：本 skill 若再向下派发任何执行子任务，先把 `references/dispatch_cheatsheet.md` 的相关硬规则（A-E）写进子任务 spec——子智能体看不到本会话上下文，没写进 spec 的规则等于不存在。
 
+## ⚕ 图型域校准（2026-10 空转顶刊频率；选型硬约束）
+
+> 依据 2026-04~10 顶刊 ST 13 篇 panel 盘点（棒棒糖 0 例、森林图 0 例）+ 506 篇库频率，详见 `references/figure_guide.md` §0.1「图型域偏好」。
+
+- **多实体单统计量**（模块-性状/TF-模块/态-通路相关、方法-指标）→ 一律 **`plot_stats_dotplot`**（plotting_reference §3.46；色=统计量、径=幅值/显著性；`group_col` 进 2D 点矩阵）。
+- **棒棒糖 `plot_lollipop`**：默认不画。仅当用户点名，或"双统计量+置换零带"必须同面板时使用（临床/宏分析系形态）。
+- **森林图 `plot_forest`**：仅限 meta-analysis / 临床多队列效应量（HR/OR/RR+CI）。空转/发育/机制叙事页禁用。
+- **雷达图**：方法/基准对比专用；**云雨图**：默认降级为箱线+抖动点（可读性）。
+- 空转机制页首选池：空间散点/双视图/H&E+zoom/dotplot 系/heatmap/梯度曲线+分位带/箱线+供体点/邻域矩阵/LR bubble/时空矩阵/schematic。
+
 ## 🚫 面板导出硬规则（Panel Export Contract，所有绘图代码强制遵守）
 
 1. **一面板一文件、双格式**：每个 panel 必须经 `save_panel(fig, 'X_name', fmt='png+pdf')` 独立落盘（PNG 自检 + PDF 矢量交付）。🚫 禁止只存在于拼接大图/slide 里的面板；🚫 禁止只出 PNG 不出 PDF（或反之）。
@@ -16,6 +26,14 @@ description: 生信发表级图表——逐张迭代设计（看上一张结果�
 3. **PPT/composite 由单图拼装**：deck 用 `figure-grid` 等布局直接引用各面板文件拼装；composite 只是打印版附加产物，**不得作为面板的唯一存在形式**。幻灯片引用的每张图必须能回溯到磁盘上的独立 png+pdf。
 
 ## 何时使用（When to Use）
+
+## 何时不用（When NOT to use —— 边界镜像路由裁决规则①②）
+
+- **DE 还没算**（诉求是"找差异基因"，画图只是顺带）→ `single-cell/omicverse-pipeline` §8.5（DE 算好再回来美化）
+- **KM/生存曲线**（专属图型）→ `general-bio/omicverse-bulk`
+- **机制示意图/图形摘要**（无数据的 schematic）→ `visualization/scientific-schematics`
+- **做成 PPT/幻灯片**（多页交付而非单面板）→ `presentation/scientific-slides`
+- 图型选择拿不准（多实体单统计量该用什么、棒棒糖能不能用）→ 先查 `references/figure_guide.md` §0.1 决策表 + 「图型域偏好」
 
 - 用户要画生信发表级图表（单细胞/空转/bulk 任何图型）
 - 要设计主图、迭代 panel 设计、拼 composite
@@ -25,7 +43,9 @@ description: 生信发表级图表——逐张迭代设计（看上一张结果�
 
 1. **本文件**（SKILL.md）— 流程：怎么迭代、怎么验证
 2. **`references/plotting_reference.md`** — 代码模板：每种图型的可跑代码（§0 速查卡选图型 → §2/§3 看对应模板）
-3. **`references/figure_guide.md`** — 视觉规格：原则、三铁律、实战教训（需要决定配色/字号/布局时查）
+3. **`references/figure_guide.md`** — 视觉规格与路由：§0.2 数据形态→图型（底座层）→ §0.1 分析输出→图型 → 域偏好；配色/字号/布局规格（需要时查）
+
+**展示规范（caption/统计标注/panel 组织时）**：`references/presentation_conventions.md`——CNS 2025-26 实测格式（统计三元组进 caption、P 斜体大写、误差=供体级 bootstrap s.d.、空间图必配定量面板、统计数值禁直印图面）。
 
 **外部参考**（非必需）：`references/omicverse_skills_examples.md` — omicverse-skills 仓库的优质片段（设计模式参考，非 cns_style 标准）。
 

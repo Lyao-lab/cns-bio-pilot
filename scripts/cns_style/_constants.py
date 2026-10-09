@@ -92,3 +92,10 @@ FORBIDDEN_CITY_FALLBACK = {
 
 # Global figure scale factor — set by set_cns_style_journal()
 # 1.0 = generic (notebook/report), 0.7 = nature/cell (compact print)
+
+# ---- CNS 2026-10 原图实测 colormap 约定（figure_guide §2 的代码锚）----
+SEQ_PRIMARY = 'viridis'     # 空间/伪时间 sequential 首选（肝分区、胚胎伪时间实测）
+DOT_SEQ = ('#4B0f0F', '#F5D5D5')   # dotplot 表达量：深红→浅（肝 Fig4 实测 dark-red 系）
+DIV_RDBU = 'RdBu_r'         # diverging 首选，对称 vcenter=0（GSEA/logFC）
+GREY_NS = '#B0B0B0'         # 灰 = unassigned/纤维化/非显著 语义（肝 Fig1/2 实测）
+# 🚫 jet/rainbow 零出现；高簇数(>12)定性色自动降饱和（用 MORLANDI_EXTENDED）

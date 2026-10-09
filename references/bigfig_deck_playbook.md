@@ -26,7 +26,7 @@ build_*_deck.py —— build_deck(skill) → 后处理链（下面的顺序不�
    ④ place_panels → shadow outline（读 json 后 panel_rows 里的 tuple 已变 list，
       isinstance 要兼容两种）
 scripts/render_slides.py —— pptx→PNG 预览（保真版；E3）
-pixel_gate.py    —— 每页底/右/顶缘 文字像素扫描；视觉模型抽检
+scripts/edge_sweep.py   —— 每页底/右/顶缘 文字像素扫描；视觉模型抽检
 ```
 
 ## §2 布局与渲染几何
@@ -99,3 +99,30 @@ pixel_gate.py    —— 每页底/右/顶缘 文字像素扫描；视觉模型�
 
 ① 做了什么（一句）② 产物清单（路径+用途）③ 验证证据（附图/表）④ 未做/存疑。
 图表随回复 inline 截图；>200 行产物落盘后传路径。
+
+## §7 语义验收门（数字门）——E5 像素门之上必须叠的一层（2026-10 实战新增）
+
+像素门全 PASS ≠ deck 是对的：两轮实战中 47/47 像素 pass 的 deck 里仍挖出 P0 级语义错误
+（图注错标口径、不可复现历史数值、注释版本陈旧）。定稿/外发前必须再过
+`references/deep_review_protocol.md`（五步审查 + caption-from-table 铁律 + 版本切换纪律）。
+最小数字门：抽检每个 deck ≥3 个关键数字对依据表 + python-pptx 全文 grep 旧值清单。
+
+## §8 面板画布适配与 overview 生成器（三轮视觉门沉淀的工程规则）
+
+**画布适配（8pt 法则）**：为 deck 生产的分析面板，画布宽高比 ≈ slide 内容区（如 12.4×5.7in），
+字号按"最终显示尺寸 ≥8pt"反推（画布字号 = 8pt / 缩放比）；横向 1×3 宽条在 16:9 上每格只剩
+~4in，小字必挂——改 2×2 或左 1 大右 2 小。通栏单行微缩脚注禁止进面板（关键 caveat 并入
+slide caption 由 fit_captions 管排）。
+
+**文字重叠断言必须含 tick labels**：finalize 的 ax.texts 不含刻度；实战逃逸案例 = 上面板
+x 轴刻度（bin50/bin100）与下面板标题叠印。pairwise bbox 检查把 `get_xticklabels() +
+get_yticklabels()` 纳入。
+
+**overview 页（30 秒页）生成器三规则**：
+1. 文字列宽**实测**（renderer bbox 逐词贪心换行 + 5% 余量），禁止固定猜宽——缩略图网格 x0
+   由实测列缘 + 硬隔离带（≥0.04 画布分数）推导；
+2. 缩略图 aspect-fit 用**英寸制**，宽高方向别写反（实战根因 bug：`dw = dh*W/H*iw/ih` 反写
+   导致缩略图越格压进文字列）；
+3. 版本戳/页脚放**左下空白带**，与所有元素 bbox 距离 assert ≥0.15in；缩略图小注在**自己格子
+   宽度内**换行（按画布宽换行 = 底部双行叠印根因）。
+生成后脚本内 assert：文字列 vs 全部缩略图 bbox 零相交、小注两两零相交。

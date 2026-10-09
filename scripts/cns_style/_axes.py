@@ -132,12 +132,21 @@ def optical_margin(ax, pad_fraction=0.15):
 # 8. add_panel_label(ax, label, offset=(-0.12, 1.08))
 # ============================================================
 def add_panel_label(ax, label, offset=(-0.12, 1.08), fontsize=12):
-    """Add A/B/C panel label in CNS style (bold, optically positioned)."""
+    """Panel letter, Nature 流派：小写加粗 a/b/c、左上绘图区外、无句点（2026 原图实测）。
+
+    fontsize 为画布尺度（12pt 画布 ≈ 终稿 8pt，按缩放比反推）；Cell 投稿传大写并
+    可另叠 stamp_panel 陈述句标题。panel 字母 ≈ 轴标签 ×1.15-1.3、距图 2-5pt。
+    """
     ax.text(offset[0], offset[1], label,
             transform=ax.transAxes,
             fontsize=fontsize, fontweight='bold',
             va='top', ha='right',
             fontfamily='Arial', color=NEAR_BLACK)
+
+
+def label_panel(ax, letter, offset=(-0.12, 1.08), fontsize=12):
+    """label_panel = add_panel_label 短名（Nature 小写加粗默认，如 label_panel(ax, 'a')）。"""
+    add_panel_label(ax, letter, offset=offset, fontsize=fontsize)
 
 
 # ============================================================
@@ -149,7 +158,7 @@ def add_panel_label(ax, label, offset=(-0.12, 1.08), fontsize=12):
 # 9c2. add_scale_bar() — spatial figure scale bar (mandatory)
 # ============================================================
 
-def add_scale_bar(ax, length_um=200, px_per_um=1.0, color='white',
+def add_scale_bar(ax, length_um=200, px_per_um=1.0, color=None,
                   fontsize=7, y_frac=0.05, x_frac=0.05):
     """Add a scale bar to a spatial plot (mandatory for spatial figures).
 
@@ -157,12 +166,19 @@ def add_scale_bar(ax, length_um=200, px_per_um=1.0, color='white',
         ax: matplotlib axes
         length_um: bar length in micrometers (pick from 100/200/500 closest to 1/5 figure width)
         px_per_um: pixels per micrometer (coordinate units per μm)
-        color: bar/text color (white on dark tissue, #2E3440 on light)
+        color: bar/text color。**None（默认）= 按背景亮度自适应**（CNS 2026 实测：
+            白底空间图=黑条黑字〔胎心 Fig2 '1 mm'〕；组织/H&E 深底=白条〔胚胎 Fig1、IF〕）；
+            显式传色则强制
         fontsize: label font size
         y_frac: vertical position as fraction of axes height (from bottom)
         x_frac: horizontal position as fraction of axes width (from left)
     """
     import matplotlib.patheffects as pe
+    if color is None:
+        bg = ax.get_facecolor()
+        lum = (0.299 * bg[0] + 0.587 * bg[1] + 0.114 * bg[2]) \
+            if len(bg) > 3 and bg[3] > 0 else 1.0   # 透明背景按白处理
+        color = '#2E3440' if lum > 0.5 else 'white'
     length_px = length_um * px_per_um
     xlim = ax.get_xlim(); ylim = ax.get_ylim()
     xdir = 1.0 if xlim[1] > xlim[0] else -1.0        # 翻转轴安全（fetal_heart 实测）

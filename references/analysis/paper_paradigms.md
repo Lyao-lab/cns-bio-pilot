@@ -1,4 +1,5 @@
 # 高分文章分析范式（Paper Paradigms）
+> as_of: 2026-10-09 | review_by: 2027-10-09 | cadence: 年度（范式库）（过期由 evals/freshness_check.py 报 ERROR；调研 runbook 见 pitfall_inbox/evals）
 
 > 提炼自 **29 篇 IF>15 空转/单细胞文章**（Nature/Cell/Cancer Cell/Nat Med/Nat Cardiovasc Res/Nat Genet 2023-2026；原 13 篇主干 + 16 篇方向续篇，2026-09-24 合并为单文件）。
 > 本文件不是教你怎么调 API——是教你**像高分文章作者一样思考分析路径**。

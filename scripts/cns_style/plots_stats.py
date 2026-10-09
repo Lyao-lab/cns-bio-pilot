@@ -2056,3 +2056,179 @@ def plot_trend_grid(data, x, y, by, size_col=None, stat_col=None,
                     outdir=kwargs.pop("outdir", "panels"),
                     fmt=kwargs.pop("fmt", "pdf"))
     return fig, axes
+
+
+# ============================================================
+# 20.20 plot_stats_dotplot — 统计量 dotplot（多实体单统计量的
+# 空转顶刊标准形态；2026-10 频率校准后取代棒棒糖的首选位）
+# ============================================================
+
+def plot_stats_dotplot(data, entity_col, value_col, group_col=None, size_col=None,
+                       value2_col=None, order=None, group_order=None,
+                       cmap='RdBu_r', vmin=None, vmax=None, center=0.0,
+                       size_range=(18, 260), figsize=None, ax=None,
+                       colorbar_label=None, show_values=False, value_fmt='{:+.2f}',
+                       star_col=None, dot_edgewidth=0.6,
+                       save=None, show=None, outdir='panels', fmt='pdf', **kwargs):
+    """统计量 dotplot：色=统计量（ρ/logFC/Δ），径=|统计量|或第二变量（-log10p/n）。
+
+    空转/机制叙事页「多实体单统计量」（模块-性状相关、TF-模块 linkage、态-通路
+    评分、方法-指标）的顶刊标准形态（2026-04~10 顶刊 ST 13 篇中棒棒糖 0 例、
+    dot/bubble 系为主力）。两种用法：
+      1D（group_col=None）：每实体一行（按 value 排序或 order 指定），单列点阵
+          ——直接替换 lollipop/forest 的场景；
+      2D（group_col='tf'）：实体×分组点矩阵（如 module×TF），色=ρ 径=|ρ| ——
+          替换"成对条形 + heatmap 第三变量"组合。
+    value2_col: 第二统计量（如 Spearman）以空心环叠加；star_col: p 值列 → 星号。
+    返回 (fig, ax)。
+
+    Usage:
+        plot_stats_dotplot(corr_df, entity_col='module', value_col='pearson',
+                           size_col='neglog10p', star_col='p',
+                           colorbar_label='Pearson r', save='E1_stats_dot')
+        plot_stats_dotplot(link_df, entity_col='module', group_col='tf',
+                           value_col='rho', colorbar_label='module-TF r',
+                           save='L1_module_tf_dot')
+    """
+    df = data.copy()
+    for c in (entity_col, value_col):
+        if c not in df.columns:
+            raise ValueError(f"plot_stats_dotplot: 列 {c!r} 不在 data")
+    # 行序：显式 order > 按 value 排序（1D）> 按首现
+    if order is not None:
+        ents = list(order)
+    elif group_col is None:
+        ents = df.sort_values(value_col)[entity_col].tolist()
+    else:
+        ents = list(dict.fromkeys(df[entity_col]))
+    # NaN 值行保留为空格（画位不画点）
+    from matplotlib.colors import Normalize, TwoSlopeNorm as _TwoSlopeNorm
+    v = pd.to_numeric(df[value_col], errors='coerce')
+    lo = float(np.nanmin([vmin if vmin is not None else np.nanmin(v)]))
+    hi = float(np.nanmax([vmax if vmax is not None else np.nanmax(v)]))
+    if hi - lo < 1e-12:
+        hi = lo + 1.0
+    norm = _TwoSlopeNorm(vcenter=center, vmin=lo, vmax=hi) \
+        if (lo < center < hi) else Normalize(vmin=lo, vmax=hi)
+    cmap_obj = plt.get_cmap(cmap)
+
+    if group_col is None:
+        # ---------- 1D ----------
+        if figsize is None:
+            figsize = (0.9 + 3.4, 0.20 * len(ents) + 1.1)
+        fig, axx = (plt.gcf(), ax) if ax is not None else plt.subplots(
+            figsize=figsize)
+        rows = df.set_index(entity_col)
+        vals = [float(rows.loc[e, value_col])
+                if e in rows.index and pd.notna(rows.loc[e, value_col]) else np.nan
+                for e in ents]
+        sz_src = None
+        if size_col is not None:
+            sz_raw = np.abs(pd.to_numeric(rows.get(size_col), errors='coerce').values)
+            sz_src = np.nan_to_num(sz_raw)
+        else:
+            sz_src = np.nan_to_num(np.abs(vals))
+        s_lo, s_hi = (0.0, 1.0) if sz_src.max() - sz_src.min() < 1e-12 \
+            else (sz_src.min(), sz_src.max())
+        sizes = size_range[0] + (size_range[1] - size_range[0]) * \
+            (sz_src - s_lo) / (s_hi - s_lo + 1e-12)
+        colors = cmap_obj(norm(np.nan_to_num(vals, nan=center)))
+        axx.scatter(np.zeros(len(ents)), np.arange(len(ents))[::-1],
+                    s=sizes, c=colors, edgecolors='white',
+                    linewidths=dot_edgewidth, zorder=3)
+        # NaN 行：灰色占位短横（保留行位，明示"无值"而非漏画）
+        for yi, vv in zip(np.arange(len(ents))[::-1], vals):
+            if not pd.notna(vv):
+                axx.plot([-0.12, 0.12], [yi, yi], color=GREY, lw=1.0, zorder=2)
+        if value2_col is not None and value2_col in rows.columns:
+            v2 = pd.to_numeric(rows[value2_col], errors='coerce').values
+            axx.scatter(np.zeros(len(ents)), np.arange(len(ents))[::-1] - 0.26,
+                        s=sizes * 0.36, facecolor='none',
+                        edgecolors=cmap_obj(norm(np.nan_to_num(v2, nan=center))),
+                        linewidths=1.1, zorder=3)
+            # 双统计量图例（实心=主统计量，空心环=第二统计量）
+            from matplotlib.lines import Line2D
+            axx.legend(handles=[
+                Line2D([], [], marker='o', ls='', markersize=7,
+                       markerfacecolor='#7A8B99', markeredgecolor='white',
+                       label=str(value_col)),
+                Line2D([], [], marker='o', ls='', markersize=5,
+                       markerfacecolor='none', markeredgecolor='#7A8B99',
+                       markeredgewidth=1.2, label=str(value2_col))],
+                loc='lower right', fontsize=6.5, frameon=False,
+                handletextpad=0.2, borderaxespad=0.1)
+        if star_col is not None and star_col in rows.columns:
+            for yi, e in zip(np.arange(len(ents))[::-1], ents):
+                p = rows.loc[e, star_col]
+                if pd.notna(p):
+                    st = '***' if p < 0.001 else '**' if p < 0.01 else \
+                        '*' if p < 0.05 else ''
+                    if st:
+                        axx.text(0.32, yi, st, fontsize=7, color=NEAR_BLACK,
+                                 va='center', zorder=4)
+        if show_values:
+            for yi, vv in zip(np.arange(len(ents))[::-1], vals):
+                if pd.notna(vv):
+                    axx.text(0.55, yi, value_fmt.format(vv), fontsize=6.8,
+                             color=GREY, va='center', zorder=4)
+        axx.set_yticks(np.arange(len(ents))[::-1])
+        axx.set_yticklabels(ents, fontsize=7.5, color=NEAR_BLACK)
+        axx.set_xticks([])
+        axx.set_xlim(-0.6, 1.15)
+        axx.set_ylim(-0.7, len(ents) - 0.3)
+    else:
+        # ---------- 2D 点矩阵 ----------
+        groups = list(group_order) if group_order is not None else \
+            list(dict.fromkeys(df[group_col]))
+        if figsize is None:
+            figsize = (0.62 * len(groups) + 1.6, 0.22 * len(ents) + 1.1)
+        fig, axx = (plt.gcf(), ax) if ax is not None else plt.subplots(
+            figsize=figsize)
+        cell = df.set_index([entity_col, group_col])
+        for yi, e in zip(np.arange(len(ents))[::-1], ents):
+            for xi, g in enumerate(groups):
+                if (e, g) in cell.index:
+                    vv = cell.loc[(e, g), value_col]
+                    if pd.isna(vv):
+                        continue
+                    vv = float(vv)
+                    sz = abs(vv)
+                    if size_col is not None:
+                        sv = cell.loc[(e, g), size_col]
+                        sz = abs(float(sv)) if pd.notna(sv) else 0.0
+                    axx.scatter(xi, yi, s=size_range[0] +
+                                (size_range[1] - size_range[0]) * min(sz, 1.0),
+                                c=[cmap_obj(norm(vv))], edgecolors='white',
+                                linewidths=dot_edgewidth, zorder=3)
+                    if star_col is not None:
+                        p = cell.loc[(e, g), star_col]
+                        if pd.notna(p) and p < 0.05:
+                            st = '***' if p < 0.001 else '**' if p < 0.01 else '*'
+                            axx.text(xi, yi + 0.32, st, fontsize=5.8,
+                                     color=NEAR_BLACK, ha='center', zorder=4)
+        axx.set_yticks(np.arange(len(ents))[::-1])
+        axx.set_yticklabels(ents, fontsize=7.5, color=NEAR_BLACK)
+        axx.set_xticks(range(len(groups)))
+        axx.set_xticklabels(groups, fontsize=7.5, rotation=45,
+                            ha='right', color=NEAR_BLACK)
+        axx.set_xlim(-0.7, len(groups) - 0.3)
+        axx.set_ylim(-0.8, len(ents) - 0.3)
+    for side in ('top', 'right', 'left'):
+        axx.spines[side].set_visible(False)
+    if group_col is not None:
+        axx.spines['bottom'].set_color(GREY_SCALE['spine'])
+        axx.tick_params(length=2, labelsize=7.5, colors='#444444')
+        axx.grid(False)
+    else:
+        axx.spines['bottom'].set_visible(False)
+        axx.tick_params(length=0)
+    # 色条（截取右侧空间）
+    import matplotlib as mpl
+    sm = mpl.cm.ScalarMappable(norm=norm, cmap=cmap_obj)
+    cb = fig.colorbar(sm, ax=axx, shrink=0.75, pad=0.02, aspect=26)
+    cb.set_label(colorbar_label or str(value_col), fontsize=7.5)
+    cb.ax.tick_params(labelsize=6.8)
+    cb.outline.set_visible(False)
+    if save:
+        save_panel(fig, save, show=show, outdir=outdir, fmt=fmt)
+    return fig, ax

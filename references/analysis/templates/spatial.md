@@ -198,3 +198,31 @@ ov.space.nmf_tissue_zones(adata, obsm_key='X_pca', n_factors=10)
 # sliding_window：滑动窗口分析（局部特征提取）
 ov.space.sliding_window(adata, window_size=100, overlap=20)
 ```
+## 2026 前沿层（2026-10-09 调研消化；裁决与出处全量见 `references/spatial_frontiers_2026.md`）
+
+### 共识空间域聚类（SACCELERATOR 2026 新标准，现装包即可跑）
+```python
+# 单方法定稿不合规 → ≥2 方法共识 + ARI + 分歧人工裁决
+import scanpy as sc
+from sklearn.metrics import adjusted_rand_score
+# 各方法分别跑（ov.space.pySTAGATE / CAST / cellcharter / standalone BANKSY），
+# 假设各自结果在 obs['dom_stagate'], obs['dom_banksy']
+ari = adjusted_rand_score(adata.obs['dom_stagate'], adata.obs['dom_banksy'])
+# 分歧 bins 打标：consensus 列 = 两法一致处取标签，分歧处 'discordant'
+agree = adata.obs['dom_stagate'] == adata.obs['dom_banksy']
+adata.obs['dom_consensus'] = adata.obs['dom_stagate'].astype(str).where(agree, 'discordant')
+# 报告口径：ARI + 一致 bin 占比 + discordant 空间分布图（是否聚在边界带）
+```
+
+### 多样本空间比较的零包手搓统计（VIMA/TESSERA 口径，详见 frontiers §3）
+```python
+# 供体级标签置换 null（保切片内空间结构、破条件关联）≥1000 次
+# + BH 于置换 p + 空间块(≥500µm) bootstrap CI
+# n 切片与 n 供体分开报；n<5 供体标"探索性"
+```
+
+### 未预装（装前需用户许可 + api_check.py --diff；清单见 frontiers §7）
+- 3D/连续场：sc3D、SINTER3D、NTF、AlignDG、Spa3D ｜ 虚拟切片：STITCH、STADiffuser
+- microniche case-control + 功效：vima ｜ 多样本空间 DE：TESSERA(R)
+- 成像平台空间 CCC：SpaCCI、SpatialDM ｜ 共识 SVG：CASTL ｜ 空间迁移轨迹：stVCR
+- 去卷积新选项：SONAR（spDDB 前三，与 c2l/RCTD 同梯队）

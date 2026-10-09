@@ -196,10 +196,17 @@
 - **相关规则**: B1 B2
 - **机检**: finalize_figure 内置；<2 组 → ValueError
 
-### plot_lollipop | category: plotting | verified ✅
+### plot_stats_dotplot | category: plotting | verified ✅（2026-10-09 冒烟：1D/2D/NaN 行/双统计量环/星号/色标）
+- **inputs**: data(DataFrame), entity_col, value_col, group_col=None(进 2D 点矩阵), size_col=None(径编码,默认|value|), value2_col=None(空心环第二统计量), order/group_order=None, cmap='RdBu_r', center=0, star_col=None(p 值→星), show_values=False, save=...
+- **outputs**: PDF/PNG 统计量 dotplot——1D 每实体一行按值排序；2D 实体×分组点矩阵；发散色标+右 colorbar+NaN 灰短横占位+双统计量图例
+- **路由**: mpl 直绘（plots_stats.py §20.20）；**多实体单统计量的默认入口**（2026-10 频率校准取代棒棒糖首选位）
+- **相关规则**: B1 B2
+- **机检**: finalize_figure 内置
+
+### plot_lollipop | category: plotting | verified ✅ ⚕域限定（默认→plot_stats_dotplot）
 - **inputs**: data(DataFrame), label_col, value_col, value2_col=None(第二统计量空心点), pval_col=None, tag_col=None, ref_line=None, null_band=None(置换零带)
 - **outputs**: PDF 发散棒棒糖（实心=主统计量+空心=第二统计量；灰底零带+斜体注释）
-- **路由**: mpl 直绘（plots_stats；fetal_heart hdWGCNA module-trait 回灌）
+- **路由**: mpl 直绘（plots_stats；fetal_heart hdWGCNA module-trait 回灌）。**仅用户点名或双统计量+置换零带同面板时使用**——空转/机制页首选 plot_stats_dotplot（2026 顶刊 ST 0/13）
 - **相关规则**: B1 B2
 - **机检**: finalize_figure 内置
 
@@ -483,10 +490,10 @@
 - **相关规则**: B1 B2
 - **机检**: finalize_figure 内置
 
-### plot_forest | category: plotting | verified ✅
+### plot_forest | category: plotting | verified ✅ ⚕临床/meta 域专用
 - **inputs**: data(DataFrame), estimate, lower, upper, label, group=None
 - **outputs**: PDF 森林图（meta-analysis）
-- **路由**: ov.pl.forest 优先 → mpl errorbar 兜底
+- **路由**: ov.pl.forest 优先 → mpl errorbar 兜底。**仅 meta-analysis/临床多队列效应量**；空转/机制/发育页禁用（同数据走 plot_stats_dotplot）
 - **对齐 ov**: ov.pl.forest
 - **相关规则**: B1 B2
 - **机检**: finalize_figure 内置
@@ -507,11 +514,10 @@
 - **相关规则**: B1 B2
 - **机检**: finalize_figure 内置
 
-### plot_pca_variance | category: plotting | verified ✅
-- **inputs**: adata(AnnData), n_pcs=30
-- **outputs**: PDF PCA 方差比图
+### plot_pca_variance | category: plotting | verified ✅（cns_style 入口名；底层 ov 函数 `ov.pl.plot_pca_variance_ratio` 不同名）
+- **inputs**: adata, n_pcs=30, ax=None, save=...
+- **outputs**: PDF PCA 方差比柱+累计线双轴
 - **路由**: ov.pl.plot_pca_variance_ratio 优先 → mpl bar 兜底
-- **对齐 ov**: ov.pl.plot_pca_variance_ratio
 - **相关规则**: B1 B2
 - **机检**: finalize_figure 内置
 

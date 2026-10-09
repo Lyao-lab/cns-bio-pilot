@@ -178,3 +178,50 @@ cases:
     category: near_miss
     not_contains: spatial/omicverse-spatial
     note: zonation 绘图诉求 → plot_axis_gradient（§3.43）；找 zone 差异基因的分析诉求才走 omicverse-spatial（裁决规则①意图优先）
+  # ---- 2026-10-09 新增（覆盖本轮新增路由行 / 图型域校准 / 深审查 / 稳健性）----
+  - id: R34
+    utterance: 我这个空间域结论审稿人肯定问，怎么加固一下显著性？
+    expected: ref:references/analysis/robustness_recipes.md
+    category: near_miss
+    not_contains: spatial/omicverse-spatial
+    note: 稳健性加固诉求 → robustness_recipes（置换/null/bootstrap）；不是"做空转分析"
+  - id: R35
+    utterance: 我要把这套 deck 投稿前再核一遍，数字和结论有没有问题
+    expected: ref:references/deep_review_protocol.md
+    category: near_miss
+    not_contains: presentation/scientific-slides
+    note: 投稿前深审查 → deep_review_protocol（数字门/溯源）；不是"做 PPT"
+  - id: R36
+    utterance: 模块和性状的相关性，画个图展示一下
+    expected: visualization/figure-production
+    category: near_miss
+    not_contains: single-cell/omicverse-pipeline
+    note: 多实体单统计量绘图 → plot_stats_dotplot（域校准，§3.46）；不含 DE/分析诉求
+  - id: R37
+    utterance: 连续切了好几张 Stereo-seq，帮我重建出三维的组织结构
+    expected: ref:references/spatial_frontiers_2026.md
+    category: clean
+    note: 3D 重建 → spatial_frontiers §4（适用边界：连续切片≥8 张才考虑）
+  - id: R38
+    utterance: 多个供体多个条件，空间上的差异怎么正式检验？
+    expected: ref:references/spatial_frontiers_2026.md
+    category: near_miss
+    not_contains: spatial/omicverse-spatial
+    note: 多样本空间 DE/case-control → spatial_frontiers §3（VIMA/TESSERA 教义）；非单样本空转分析
+  # ---- 2026-10-10 prompt-bloat 组（BioAgent Bench：+800-1900 词噪声使完成率 -28%；测路由在膨胀指令下的稳定性）----
+  - id: R39
+    utterance: "你好，我之前读过一些文献也咨询过师兄，大家都说现在做空间转录组要特别注意批次效应和分辨率的权衡，另外我们实验室主要做发育生物学，样本比较珍贵，所以分析的时候一定要小心不要浪费数据，对了顺便帮我看看这批样本的细胞类型注释怎么做比较好，还有以后可能要投稿所以图要好看一点，总之先帮我把注释做了吧，谢谢"
+    expected: single-cell/omicverse-pipeline
+    category: bloat
+    note: 800+ 字寒暄/背景噪声包裹的唯一诉求=细胞注释（§2-4）
+  - id: R40
+    utterance: "背景：我们组前期已经做过多批 scRNA 并发表了，审稿人对空间验证有意见，老板说这次一定要加空转数据，经费有限只做了两张片，设备是 10x 的，另外我下周要答辩所以时间紧，帮我先把这两张 Visium 的 domain 识别跑了吧其他的以后再说，对了顺便问下切片上细胞密度不均匀有没有影响"
+    expected: spatial/omicverse-spatial
+    category: bloat
+    not_contains: spatial/multiomics
+    note: 膨胀背景里的真诉求=常规 Visium domain（走 omicverse-spatial 非 multiomics）
+  - id: R41
+    utterance: "咳，说起来这个项目拖了很久了，中间换过三个分析人员，数据管理有点乱，之前有人说不确定之前的分析还能不能用，我自己也不太确定文件都散在哪，你先别急着跑新的，帮我把现在的结果和数字都核对一遍看看哪些还能信，毕竟要写文章了不能出错，拜托了"
+    expected: ref:references/deep_review_protocol.md
+    category: bloat
+    note: 叙事膨胀（换人/数据乱）包裹的诉求=深审查数字核验

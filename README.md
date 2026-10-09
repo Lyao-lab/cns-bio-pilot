@@ -1,6 +1,6 @@
 # CNS Bio-Pilot
 
-[![version](https://img.shields.io/badge/version-22.6-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-15-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
+[![version](https://img.shields.io/badge/version-23.4-blue)](#) [![skills](https://img.shields.io/badge/sub--skills-15-green)](#) [![engine](https://img.shields.io/badge/engine-OmicVerse%20V2%20%2B%20scop%20%2B%20perturbation-orange)](#)
 
 Single-cell + spatial transcriptomics bioinformatics skill library. Router architecture: read `SKILL.md` → pick ONE sub-skill → execute.（版本以 SKILL.md metadata 为唯一源）
 
@@ -17,6 +17,9 @@ conda activate st          # squidpy (spatial stats) + decoupler 2.x
 python scripts/api_check.py --diff    # see what changed
 python scripts/api_check.py           # full verification
 ```
+# Skill 自检（改任何文件后）
+python evals/check_all.py   # lint+consistency+freshness+desc 一键
+
 
 ## Architecture
 
